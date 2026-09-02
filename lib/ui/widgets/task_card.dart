@@ -28,7 +28,7 @@ class TaskCard extends ConsumerWidget {
     final taskColor = Color(int.parse(task.color.replaceFirst('#', '0xFF')));
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       decoration: BoxDecoration(
         color: isSelected ? theme.colorScheme.primary.withOpacity(0.08) : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(8),

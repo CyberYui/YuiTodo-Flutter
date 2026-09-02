@@ -143,14 +143,43 @@ const Map<AppThemeScheme, ThemeScheme> themeSchemes = {
 ThemeData lightThemeForScheme(ThemeScheme scheme) {
   return ThemeData(
     useMaterial3: true,
+    brightness: Brightness.light,
     colorScheme: ColorScheme.light(
       primary: scheme.lightPrimary,
       secondary: scheme.lightSecondary,
       background: scheme.lightBackground,
       surface: scheme.lightSurface,
+      onBackground: const Color(0xFF1A1A1A),
+      onSurface: const Color(0xFF1A1A1A),
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
     ),
     scaffoldBackgroundColor: scheme.lightBackground,
     cardColor: scheme.lightSurface,
+    appBarTheme: AppBarTheme(
+      backgroundColor: scheme.lightSurface,
+      foregroundColor: const Color(0xFF1A1A1A),
+      elevation: 0,
+    ),
+    textTheme: const TextTheme(
+      displayLarge: TextStyle(color: Color(0xFF1A1A1A)),
+      displayMedium: TextStyle(color: Color(0xFF1A1A1A)),
+      displaySmall: TextStyle(color: Color(0xFF1A1A1A)),
+      headlineLarge: TextStyle(color: Color(0xFF1A1A1A)),
+      headlineMedium: TextStyle(color: Color(0xFF1A1A1A)),
+      headlineSmall: TextStyle(color: Color(0xFF1A1A1A)),
+      titleLarge: TextStyle(color: Color(0xFF1A1A1A)),
+      titleMedium: TextStyle(color: Color(0xFF1A1A1A)),
+      titleSmall: TextStyle(color: Color(0xFF1A1A1A)),
+      bodyLarge: TextStyle(color: Color(0xFF1A1A1A)),
+      bodyMedium: TextStyle(color: Color(0xFF1A1A1A)),
+      bodySmall: TextStyle(color: Color(0xFF1A1A1A)),
+      labelLarge: TextStyle(color: Color(0xFF1A1A1A)),
+      labelMedium: TextStyle(color: Color(0xFF1A1A1A)),
+      labelSmall: TextStyle(color: Color(0xFF1A1A1A)),
+    ),
+    iconTheme: const IconThemeData(color: Color(0xFF1A1A1A)),
+    dividerColor: const Color(0xFFE0E0E0),
   );
 }
 
@@ -158,13 +187,42 @@ ThemeData lightThemeForScheme(ThemeScheme scheme) {
 ThemeData darkThemeForScheme(ThemeScheme scheme) {
   return ThemeData(
     useMaterial3: true,
+    brightness: Brightness.dark,
     colorScheme: ColorScheme.dark(
       primary: scheme.darkPrimary,
       secondary: scheme.darkSecondary,
       background: scheme.darkBackground,
       surface: scheme.darkSurface,
+      onBackground: Colors.white,
+      onSurface: Colors.white,
+      onPrimary: Colors.black,
+      onSecondary: Colors.black,
     ),
     scaffoldBackgroundColor: scheme.darkBackground,
     cardColor: scheme.darkSurface,
+    appBarTheme: AppBarTheme(
+      backgroundColor: scheme.darkSurface,
+      foregroundColor: Colors.white,
+      elevation: 0,
+    ),
+    textTheme: const TextTheme(
+      displayLarge: TextStyle(color: Colors.white),
+      displayMedium: TextStyle(color: Colors.white),
+      displaySmall: TextStyle(color: Colors.white),
+      headlineLarge: TextStyle(color: Colors.white),
+      headlineMedium: TextStyle(color: Colors.white),
+      headlineSmall: TextStyle(color: Colors.white),
+      titleLarge: TextStyle(color: Colors.white),
+      titleMedium: TextStyle(color: Colors.white),
+      titleSmall: TextStyle(color: Colors.white),
+      bodyLarge: TextStyle(color: Colors.white),
+      bodyMedium: TextStyle(color: Colors.white),
+      bodySmall: TextStyle(color: Color(0xFFB0B0B0)),
+      labelLarge: TextStyle(color: Colors.white),
+      labelMedium: TextStyle(color: Colors.white),
+      labelSmall: TextStyle(color: Color(0xFFB0B0B0)),
+    ),
+    iconTheme: const IconThemeData(color: Colors.white),
+    dividerColor: Color(0xFF404040),
   );
 }

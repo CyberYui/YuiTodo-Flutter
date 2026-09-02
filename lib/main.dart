@@ -28,26 +28,7 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
     final fontPair = AppFontPairs.getPair(fontIndex);
     final chineseFont = fontPair.chineseFontFamily;
     final englishFont = fontPair.englishFontFamily;
-
-    // Build text theme with custom font
-    final baseTextTheme = Theme.of(context).textTheme;
-    final customTextTheme = baseTextTheme.copyWith(
-      displayLarge: baseTextTheme.displayLarge?.copyWith(fontFamily: chineseFont ?? englishFont),
-      displayMedium: baseTextTheme.displayMedium?.copyWith(fontFamily: chineseFont ?? englishFont),
-      displaySmall: baseTextTheme.displaySmall?.copyWith(fontFamily: chineseFont ?? englishFont),
-      headlineLarge: baseTextTheme.headlineLarge?.copyWith(fontFamily: chineseFont ?? englishFont),
-      headlineMedium: baseTextTheme.headlineMedium?.copyWith(fontFamily: chineseFont ?? englishFont),
-      headlineSmall: baseTextTheme.headlineSmall?.copyWith(fontFamily: chineseFont ?? englishFont),
-      titleLarge: baseTextTheme.titleLarge?.copyWith(fontFamily: chineseFont ?? englishFont),
-      titleMedium: baseTextTheme.titleMedium?.copyWith(fontFamily: chineseFont ?? englishFont),
-      titleSmall: baseTextTheme.titleSmall?.copyWith(fontFamily: chineseFont ?? englishFont),
-      bodyLarge: baseTextTheme.bodyLarge?.copyWith(fontFamily: chineseFont ?? englishFont),
-      bodyMedium: baseTextTheme.bodyMedium?.copyWith(fontFamily: chineseFont ?? englishFont),
-      bodySmall: baseTextTheme.bodySmall?.copyWith(fontFamily: chineseFont ?? englishFont),
-      labelLarge: baseTextTheme.labelLarge?.copyWith(fontFamily: chineseFont ?? englishFont),
-      labelMedium: baseTextTheme.labelMedium?.copyWith(fontFamily: chineseFont ?? englishFont),
-      labelSmall: baseTextTheme.labelSmall?.copyWith(fontFamily: chineseFont ?? englishFont),
-    );
+    final fontFamily = chineseFont ?? englishFont;
 
     // Get light/dark themes
     final lightScheme = themeSchemes[themeState.lightScheme];
@@ -56,15 +37,36 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
     final baseLightTheme = lightScheme != null ? lightThemeForScheme(lightScheme) : lightTheme;
     final baseDarkTheme = darkScheme != null ? darkThemeForScheme(darkScheme) : darkTheme;
 
+    // Build text theme with custom font
+    TextTheme buildTextTheme(TextTheme base) {
+      return base.copyWith(
+        displayLarge: base.displayLarge?.copyWith(fontFamily: fontFamily),
+        displayMedium: base.displayMedium?.copyWith(fontFamily: fontFamily),
+        displaySmall: base.displaySmall?.copyWith(fontFamily: fontFamily),
+        headlineLarge: base.headlineLarge?.copyWith(fontFamily: fontFamily),
+        headlineMedium: base.headlineMedium?.copyWith(fontFamily: fontFamily),
+        headlineSmall: base.headlineSmall?.copyWith(fontFamily: fontFamily),
+        titleLarge: base.titleLarge?.copyWith(fontFamily: fontFamily),
+        titleMedium: base.titleMedium?.copyWith(fontFamily: fontFamily),
+        titleSmall: base.titleSmall?.copyWith(fontFamily: fontFamily),
+        bodyLarge: base.bodyLarge?.copyWith(fontFamily: fontFamily),
+        bodyMedium: base.bodyMedium?.copyWith(fontFamily: fontFamily),
+        bodySmall: base.bodySmall?.copyWith(fontFamily: fontFamily),
+        labelLarge: base.labelLarge?.copyWith(fontFamily: fontFamily),
+        labelMedium: base.labelMedium?.copyWith(fontFamily: fontFamily),
+        labelSmall: base.labelSmall?.copyWith(fontFamily: fontFamily),
+      );
+    }
+
     return MaterialApp(
       title: 'YuiTodo',
       debugShowCheckedModeBanner: false,
       themeMode: themeState.mode,
       theme: baseLightTheme.copyWith(
-        textTheme: customTextTheme,
+        textTheme: buildTextTheme(baseLightTheme.textTheme),
       ),
       darkTheme: baseDarkTheme.copyWith(
-        textTheme: customTextTheme,
+        textTheme: buildTextTheme(baseDarkTheme.textTheme),
       ),
       home: const HomeScreen(),
     );
