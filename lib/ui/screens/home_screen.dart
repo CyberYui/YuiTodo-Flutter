@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task.dart';
@@ -31,7 +32,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Task> _filterTasks(List<Task> tasks) {
     var filtered = tasks;
     
-    // Smart filter
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final todayEnd = today.add(const Duration(days: 1));
@@ -61,12 +61,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         break;
     }
 
-    // Tag filter
     if (_filterTagId != null) {
       filtered = filtered.where((t) => t.tags.any((tag) => tag.id == _filterTagId)).toList();
     }
 
-    // Search
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
       filtered = filtered.where((t) {
@@ -96,6 +94,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  void _completeTaskWithUndo(Task task) {
+    ref.read(taskListProvider.notifier).toggleComplete(task);
+    final wasDone = task.status == 'done';
+    context.showUndoSnackBar(wasDone? '已取消完成' : '已完成', () {
+      ref.read(taskListProvider.notifier).toggleComplete(task);
+    });
+  }
+
+  void _onReorder(int oldIndex, int newIndex, List<Task> filteredTasks) {
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    
+    final movedTask = filteredTasks[oldIndex];
+    final targetTask = filteredTasks[newIndex];
+    
+    // Update sort order
+    final newSortOrder = targetTask.sortOrder;
+    ref.read(taskRepositoryProvider).updateTask(
+      movedTask.copyWith(sortOrder: newSortOrder)
+    );
+    
+    // Reload to get fresh data
+    ref.read(taskListProvider.notifier).loadTasks();
+  }
+
+  void _showBatchOperationsSheet(List<int> selectedIds) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => BatchOperationsSheet(
+        selectedIds: selectedIds,
+        onComplete: () {
+          ref.read(selectionProvider.notifier).clear();
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -119,13 +156,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             : const Text('YuiTodo'),
         actions: [
           if (isSelectionMode) ...[
-            Text('已选 ${selection.length}'),
+            TextButton(
+              onPressed: () => _showBatchOperationsSheet(selection),
+              child: const Text('操作'),
+            ),
             IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () {
-                ref.read(taskListProvider.notifier).batchDelete(selection);
-                ref.read(selectionProvider.notifier).clear();
-              },
+              icon: const Icon(Icons.close),
+              onPressed: () => ref.read(selectionProvider.notifier).clear(),
             ),
           ] else ...[
             IconButton(
@@ -188,7 +225,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ),
             ),
-          // Task list
+          // Task list with drag-and-drop
           Expanded(
             child: tasksAsync.when(
               data: (tasks) {
@@ -205,8 +242,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   );
                 }
-                return ListView.builder(
+                return ReorderableListView.builder(
+                  padding: const EdgeInsets.only(bottom: 80),
                   itemCount: filtered.length,
+                  onReorder: (oldIndex, newIndex) => _onReorder(oldIndex, newIndex, filtered),
                   itemBuilder: (context, index) {
                     final task = filtered[index];
                     return Dismissible(
@@ -225,16 +264,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       confirmDismiss: (direction) async {
                         if (direction == DismissDirection.startToEnd) {
-                          // Swipe right: complete
-                          ref.read(taskListProvider.notifier).toggleComplete(task);
+                          _completeTaskWithUndo(task);
                           return false;
                         } else {
-                          // Swipe left: delete with undo
                           _deleteTaskWithUndo(task);
                           return false;
                         }
                       },
                       child: TaskCard(
+                        key: ValueKey(task.id),
                         task: task,
                         isSelected: selection.contains(task.id),
                         onTap: () {
@@ -256,10 +294,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openTaskEditor(null),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: isSelectionMode
+          ? null
+          : FloatingActionButton(
+              onPressed: () => _openTaskEditor(null),
+              child: const Icon(Icons.add),
+            ),
     );
   }
 
@@ -269,6 +309,60 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => setState(() => _smartFilter = id),
+    );
+  }
+}
+
+/// Batch operations bottom sheet
+class BatchOperationsSheet extends ConsumerWidget {
+  final List<int> selectedIds;
+  final VoidCallback onComplete;
+
+  const BatchOperationsSheet({
+    super.key,
+    required this.selectedIds,
+    required this.onComplete,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final tagsAsync = ref.watch(tagListProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '已选择 ${selectedIds.length} 个任务',
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 16),
+          ListTile(
+            leading: Icon(Icons.delete, color: theme.colorScheme.error),
+            title: const Text('批量删除'),
+            onTap: () {
+              ref.read(taskListProvider.notifier).batchDelete(selectedIds);
+              onComplete();
+            },
+          ),
+          // Tag operations
+          if (tagsAsync.hasValue)
+            ...tagsAsync.value!.map((tag) {
+              return ListTile(
+                leading: Icon(Icons.label, color: Color(int.parse(tag.color.replaceFirst('#', '0xFF')))),
+                title: Text('添加标签: ${tag.name}'),
+                onTap: () {
+                  ref.read(taskListProvider.notifier).batchAddTag(selectedIds, tag.id!);
+                  onComplete();
+                },
+              );
+            }),
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 }
