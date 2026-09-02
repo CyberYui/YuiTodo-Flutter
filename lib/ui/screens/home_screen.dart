@@ -356,7 +356,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                           }
                         },
                         onLongPress: () => _enterSelectionMode(task.id!),
-                        onStepToggle: (task, step) => _toggleStep(task, step),
+                        onStepToggle: (Task task, TaskStep step) => _toggleStep(task, step),
                       ),
                     );
                   },

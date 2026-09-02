@@ -406,32 +406,64 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Steps
+          // Steps with drag-to-reorder
           const Text('子任务', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
-          ..._steps.asMap().entries.map((entry) {
-            final index = entry.key;
-            final step = entry.value;
-            return ListTile(
-              leading: GestureDetector(
-                onTap: () => _toggleStepStatus(index),
-                child: Icon(
-                  step.status == 'completed' ? Icons.check_circle : Icons.circle_outlined,
-                  color: step.status == 'completed' ? theme.colorScheme.primary : null,
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _steps.length,
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (newIndex > oldIndex) newIndex--;
+                final item = _steps.removeAt(oldIndex);
+                _steps.insert(newIndex, item);
+                // Update sort orders
+                for (int i = 0; i < _steps.length; i++) {
+                  _steps[i] = TaskStep(
+                    id: _steps[i].id,
+                    taskId: _steps[i].taskId,
+                    title: _steps[i].title,
+                    sortOrder: i,
+                    status: _steps[i].status,
+                  );
+                }
+              });
+            },
+            itemBuilder: (context, index) {
+              final step = _steps[index];
+              return ListTile(
+                key: ValueKey('step-$index'),
+                leading: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Icon(Icons.drag_handle, color: theme.colorScheme.outline),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _toggleStepStatus(index),
+                      child: Icon(
+                        step.status == 'completed' ? Icons.check_circle : Icons.circle_outlined,
+                        color: step.status == 'completed' ? theme.colorScheme.primary : null,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              title: Text(
-                step.title,
-                style: TextStyle(
-                  decoration: step.status == 'completed' ? TextDecoration.lineThrough : null,
+                title: Text(
+                  step.title,
+                  style: TextStyle(
+                    decoration: step.status == 'completed' ? TextDecoration.lineThrough : null,
+                  ),
                 ),
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => _removeStep(index),
-              ),
-            );
-          }),
+                trailing: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => _removeStep(index),
+                ),
+              );
+            },
+          ),
           Row(
             children: [
               Expanded(
