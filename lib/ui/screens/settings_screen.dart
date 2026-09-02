@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_picker/image_picker.dart';
-import '../core/theme/app_theme.dart';
-import '../providers/task_provider.dart';
-import '../providers/tag_provider.dart';
-import '../services/backup_service.dart';
-import '../ui/screens/tag_management_screen.dart';
+import '../../core/theme/app_theme.dart';
+import '../../providers/task_provider.dart';
+import '../../providers/tag_provider.dart';
+import '../../services/backup_service.dart';
+import '../screens/tag_management_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});

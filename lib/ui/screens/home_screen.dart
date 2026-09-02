@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/task.dart';
-import '../providers/task_provider.dart';
-import '../providers/tag_provider.dart';
-import '../ui/screens/task_editor_screen.dart';
-import '../ui/screens/settings_screen.dart';
-import 'statistics_screen.dart';
-import '../ui/widgets/task_card.dart';
-import '../core/utils/undo_manager.dart';
+import '../../models/task.dart';
+import '../../providers/task_provider.dart';
+import '../../providers/tag_provider.dart';
+import '../../providers/filter_provider.dart';
+import '../../repositories/task_repository.dart';
+import '../screens/task_editor_screen.dart';
+import '../screens/settings_screen.dart';
+import '../screens/statistics_screen.dart';
+import '../widgets/task_card.dart';
+import '../../core/utils/undo_manager.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -18,10 +20,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  String _searchQuery = '';
-  String _smartFilter = 'all';
   bool _showSearch = false;
-  int? _filterTagId;
   final _searchController = TextEditingController();
 
   @override
@@ -31,6 +30,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   List<Task> _filterTasks(List<Task> tasks) {
+    final smartFilter = ref.watch(smartFilterProvider);
+    final tagFilter = ref.watch(tagFilterProvider);
+    final searchQuery = _searchController.text.toLowerCase().trim();
+    
     var filtered = tasks;
     
     final now = DateTime.now();
@@ -38,23 +41,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final todayEnd = today.add(const Duration(days: 1));
     final tomorrowEnd = today.add(const Duration(days: 2));
 
-    switch (_smartFilter) {
+    switch (smartFilter) {
       case 'today':
         filtered = filtered.where((t) {
           final date = DateTime.fromMillisecondsSinceEpoch(t.startDate ?? t.startTime ?? 0);
-          return date.isAfter(today) && date.isBefore(todayEnd);
+          return date.isAfter(today.subtract(const Duration(days: 1))) && date.isBefore(todayEnd);
         }).toList();
         break;
       case 'tomorrow':
         filtered = filtered.where((t) {
           final date = DateTime.fromMillisecondsSinceEpoch(t.startDate ?? t.startTime ?? 0);
-          return date.isAfter(todayEnd) && date.isBefore(tomorrowEnd);
+          return date.isAfter(todayEnd.subtract(const Duration(days: 1))) && date.isBefore(tomorrowEnd);
         }).toList();
         break;
       case 'future':
         filtered = filtered.where((t) {
           final date = DateTime.fromMillisecondsSinceEpoch(t.startDate ?? t.startTime ?? 0);
-          return date.isAfter(tomorrowEnd);
+          return date.isAfter(tomorrowEnd.subtract(const Duration(days: 1)));
         }).toList();
         break;
       case 'completed':
@@ -62,15 +65,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         break;
     }
 
-    if (_filterTagId != null) {
-      filtered = filtered.where((t) => t.tags.any((tag) => tag.id == _filterTagId)).toList();
+    if (tagFilter != null) {
+      filtered = filtered.where((t) => t.tags.any((tag) => tag.id == tagFilter)).toList();
     }
 
-    if (_searchQuery.isNotEmpty) {
-      final query = _searchQuery.toLowerCase();
+    if (searchQuery.isNotEmpty) {
       filtered = filtered.where((t) {
-        return t.title.toLowerCase().contains(query) || 
-               t.note.toLowerCase().contains(query);
+        return t.title.toLowerCase().contains(searchQuery) || 
+               t.note.toLowerCase().contains(searchQuery);
       }).toList();
     }
 
@@ -98,39 +100,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _completeTaskWithUndo(Task task) {
     ref.read(taskListProvider.notifier).toggleComplete(task);
     final wasDone = task.status == 'done';
-    context.showUndoSnackBar(wasDone? '已取消完成' : '已完成', () {
+    context.showUndoSnackBar(wasDone ? '已取消完成' : '已完成', () {
       ref.read(taskListProvider.notifier).toggleComplete(task);
     });
   }
 
   void _onReorder(int oldIndex, int newIndex, List<Task> filteredTasks) {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
+    if (oldIndex < newIndex) newIndex -= 1;
     
     final movedTask = filteredTasks[oldIndex];
     final targetTask = filteredTasks[newIndex];
     
-    // Update sort order
-    final newSortOrder = targetTask.sortOrder;
     ref.read(taskRepositoryProvider).updateTask(
-      movedTask.copyWith(sortOrder: newSortOrder)
+      movedTask.copyWith(sortOrder: targetTask.sortOrder),
     );
-    
-    // Reload to get fresh data
     ref.read(taskListProvider.notifier).loadTasks();
   }
 
   void _showBatchOperationsSheet(List<int> selectedIds) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => BatchOperationsSheet(
-        selectedIds: selectedIds,
-        onComplete: () {
-          ref.read(selectionProvider.notifier).clear();
-          Navigator.pop(context);
-        },
-      ),
+      builder: (context) => BatchOperationsSheet(selectedIds: selectedIds),
     );
   }
 
@@ -141,6 +131,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final tagsAsync = ref.watch(tagListProvider);
     final selection = ref.watch(selectionProvider);
     final isSelectionMode = selection.isNotEmpty;
+    final smartFilter = ref.watch(smartFilterProvider);
+    final tagFilter = ref.watch(tagFilterProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -148,11 +140,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: '搜索任务...',
                   border: InputBorder.none,
                 ),
-                onChanged: (v) => setState(() => _searchQuery = v),
+                onChanged: (_) => setState(() {}),
               )
             : const Text('YuiTodo'),
         actions: [
@@ -165,7 +157,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               icon: const Icon(Icons.close),
               onPressed: () => ref.read(selectionProvider.notifier).clear(),
             ),
-          } else [
+          ] else ...[
             IconButton(
               icon: const Icon(Icons.bar_chart),
               onPressed: () => Navigator.push(
@@ -189,25 +181,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: Column(
         children: [
-          // Smart filter bar
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                _filterChip('all', '全部'),
+                _filterChip('all', '全部', smartFilter),
                 const SizedBox(width: 8),
-                _filterChip('today', '今天'),
+                _filterChip('today', '今天', smartFilter),
                 const SizedBox(width: 8),
-                _filterChip('tomorrow', '明天'),
+                _filterChip('tomorrow', '明天', smartFilter),
                 const SizedBox(width: 8),
-                _filterChip('future', '未来'),
+                _filterChip('future', '未来', smartFilter),
                 const SizedBox(width: 8),
-                _filterChip('completed', '已完成'),
+                _filterChip('completed', '已完成', smartFilter),
               ],
             ),
           ),
-          // Tag filter bar
           if (tagsAsync.hasValue && tagsAsync.value!.isNotEmpty)
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -216,8 +206,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   FilterChip(
                     label: const Text('全部标签'),
-                    selected: _filterTagId == null,
-                    onSelected: (_) => setState(() => _filterTagId = null),
+                    selected: tagFilter == null,
+                    onSelected: (_) => ref.read(tagFilterProvider.notifier).setTag(null),
                   ),
                   const SizedBox(width: 8),
                   ...tagsAsync.value!.map((tag) {
@@ -225,15 +215,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       padding: const EdgeInsets.only(right: 8),
                       child: FilterChip(
                         label: Text(tag.name),
-                        selected: _filterTagId == tag.id,
-                        onSelected: (_) => setState(() => _filterTagId = tag.id),
+                        selected: tagFilter == tag.id,
+                        onSelected: (_) => ref.read(tagFilterProvider.notifier).setTag(tag.id),
                       ),
                     );
                   }),
                 ],
               ),
             ),
-          // Task list with drag-and-drop
           Expanded(
             child: tasksAsync.when(
               data: (tasks) {
@@ -273,11 +262,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       confirmDismiss: (direction) async {
                         if (direction == DismissDirection.startToEnd) {
                           _completeTaskWithUndo(task);
-                          return false;
                         } else {
                           _deleteTaskWithUndo(task);
-                          return false;
                         }
+                        return false;
                       },
                       child: TaskCard(
                         key: ValueKey(task.id),
@@ -311,12 +299,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _filterChip(String id, String label) {
-    final isSelected = _smartFilter == id;
+  Widget _filterChip(String id, String label, String currentFilter) {
     return FilterChip(
       label: Text(label),
-      selected: isSelected,
-      onSelected: (_) => setState(() => _smartFilter = id),
+      selected: currentFilter == id,
+      onSelected: (_) => ref.read(smartFilterProvider.notifier).setFilter(id),
     );
   }
 }
@@ -324,12 +311,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 /// Batch operations bottom sheet
 class BatchOperationsSheet extends ConsumerWidget {
   final List<int> selectedIds;
-  final VoidCallback onComplete;
 
   const BatchOperationsSheet({
     super.key,
     required this.selectedIds,
-    required this.onComplete,
   });
 
   @override
@@ -353,10 +338,10 @@ class BatchOperationsSheet extends ConsumerWidget {
             title: const Text('批量删除'),
             onTap: () {
               ref.read(taskListProvider.notifier).batchDelete(selectedIds);
-              onComplete();
+              ref.read(selectionProvider.notifier).clear();
+              Navigator.pop(context);
             },
           ),
-          // Tag operations
           if (tagsAsync.hasValue)
             ...tagsAsync.value!.map((tag) {
               return ListTile(
@@ -364,7 +349,8 @@ class BatchOperationsSheet extends ConsumerWidget {
                 title: Text('添加标签: ${tag.name}'),
                 onTap: () {
                   ref.read(taskListProvider.notifier).batchAddTag(selectedIds, tag.id!);
-                  onComplete();
+                  ref.read(selectionProvider.notifier).clear();
+                  Navigator.pop(context);
                 },
               );
             }),

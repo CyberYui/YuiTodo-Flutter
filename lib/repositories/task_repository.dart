@@ -38,7 +38,7 @@ class TaskRepository {
     final maps = await db.query(
       'task',
       where: '(start_date >= ? AND start_date < ?) AND (deleted_at IS NULL OR deleted_at = 0)',
-      args: [start, end],
+      whereArgs: [start, end],
       orderBy: 'sort_order ASC',
     );
     return maps.map((m) => Task.fromMap(m)).toList();

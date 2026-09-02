@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/task.dart';
-import '../providers/tag_provider.dart';
+import '../../models/task.dart';
+import '../../providers/tag_provider.dart';
 
 class TagManagementScreen extends ConsumerStatefulWidget {
   const TagManagementScreen({super.key});

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/task.dart';
-import '../providers/task_provider.dart';
-import '../providers/tag_provider.dart';
-import '../core/icons/app_icons.dart';
-import '../core/utils/recurrence.dart';
-import '../ui/widgets/recurrence_selector.dart';
-import '../ui/widgets/reminder_selector.dart';
+import '../../models/task.dart';
+import '../../providers/task_provider.dart';
+import '../../providers/tag_provider.dart';
+import '../../core/icons/app_icons.dart';
+import '../../core/utils/recurrence.dart';
+import '../widgets/recurrence_selector.dart';
+import '../widgets/reminder_selector.dart';
+import '../../repositories/task_repository.dart';
 
 class TaskEditorScreen extends ConsumerStatefulWidget {
   final Task? task;
@@ -119,7 +120,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
     try {
       int taskId;
       if (widget.task == null) {
-        taskId = await ref.read(taskListProvider.notifier).addTask(task);
+        taskId = await ref.read(taskRepositoryProvider).createTask(task);
         // Add steps
         final repo = ref.read(taskRepositoryProvider);
         for (final step in _steps) {
@@ -135,6 +136,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
             await repo.addTagToTask(taskId, tag.id!);
           }
         }
+        // Reload tasks
+        await ref.read(taskListProvider.notifier).loadTasks();
       } else {
         await ref.read(taskListProvider.notifier).updateTask(task);
         taskId = task.id!;

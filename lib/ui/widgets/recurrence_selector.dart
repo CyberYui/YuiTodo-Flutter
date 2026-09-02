@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../core/utils/recurrence.dart';
+import '../../core/utils/recurrence.dart';
 
 class RecurrenceSelector extends StatelessWidget {
   final RecurrenceType type;
