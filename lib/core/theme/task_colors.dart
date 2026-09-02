@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Extended color palette - 16 colors in 2 rows
+/// Extended color palette - 18 colors aligned in 2 rows
 class TaskColors {
   static const List<String> all = [
     '#3B82F6', // Blue
@@ -19,6 +19,8 @@ class TaskColors {
     '#A855F7', // Violet
     '#E11D48', // Rose
     '#64748B', // Slate
+    '#78716C', // Warm Gray
+    '#000000', // Black
   ];
   
   static Color colorFromHex(String hex) {
