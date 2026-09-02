@@ -4,7 +4,9 @@ import '../models/task.dart';
 import '../providers/task_provider.dart';
 import '../providers/tag_provider.dart';
 import '../ui/screens/task_editor_screen.dart';
+import '../ui/screens/settings_screen.dart';
 import '../ui/widgets/task_card.dart';
+import '../core/utils/undo_manager.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +19,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _searchQuery = '';
   String _smartFilter = 'all';
   bool _showSearch = false;
+  int? _filterTagId;
   final _searchController = TextEditingController();
 
   @override
@@ -58,6 +61,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         break;
     }
 
+    // Tag filter
+    if (_filterTagId != null) {
+      filtered = filtered.where((t) => t.tags.any((tag) => tag.id == _filterTagId)).toList();
+    }
+
     // Search
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
@@ -81,10 +89,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.read(selectionProvider.notifier).toggle(taskId);
   }
 
+  void _deleteTaskWithUndo(Task task) {
+    ref.read(taskListProvider.notifier).deleteTask(task.id!);
+    context.showUndoSnackBar('任务已删除', () {
+      ref.read(taskListProvider.notifier).restoreTask(task.id!);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tasksAsync = ref.watch(taskListProvider);
+    final tagsAsync = ref.watch(tagListProvider);
     final selection = ref.watch(selectionProvider);
     final isSelectionMode = selection.isNotEmpty;
 
@@ -116,6 +132,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               icon: const Icon(Icons.search),
               onPressed: () => setState(() => _showSearch = !_showSearch),
             ),
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              ),
+            ),
           ],
         ],
       ),
@@ -139,6 +162,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ),
+          // Tag filter bar
+          if (tagsAsync.hasValue && tagsAsync.value!.isNotEmpty)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: [
+                  FilterChip(
+                    label: const Text('全部标签'),
+                    selected: _filterTagId == null,
+                    onSelected: (_) => setState(() => _filterTagId = null),
+                  ),
+                  const SizedBox(width: 8),
+                  ...tagsAsync.value!.map((tag) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: Text(tag.name),
+                        selected: _filterTagId == tag.id,
+                        onSelected: (_) => setState(() => _filterTagId = tag.id),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
           // Task list
           Expanded(
             child: tasksAsync.when(
@@ -160,17 +209,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final task = filtered[index];
-                    return TaskCard(
-                      task: task,
-                      isSelected: selection.contains(task.id),
-                      onTap: () {
-                        if (isSelectionMode) {
-                          ref.read(selectionProvider.notifier).toggle(task.id!);
+                    return Dismissible(
+                      key: Key('task-${task.id}'),
+                      background: Container(
+                        color: theme.colorScheme.primary,
+                        alignment: Alignment.centerLeft,
+                        padding: const EdgeInsets.only(left: 16),
+                        child: const Icon(Icons.check, color: Colors.white),
+                      ),
+                      secondaryBackground: Container(
+                        color: theme.colorScheme.error,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 16),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      confirmDismiss: (direction) async {
+                        if (direction == DismissDirection.startToEnd) {
+                          // Swipe right: complete
+                          ref.read(taskListProvider.notifier).toggleComplete(task);
+                          return false;
                         } else {
-                          _openTaskEditor(task);
+                          // Swipe left: delete with undo
+                          _deleteTaskWithUndo(task);
+                          return false;
                         }
                       },
-                      onLongPress: () => _enterSelectionMode(task.id!),
+                      child: TaskCard(
+                        task: task,
+                        isSelected: selection.contains(task.id),
+                        onTap: () {
+                          if (isSelectionMode) {
+                            ref.read(selectionProvider.notifier).toggle(task.id!);
+                          } else {
+                            _openTaskEditor(task);
+                          }
+                        },
+                        onLongPress: () => _enterSelectionMode(task.id!),
+                      ),
                     );
                   },
                 );
