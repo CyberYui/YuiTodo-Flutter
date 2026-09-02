@@ -5,10 +5,11 @@ import '../../models/task.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../providers/filter_provider.dart';
+import '../../providers/recycle_bin_provider.dart';
 import '../../repositories/task_repository.dart';
-import 'task_editor_screen.dart';
-import 'settings_screen.dart';
-import 'statistics_screen.dart';
+import '../screens/task_editor_screen.dart';
+import '../screens/settings_screen.dart';
+import '../screens/statistics_screen.dart';
 import '../widgets/task_card.dart';
 import '../../core/utils/undo_manager.dart';
 
@@ -19,15 +20,43 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStateMixin {
   bool _showSearch = false;
-  bool _showFilters = true;
+  bool _showFilters = false;
   final _searchController = TextEditingController();
+  late AnimationController _filterAnimController;
+  late Animation<double> _filterAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _filterAnimController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _filterAnimation = CurvedAnimation(
+      parent: _filterAnimController,
+      curve: Curves.easeInOut,
+    );
+    if (_showFilters) _filterAnimController.forward();
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _filterAnimController.dispose();
     super.dispose();
+  }
+
+  void _toggleFilters() {
+    setState(() {
+      _showFilters = !_showFilters;
+      if (_showFilters) {
+        _filterAnimController.forward();
+      } else {
+        _filterAnimController.reverse();
+      }
+    });
   }
 
   List<Task> _filterTasks(List<Task> tasks) {
@@ -93,8 +122,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _deleteTaskWithUndo(Task task) {
     ref.read(taskListProvider.notifier).softDeleteTask(task.id!);
+    ref.read(recycleBinProvider.notifier).addDeleted(task);
     context.showUndoSnackBar('任务已删除', () {
       ref.read(taskListProvider.notifier).restoreTask(task.id!);
+      ref.read(recycleBinProvider.notifier).restore(task);
     });
   }
 
@@ -112,9 +143,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final movedTask = filteredTasks[oldIndex];
     final targetTask = filteredTasks[newIndex];
     
-    ref.read(taskRepositoryProvider).updateTask(
-      movedTask.copyWith(sortOrder: targetTask.sortOrder),
-    );
+    // Calculate new sort order
+    int newSortOrder;
+    if (newIndex == 0) {
+      newSortOrder = filteredTasks.first.sortOrder - 1;
+    } else if (newIndex == filteredTasks.length - 1) {
+      newSortOrder = filteredTasks.last.sortOrder + 1;
+    } else {
+      final before = filteredTasks[newIndex - 1];
+      final after = filteredTasks[newIndex + (oldIndex < newIndex ? 0 : 1)];
+      newSortOrder = ((before.sortOrder + after.sortOrder) / 2).round();
+    }
+    
+    ref.read(taskRepositoryProvider).updateTaskSortOrder(movedTask.id!, newSortOrder);
     ref.read(taskListProvider.notifier).loadTasks();
   }
 
@@ -167,6 +208,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
             IconButton(
+              icon: AnimatedIcon(
+                icon: AnimatedIcons.menu_close,
+                progress: _filterAnimation,
+                color: _showFilters ? theme.colorScheme.primary : null,
+              ),
+              onPressed: _toggleFilters,
+            ),
+            IconButton(
               icon: const Icon(Icons.search),
               onPressed: () => setState(() => _showSearch = !_showSearch),
             ),
@@ -182,66 +231,68 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: Column(
         children: [
-          // Filter section
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            height: _showFilters ? null : 0,
-            clipBehavior: Clip.hardEdge,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              border: Border(
-                bottom: BorderSide(color: theme.dividerColor),
+          // Animated filter section
+          SizeTransition(
+            sizeFactor: _filterAnimation,
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                border: Border(
+                  bottom: BorderSide(color: theme.dividerColor),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Smart filter row
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        _filterChip('all', '全部', smartFilter),
+                        const SizedBox(width: 8),
+                        _filterChip('today', '今天', smartFilter),
+                        const SizedBox(width: 8),
+                        _filterChip('tomorrow', '明天', smartFilter),
+                        const SizedBox(width: 8),
+                        _filterChip('future', '未来', smartFilter),
+                        const SizedBox(width: 8),
+                        _filterChip('completed', '已完成', smartFilter),
+                      ],
+                    ),
+                  ),
+                  // Tag filter row
+                  if (tagsAsync.hasValue && tagsAsync.value!.isNotEmpty)
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: Row(
+                        children: [
+                          FilterChip(
+                            label: const Text('全部'),
+                            selected: tagFilter == null,
+                            visualDensity: VisualDensity.compact,
+                            onSelected: (_) => ref.read(tagFilterProvider.notifier).setTag(null),
+                          ),
+                          const SizedBox(width: 8),
+                          ...tagsAsync.value!.map((tag) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: FilterChip(
+                                label: Text(tag.name),
+                                selected: tagFilter == tag.id,
+                                visualDensity: VisualDensity.compact,
+                                onSelected: (_) => ref.read(tagFilterProvider.notifier).setTag(tag.id),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                ],
               ),
             ),
-            child: _showFilters
-                ? Column(
-                    children: [
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        child: Row(
-                          children: [
-                            _filterChip('all', '全部', smartFilter),
-                            const SizedBox(width: 8),
-                            _filterChip('today', '今天', smartFilter),
-                            const SizedBox(width: 8),
-                            _filterChip('tomorrow', '明天', smartFilter),
-                            const SizedBox(width: 8),
-                            _filterChip('future', '未来', smartFilter),
-                            const SizedBox(width: 8),
-                            _filterChip('completed', '已完成', smartFilter),
-                          ],
-                        ),
-                      ),
-                      if (tagsAsync.hasValue && tagsAsync.value!.isNotEmpty)
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          child: Row(
-                            children: [
-                              FilterChip(
-                                label: const Text('全部标签'),
-                                selected: tagFilter == null,
-                                onSelected: (_) => ref.read(tagFilterProvider.notifier).setTag(null),
-                              ),
-                              const SizedBox(width: 8),
-                              ...tagsAsync.value!.map((tag) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: FilterChip(
-                                    label: Text(tag.name),
-                                    selected: tagFilter == tag.id,
-                                    onSelected: (_) => ref.read(tagFilterProvider.notifier).setTag(tag.id),
-                                  ),
-                                );
-                              }),
-                            ],
-                          ),
-                        ),
-                    ],
-                  )
-                : const SizedBox.shrink(),
           ),
           // Task list with drag-and-drop
           Expanded(
@@ -300,6 +351,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           }
                         },
                         onLongPress: () => _enterSelectionMode(task.id!),
+                        onStepToggle: (step) => _toggleStep(step),
                       ),
                     );
                   },
@@ -320,10 +372,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  void _toggleStep(TaskStep step) {
+    // TODO: Toggle step status
+  }
+
   Widget _filterChip(String id, String label, String currentFilter) {
     return FilterChip(
       label: Text(label),
       selected: currentFilter == id,
+      visualDensity: VisualDensity.compact,
       onSelected: (_) => ref.read(smartFilterProvider.notifier).setFilter(id),
     );
   }

@@ -2,12 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_schemes.dart';
+import '../../core/theme/font_pairs.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/tag_provider.dart';
-import '../../services/backup_service.dart';
-import 'tag_management_screen.dart';
+import '../screens/tag_management_screen.dart';
+import '../screens/recycle_bin_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -25,12 +26,31 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           // Theme section
           _SectionHeader(title: '外观'),
+          
+          // Light theme
           ListTile(
-            title: const Text('主题模式'),
-            subtitle: Text(_themeModeLabel(themeMode)),
+            title: const Text('浅色主题'),
+            subtitle: Text(_themeSchemeLabel(_lightScheme)),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showThemePicker(context, ref),
+            onTap: () => _showLightThemePicker(context, ref),
           ),
+          
+          // Dark theme
+          ListTile(
+            title: const Text('深色主题'),
+            subtitle: Text(_themeSchemeLabel(_darkScheme)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showDarkThemePicker(context, ref),
+          ),
+          
+          // Font
+          ListTile(
+            title: const Text('字体'),
+            subtitle: Text(AppFontPairs.getPair(_fontIndex).name),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showFontPicker(context, ref),
+          ),
+          
           const Divider(),
 
           // Data section
@@ -56,13 +76,23 @@ class SettingsScreen extends ConsumerWidget {
               MaterialPageRoute(builder: (_) => const TagManagementScreen()),
             ),
           ),
+          ListTile(
+            title: const Text('回收站'),
+            subtitle: const Text('查看已删除的任务'),
+            trailing: const Icon(Icons.delete_outline),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const RecycleBinScreen()),
+            ),
+          ),
+          
           const Divider(),
 
           // About section
           _SectionHeader(title: '关于'),
           const ListTile(
             title: Text('版本'),
-            subtitle: Text('v4.0.0'),
+            subtitle: Text('v4.1.0'),
           ),
           ListTile(
             title: Text('数据存储', style: TextStyle(color: theme.colorScheme.outline)),
@@ -73,125 +103,112 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  String _themeModeLabel(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return '浅色模式';
-      case ThemeMode.dark:
-        return '深色模式';
-      case ThemeMode.system:
-        return '跟随系统';
-    }
+  static int _lightScheme = 0;
+  static int _darkScheme = 0;
+  static int _fontIndex = 0;
+
+  String _themeSchemeLabel(int index) {
+    return themeSchemes.values.toList()[index].name;
   }
 
-  void _showThemePicker(BuildContext context, WidgetRef ref) {
+  void _showLightThemePicker(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            title: const Text('浅色模式'),
-            leading: const Icon(Icons.light_mode),
-            onTap: () {
-              ref.read(themeProvider.notifier).setTheme(ThemeMode.light);
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: const Text('深色模式'),
-            leading: const Icon(Icons.dark_mode),
-            onTap: () {
-              ref.read(themeProvider.notifier).setTheme(ThemeMode.dark);
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: const Text('跟随系统'),
-            leading: const Icon(Icons.brightness_auto),
-            onTap: () {
-              ref.read(themeProvider.notifier).setTheme(ThemeMode.system);
-              Navigator.pop(context);
-            },
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('选择浅色主题', style: Theme.of(context).textTheme.titleLarge),
+            ),
+            ...themeSchemes.values.map((scheme) {
+              return ListTile(
+                title: Text(scheme.name),
+                trailing: _lightScheme == themeSchemes.values.toList().indexOf(scheme)
+                    ? const Icon(Icons.check)
+                    : null,
+                onTap: () {
+                  _lightScheme = themeSchemes.values.toList().indexOf(scheme);
+                  Navigator.pop(context);
+                },
+              );
+            }),
+          ],
+        );
+      },
     );
   }
 
-  Future<void> _exportData(BuildContext context, WidgetRef ref) async {
-    try {
-      final json = await ref.read(backupServiceProvider).export();
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/yuitodo-backup-${DateTime.now().millisecondsSinceEpoch}.json');
-      await file.writeAsString(json);
-      
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('已导出到: ${file.path}')),
+  void _showDarkThemePicker(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('选择深色主题', style: Theme.of(context).textTheme.titleLarge),
+            ),
+            ...themeSchemes.values.map((scheme) {
+              return ListTile(
+                title: Text(scheme.name),
+                trailing: _darkScheme == themeSchemes.values.toList().indexOf(scheme)
+                    ? const Icon(Icons.check)
+                    : null,
+                onTap: () {
+                  _darkScheme = themeSchemes.values.toList().indexOf(scheme);
+                  Navigator.pop(context);
+                },
+              );
+            }),
+          ],
         );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('导出失败: $e')),
-        );
-      }
-    }
+      },
+    );
   }
 
-  Future<void> _importData(BuildContext context, WidgetRef ref) async {
-    try {
-      final picker = ImagePicker();
-      // Note: image_picker doesn't support JSON, we need file_picker
-      // For now, use a simple approach with a text input dialog
-      
-      final controller = TextEditingController();
-      final result = await showDialog<String>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('导入数据'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: '粘贴 JSON 数据或输入文件路径',
+  void _showFontPicker(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('选择字体', style: Theme.of(context).textTheme.titleLarge),
             ),
-            maxLines: 5,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, controller.text),
-              child: const Text('导入'),
-            ),
+            ...AppFontPairs.pairs.asMap().entries.map((entry) {
+              final index = entry.key;
+              final font = entry.value;
+              return ListTile(
+                title: Text(font.name),
+                subtitle: Text(font.description),
+                trailing: _fontIndex == index ? const Icon(Icons.check) : null,
+                onTap: () {
+                  _fontIndex = index;
+                  Navigator.pop(context);
+                },
+              );
+            }),
           ],
-        ),
-      );
-
-      if (result == null || result.trim().isEmpty) return;
-
-      // Try to parse as JSON directly
-      final count = await ref.read(backupServiceProvider).import(result);
-      
-      // Reload tasks
-      await ref.read(taskListProvider.notifier).loadTasks();
-      
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('已导入 $count 个任务')),
         );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('导入失败: $e')),
-        );
-      }
-    }
+      },
+    );
+  }
+
+  void _exportData(BuildContext context, WidgetRef ref) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('开发中...')),
+    );
+  }
+
+  void _importData(BuildContext context, WidgetRef ref) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('开发中...')),
+    );
   }
 }
 
@@ -206,7 +223,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: TextStyle(
-          fontSize: 13,
+          fontSize: 14,
           fontWeight: FontWeight.w600,
           color: Theme.of(context).colorScheme.primary,
         ),

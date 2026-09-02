@@ -4,9 +4,11 @@ import '../../models/task.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../core/icons/app_icons.dart';
+import '../../core/theme/task_colors.dart';
 import '../../core/utils/recurrence.dart';
 import '../widgets/recurrence_selector.dart';
 import '../widgets/reminder_selector.dart';
+import '../widgets/icon_picker.dart';
 import '../../repositories/task_repository.dart';
 
 class TaskEditorScreen extends ConsumerStatefulWidget {
@@ -231,9 +233,36 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
           // Color picker
           const Text('颜色', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
+          // Color preview
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Color(int.parse(_color.replaceFirst('#', '0xFF'))).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Color(int.parse(_color.replaceFirst('#', '0xFF'))).withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Color(int.parse(_color.replaceFirst('#', '0xFF'))),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('已选择颜色: $_color'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Color grid - 2 rows of 8
           Wrap(
             spacing: 8,
-            children: ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'].map((c) {
+            runSpacing: 8,
+            children: TaskColors.all.map((c) {
+              final isSelected = _color == c;
               return GestureDetector(
                 onTap: () => setState(() => _color = c),
                 child: Container(
@@ -242,8 +271,16 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                   decoration: BoxDecoration(
                     color: Color(int.parse(c.replaceFirst('#', '0xFF'))),
                     shape: BoxShape.circle,
-                    border: _color == c ? Border.all(color: theme.colorScheme.outline, width: 3) : null,
+                    border: isSelected ? Border.all(color: theme.colorScheme.outline, width: 3) : null,
+                    boxShadow: isSelected ? [
+                      BoxShadow(
+                        color: Color(int.parse(c.replaceFirst('#', '0xFF'))).withOpacity(0.4),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
+                    ] : null,
                   ),
+                  child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
                 ),
               );
             }).toList(),

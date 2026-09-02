@@ -8,6 +8,7 @@ class TaskCard extends ConsumerWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+  final Function(TaskStep)? onStepToggle;
 
   const TaskCard({
     super.key,
@@ -15,6 +16,7 @@ class TaskCard extends ConsumerWidget {
     required this.isSelected,
     required this.onTap,
     required this.onLongPress,
+    this.onStepToggle,
   });
 
   @override
@@ -34,6 +36,7 @@ class TaskCard extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Color indicator
               Container(
@@ -121,7 +124,7 @@ class TaskCard extends ConsumerWidget {
                       ),
                     ],
                     
-                    // Subtasks
+                    // Subtasks preview
                     if (task.steps.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       ..._buildSubtaskPreview(context, ref),
@@ -154,7 +157,12 @@ class TaskCard extends ConsumerWidget {
           child: Row(
             children: [
               GestureDetector(
-                onTap: () => _toggleStep(ref, step),
+                onTap: () {
+                  // Toggle step
+                  if (onStepToggle != null) {
+                    onStepToggle!(step);
+                  }
+                },
                 child: Icon(
                   step.status == 'completed' ? Icons.check_circle : Icons.circle_outlined,
                   size: 16,
@@ -195,12 +203,6 @@ class TaskCard extends ConsumerWidget {
     }
 
     return widgets;
-  }
-
-  void _toggleStep(WidgetRef ref, TaskStep step) {
-    // Toggle step status via repository
-    final newStatus = step.status == 'completed' ? 'pending' : 'completed';
-    // We need to update the step - for now we'll add this functionality
   }
 
   String _formatDate(int timestamp) {
