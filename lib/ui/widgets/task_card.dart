@@ -27,54 +27,40 @@ class TaskCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final taskColor = Color(int.parse(task.color.replaceFirst('#', '0xFF')));
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      color: isSelected ? theme.colorScheme.primary.withOpacity(0.08) : theme.colorScheme.surface,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: isSelected ? theme.colorScheme.primary.withOpacity(0.08) : theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.all(12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Color strip on the far left
+              // Left: Icon (circular avatar style)
               Container(
-                width: 3,
-                height: 60,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: taskColor,
-                  borderRadius: BorderRadius.circular(2),
+                  color: taskColor.withOpacity(0.15),
+                  shape: BoxShape.circle,
                 ),
+                child: task.icon != null
+                    ? AppIcons.isAvatar(task.icon!)
+                        ? ClipOval(
+                            child: Image.asset('assets/icons/${task.icon}.png', width: 48, height: 48),
+                          )
+                        : Icon(FlatIconMapper.getIcon(task.icon!), size: 24, color: taskColor)
+                    : Icon(Icons.task_alt, size: 24, color: taskColor),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               
-              // Icon with drag handle - long press to reorder
-              ReorderableDelayedDragStartListener(
-                index: index,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: taskColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: task.icon != null
-                      ? AppIcons.isAvatar(task.icon!)
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: Image.asset('assets/icons/${task.icon}.png', width: 32, height: 32),
-                            )
-                          : Icon(FlatIconMapper.getIcon(task.icon!), size: 20, color: taskColor)
-                      : Icon(Icons.task_alt, size: 20, color: taskColor),
-                ),
-              ),
-              const SizedBox(width: 10),
-              
-              // Content area
+              // Middle: Content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,8 +72,8 @@ class TaskCard extends ConsumerWidget {
                           child: Text(
                             task.title,
                             style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                               decoration: task.status == 'done' ? TextDecoration.lineThrough : null,
                               color: task.status == 'done' ? theme.colorScheme.outline : null,
                             ),
@@ -146,8 +132,8 @@ class TaskCard extends ConsumerWidget {
                 ),
               ),
               
-              // Drag handle icon (subtle, on the right)
-              ReorderableDragStartListener(
+              // Right: Drag handle (subtle)
+              ReorderableDelayedDragStartListener(
                 index: index,
                 child: Padding(
                   padding: const EdgeInsets.only(left: 8, top: 4),

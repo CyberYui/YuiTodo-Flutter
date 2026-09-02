@@ -328,9 +328,11 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: TaskColors.all.map((c) {
-                    final isSelected = _color == c;
+                    final isSelected = _color == c || (TaskColors.isCustom(c) && _color.isNotEmpty && _color != '#CUSTOM');
                     final isCustom = TaskColors.isCustom(c);
-                    final color = isCustom ? Colors.grey.withOpacity(0.3) : Color(int.parse(c.replaceFirst('#', '0xFF')));
+                    final color = isCustom 
+                        ? (_color.isNotEmpty && _color != '#CUSTOM' ? TaskColors.fromHex(_color) : Colors.grey.withOpacity(0.3))
+                        : Color(int.parse(c.replaceFirst('#', '0xFF')));
                     return GestureDetector(
                       onTap: () {
                         if (isCustom) {
@@ -355,7 +357,9 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                           ] : null,
                         ),
                         child: isCustom 
-                            ? const Icon(Icons.color_lens, color: Colors.white, size: 18) 
+                            ? (_color.isNotEmpty && _color != '#CUSTOM' 
+                                ? (isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : null)
+                                : const Icon(Icons.color_lens, color: Colors.white, size: 18))
                             : (isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : null),
                       ),
                     );

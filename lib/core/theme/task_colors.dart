@@ -15,6 +15,7 @@ class TaskColors {
     '#D946EF', // Fuchsia
     '#64748B', // Slate
     '#78716C', // Warm Gray
+    '#F43F5E', // Rose
     '#000000', // Black
     '#FFFFFF', // White
     '#CUSTOM', // Custom color placeholder
@@ -28,20 +29,12 @@ class TaskColors {
   
   static bool isCustom(String hex) => hex == '#CUSTOM';
   
-  static const List<String> basicColors = [
-    '#3B82F6',
-    '#EF4444',
-    '#10B981',
-    '#F59E0B',
-    '#EC4899',
-    '#06B6D4',
-    '#F97316',
-    '#6366F1',
-    '#84CC16',
-    '#D946EF',
-    '#64748B',
-    '#78716C',
-    '#000000',
-    '#FFFFFF',
-  ];
+  static Color fromHex(String hex) {
+    if (hex.isEmpty || hex == '#CUSTOM') return Colors.grey.withOpacity(0.3);
+    try {
+      return Color(int.parse(hex.replaceFirst('#', '0xFF')));
+    } catch (_) {
+      return Colors.grey.withOpacity(0.3);
+    }
+  }
 }
