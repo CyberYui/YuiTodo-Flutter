@@ -6,6 +6,9 @@ import '../../core/theme/font_pairs.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
 
+/// Font index provider
+final fontIndexProvider = StateProvider<int>((ref) => 0);
+
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -13,6 +16,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final themeState = ref.watch(themeStateProvider);
+    final fontIndex = ref.watch(fontIndexProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -78,14 +82,9 @@ class SettingsScreen extends ConsumerWidget {
           // Font
           ListTile(
             title: const Text('字体'),
-            subtitle: Text('系统默认'),
+            subtitle: Text(AppFontPairs.getPair(fontIndex).name),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Implement font picker
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('字体功能开发中...')),
-              );
-            },
+            onTap: () => _showFontPicker(context, ref),
           ),
           
           const Divider(),
@@ -279,6 +278,52 @@ class SettingsScreen extends ConsumerWidget {
                             : null,
                         onTap: () {
                           ref.read(themeStateProvider.notifier).setDarkScheme(scheme);
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showFontPicker(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text('选择字体', style: Theme.of(context).textTheme.titleLarge),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    itemCount: AppFontPairs.pairs.length,
+                    itemBuilder: (context, index) {
+                      final font = AppFontPairs.pairs[index];
+                      final currentIndex = ref.watch(fontIndexProvider);
+                      return ListTile(
+                        title: Text(font.name, style: TextStyle(fontFamily: font.chineseFontFamily)),
+                        subtitle: Text(font.description),
+                        trailing: currentIndex == index
+                            ? const Icon(Icons.check)
+                            : null,
+                        onTap: () {
+                          ref.read(fontIndexProvider.notifier).state = index;
                           Navigator.pop(context);
                         },
                       );
