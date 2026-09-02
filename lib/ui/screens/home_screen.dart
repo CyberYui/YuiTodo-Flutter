@@ -101,8 +101,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
 
     if (searchQuery.isNotEmpty) {
       filtered = filtered.where((t) {
-        return t.title.toLowerCase().contains(searchQuery) || 
-               t.note.toLowerCase().contains(searchQuery);
+        if (t.title.toLowerCase().contains(searchQuery)) return true;
+        if (t.note.toLowerCase().contains(searchQuery)) return true;
+        // Search in subtasks
+        for (final step in t.steps) {
+          if (step.title.toLowerCase().contains(searchQuery)) return true;
+        }
+        return false;
       }).toList();
     }
 

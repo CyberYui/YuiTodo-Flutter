@@ -162,6 +162,18 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       } else {
         await ref.read(taskListProvider.notifier).updateTask(task);
         taskId = task.id!;
+        // Update tags - remove existing tags and re-add selected ones
+        final repo = ref.read(taskRepositoryProvider);
+        final existingTags = await repo.getTagsForTask(taskId);
+        for (final tag in existingTags) {
+          await repo.removeTagFromTask(taskId, tag.id!);
+        }
+        for (final tag in _selectedTags) {
+          if (tag.id != null) {
+            await repo.addTagToTask(taskId, tag.id!);
+          }
+        }
+        await ref.read(taskListProvider.notifier).loadTasks();
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
