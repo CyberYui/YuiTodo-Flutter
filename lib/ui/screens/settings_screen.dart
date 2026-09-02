@@ -1,12 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_schemes.dart';
+import '../../core/theme/theme_state.dart';
 import '../../core/theme/font_pairs.dart';
-import '../../providers/task_provider.dart';
-import '../../providers/tag_provider.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
 
@@ -16,7 +12,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final themeMode = ref.watch(themeProvider);
+    final themeState = ref.watch(themeStateProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -27,10 +23,18 @@ class SettingsScreen extends ConsumerWidget {
           // Theme section
           _SectionHeader(title: '外观'),
           
+          // Theme mode
+          ListTile(
+            title: const Text('主题模式'),
+            subtitle: Text(_getThemeModeLabel(themeState.mode)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showThemeModePicker(context, ref),
+          ),
+          
           // Light theme
           ListTile(
             title: const Text('浅色主题'),
-            subtitle: Text(_themeSchemeLabel(_lightScheme)),
+            subtitle: Text(themeSchemes[themeState.lightScheme]?.name ?? ''),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showLightThemePicker(context, ref),
           ),
@@ -38,17 +42,50 @@ class SettingsScreen extends ConsumerWidget {
           // Dark theme
           ListTile(
             title: const Text('深色主题'),
-            subtitle: Text(_themeSchemeLabel(_darkScheme)),
+            subtitle: Text(themeSchemes[themeState.darkScheme]?.name ?? ''),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showDarkThemePicker(context, ref),
           ),
           
+          // Auto switch by time
+          SwitchListTile(
+            title: const Text('定时自动切换'),
+            subtitle: Text(themeState.autoSwitchByTime 
+                ? '已开启: ${_formatTime(themeState.darkStartTime)} - ${_formatTime(themeState.darkEndTime)}'
+                : '关闭'),
+            value: themeState.autoSwitchByTime,
+            onChanged: (value) {
+              ref.read(themeStateProvider.notifier).setAutoSwitchByTime(value);
+            },
+          ),
+          
+          // Time pickers (only show when auto switch is enabled)
+          if (themeState.autoSwitchByTime) ...[
+            ListTile(
+              title: const Text('深色模式开始时间'),
+              subtitle: Text(_formatTime(themeState.darkStartTime ?? const TimeOfDay(hour: 18, minute: 0))),
+              trailing: const Icon(Icons.access_time),
+              onTap: () => _showTimePicker(context, ref, isStartTime: true),
+            ),
+            ListTile(
+              title: const Text('深色模式结束时间'),
+              subtitle: Text(_formatTime(themeState.darkEndTime ?? const TimeOfDay(hour: 8, minute: 0))),
+              trailing: const Icon(Icons.access_time),
+              onTap: () => _showTimePicker(context, ref, isStartTime: false),
+            ),
+          ],
+          
           // Font
           ListTile(
             title: const Text('字体'),
-            subtitle: Text(AppFontPairs.getPair(_fontIndex).name),
+            subtitle: Text('系统默认'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showFontPicker(context, ref),
+            onTap: () {
+              // TODO: Implement font picker
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('字体功能开发中...')),
+              );
+            },
           ),
           
           const Divider(),
@@ -103,15 +140,23 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  static int _lightScheme = 0;
-  static int _darkScheme = 0;
-  static int _fontIndex = 0;
-
-  String _themeSchemeLabel(int index) {
-    return themeSchemes.values.toList()[index].name;
+  String _getThemeModeLabel(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return '浅色模式';
+      case ThemeMode.dark:
+        return '深色模式';
+      case ThemeMode.system:
+        return '跟随系统';
+    }
   }
 
-  void _showLightThemePicker(BuildContext context, WidgetRef ref) {
+  String _formatTime(TimeOfDay? time) {
+    if (time == null) return '--:--';
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showThemeModePicker(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -120,16 +165,64 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
+              child: Text('主题模式', style: Theme.of(context).textTheme.titleLarge),
+            ),
+            ListTile(
+              title: const Text('浅色模式'),
+              trailing: ref.read(themeStateProvider).mode == ThemeMode.light
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                ref.read(themeStateProvider.notifier).setMode(ThemeMode.light);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('深色模式'),
+              trailing: ref.read(themeStateProvider).mode == ThemeMode.dark
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                ref.read(themeStateProvider.notifier).setMode(ThemeMode.dark);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('跟随系统'),
+              trailing: ref.read(themeStateProvider).mode == ThemeMode.system
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                ref.read(themeStateProvider.notifier).setMode(ThemeMode.system);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showLightThemePicker(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        final schemes = AppThemeScheme.values;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Text('选择浅色主题', style: Theme.of(context).textTheme.titleLarge),
             ),
-            ...themeSchemes.values.map((scheme) {
+            ...schemes.map((scheme) {
               return ListTile(
-                title: Text(scheme.name),
-                trailing: _lightScheme == themeSchemes.values.toList().indexOf(scheme)
+                title: Text(themeSchemes[scheme]?.name ?? ''),
+                trailing: ref.read(themeStateProvider).lightScheme == scheme
                     ? const Icon(Icons.check)
                     : null,
                 onTap: () {
-                  _lightScheme = themeSchemes.values.toList().indexOf(scheme);
+                  ref.read(themeStateProvider.notifier).setLightScheme(scheme);
                   Navigator.pop(context);
                 },
               );
@@ -144,6 +237,7 @@ class SettingsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       builder: (context) {
+        final schemes = AppThemeScheme.values;
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -151,14 +245,14 @@ class SettingsScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               child: Text('选择深色主题', style: Theme.of(context).textTheme.titleLarge),
             ),
-            ...themeSchemes.values.map((scheme) {
+            ...schemes.map((scheme) {
               return ListTile(
-                title: Text(scheme.name),
-                trailing: _darkScheme == themeSchemes.values.toList().indexOf(scheme)
+                title: Text(themeSchemes[scheme]?.name ?? ''),
+                trailing: ref.read(themeStateProvider).darkScheme == scheme
                     ? const Icon(Icons.check)
                     : null,
                 onTap: () {
-                  _darkScheme = themeSchemes.values.toList().indexOf(scheme);
+                  ref.read(themeStateProvider.notifier).setDarkScheme(scheme);
                   Navigator.pop(context);
                 },
               );
@@ -169,34 +263,23 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _showFontPicker(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
+  Future<void> _showTimePicker(BuildContext context, WidgetRef ref, {required bool isStartTime}) async {
+    final currentTime = isStartTime 
+        ? ref.read(themeStateProvider).darkStartTime ?? const TimeOfDay(hour: 18, minute: 0)
+        : ref.read(themeStateProvider).darkEndTime ?? const TimeOfDay(hour: 8, minute: 0);
+    
+    final time = await showTimePicker(
       context: context,
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text('选择字体', style: Theme.of(context).textTheme.titleLarge),
-            ),
-            ...AppFontPairs.pairs.asMap().entries.map((entry) {
-              final index = entry.key;
-              final font = entry.value;
-              return ListTile(
-                title: Text(font.name),
-                subtitle: Text(font.description),
-                trailing: _fontIndex == index ? const Icon(Icons.check) : null,
-                onTap: () {
-                  _fontIndex = index;
-                  Navigator.pop(context);
-                },
-              );
-            }),
-          ],
-        );
-      },
+      initialTime: currentTime,
     );
+    
+    if (time != null) {
+      if (isStartTime) {
+        ref.read(themeStateProvider.notifier).setDarkStart(time);
+      } else {
+        ref.read(themeStateProvider.notifier).setDarkEnd(time);
+      }
+    }
   }
 
   void _exportData(BuildContext context, WidgetRef ref) {

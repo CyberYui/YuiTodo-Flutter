@@ -162,8 +162,25 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       } else {
         await ref.read(taskListProvider.notifier).updateTask(task);
         taskId = task.id!;
-        // Update tags - remove existing tags and re-add selected ones
+        // Update steps - delete existing and re-add with correct order
         final repo = ref.read(taskRepositoryProvider);
+        // Delete existing steps
+        final existingSteps = await repo.getStepsForTask(taskId);
+        for (final step in existingSteps) {
+          if (step.id != null) {
+            await repo.deleteStep(step.id!);
+          }
+        }
+        // Re-add steps with updated order
+        for (int i = 0; i < _steps.length; i++) {
+          await repo.createStep(TaskStep(
+            taskId: taskId,
+            title: _steps[i].title,
+            sortOrder: i,
+            status: _steps[i].status,
+          ));
+        }
+        // Update tags - remove existing tags and re-add selected ones
         final existingTags = await repo.getTagsForTask(taskId);
         for (final tag in existingTags) {
           await repo.removeTagFromTask(taskId, tag.id!);

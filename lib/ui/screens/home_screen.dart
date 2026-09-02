@@ -348,6 +348,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                         key: ValueKey(task.id),
                         task: task,
                         isSelected: selection.contains(task.id),
+                        index: index,
                         onTap: () {
                           if (isSelectionMode) {
                             ref.read(selectionProvider.notifier).toggle(task.id!);
