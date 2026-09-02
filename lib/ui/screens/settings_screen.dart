@@ -205,43 +205,37 @@ class SettingsScreen extends ConsumerWidget {
   void _showLightThemePicker(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
       builder: (context) {
         final schemes = AppThemeScheme.values;
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.3,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text('选择浅色主题', style: Theme.of(context).textTheme.titleLarge),
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.5,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('选择浅色主题', style: Theme.of(context).textTheme.titleLarge),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: schemes.length,
+                  itemBuilder: (context, index) {
+                    final scheme = schemes[index];
+                    return ListTile(
+                      title: Text(themeSchemes[scheme]?.name ?? ''),
+                      trailing: ref.read(themeStateProvider).lightScheme == scheme
+                          ? const Icon(Icons.check)
+                          : null,
+                      onTap: () {
+                        ref.read(themeStateProvider.notifier).setLightScheme(scheme);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
                 ),
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    itemCount: schemes.length,
-                    itemBuilder: (context, index) {
-                      final scheme = schemes[index];
-                      return ListTile(
-                        title: Text(themeSchemes[scheme]?.name ?? ''),
-                        trailing: ref.read(themeStateProvider).lightScheme == scheme
-                            ? const Icon(Icons.check)
-                            : null,
-                        onTap: () {
-                          ref.read(themeStateProvider.notifier).setLightScheme(scheme);
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
+              ),
+            ],
+          ),
         );
       },
     );
@@ -250,43 +244,37 @@ class SettingsScreen extends ConsumerWidget {
   void _showDarkThemePicker(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
       builder: (context) {
         final schemes = AppThemeScheme.values;
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.3,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text('选择深色主题', style: Theme.of(context).textTheme.titleLarge),
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.5,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('选择深色主题', style: Theme.of(context).textTheme.titleLarge),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: schemes.length,
+                  itemBuilder: (context, index) {
+                    final scheme = schemes[index];
+                    return ListTile(
+                      title: Text(themeSchemes[scheme]?.name ?? ''),
+                      trailing: ref.read(themeStateProvider).darkScheme == scheme
+                          ? const Icon(Icons.check)
+                          : null,
+                      onTap: () {
+                        ref.read(themeStateProvider.notifier).setDarkScheme(scheme);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
                 ),
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    itemCount: schemes.length,
-                    itemBuilder: (context, index) {
-                      final scheme = schemes[index];
-                      return ListTile(
-                        title: Text(themeSchemes[scheme]?.name ?? ''),
-                        trailing: ref.read(themeStateProvider).darkScheme == scheme
-                            ? const Icon(Icons.check)
-                            : null,
-                        onTap: () {
-                          ref.read(themeStateProvider.notifier).setDarkScheme(scheme);
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
+              ),
+            ],
+          ),
         );
       },
     );

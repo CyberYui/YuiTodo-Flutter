@@ -25,11 +25,28 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
     final fontIndex = ref.watch(fontIndexProvider);
 
     // Get font family
-    final fontPair = FontPair(
-      name: AppFontPairs.getPair(fontIndex).name,
-      chineseFontFamily: AppFontPairs.getPair(fontIndex).chineseFontFamily,
-      englishFontFamily: AppFontPairs.getPair(fontIndex).englishFontFamily,
-      description: '',
+    final fontPair = AppFontPairs.getPair(fontIndex);
+    final chineseFont = fontPair.chineseFontFamily;
+    final englishFont = fontPair.englishFontFamily;
+
+    // Build text theme with custom font
+    final baseTextTheme = Typography.material2021().black;
+    final customTextTheme = baseTextTheme.copyWith(
+      displayLarge: baseTextTheme.displayLarge?.copyWith(fontFamily: chineseFont ?? englishFont),
+      displayMedium: baseTextTheme.displayMedium?.copyWith(fontFamily: chineseFont ?? englishFont),
+      displaySmall: baseTextTheme.displaySmall?.copyWith(fontFamily: chineseFont ?? englishFont),
+      headlineLarge: baseTextTheme.headlineLarge?.copyWith(fontFamily: chineseFont ?? englishFont),
+      headlineMedium: baseTextTheme.headlineMedium?.copyWith(fontFamily: chineseFont ?? englishFont),
+      headlineSmall: baseTextTheme.headlineSmall?.copyWith(fontFamily: chineseFont ?? englishFont),
+      titleLarge: baseTextTheme.titleLarge?.copyWith(fontFamily: chineseFont ?? englishFont),
+      titleMedium: baseTextTheme.titleMedium?.copyWith(fontFamily: chineseFont ?? englishFont),
+      titleSmall: baseTextTheme.titleSmall?.copyWith(fontFamily: chineseFont ?? englishFont),
+      bodyLarge: baseTextTheme.bodyLarge?.copyWith(fontFamily: chineseFont ?? englishFont),
+      bodyMedium: baseTextTheme.bodyMedium?.copyWith(fontFamily: chineseFont ?? englishFont),
+      bodySmall: baseTextTheme.bodySmall?.copyWith(fontFamily: chineseFont ?? englishFont),
+      labelLarge: baseTextTheme.labelLarge?.copyWith(fontFamily: chineseFont ?? englishFont),
+      labelMedium: baseTextTheme.labelMedium?.copyWith(fontFamily: chineseFont ?? englishFont),
+      labelSmall: baseTextTheme.labelSmall?.copyWith(fontFamily: chineseFont ?? englishFont),
     );
 
     return MaterialApp(
@@ -39,46 +56,32 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
       theme: (themeSchemes[themeState.lightScheme] != null 
           ? lightThemeForScheme(themeSchemes[themeState.lightScheme]!)
           : lightTheme).copyWith(
-        textTheme: _buildTextTheme(fontPair),
+        textTheme: customTextTheme,
+        appBarTheme: (themeSchemes[themeState.lightScheme] != null 
+            ? lightThemeForScheme(themeSchemes[themeState.lightScheme]!).appBarTheme
+            : lightTheme.appBarTheme).copyWith(
+          titleTextStyle: TextStyle(
+            fontFamily: chineseFont ?? englishFont,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
       darkTheme: (themeSchemes[themeState.darkScheme] != null 
           ? darkThemeForScheme(themeSchemes[themeState.darkScheme]!)
           : darkTheme).copyWith(
-        textTheme: _buildTextTheme(fontPair),
+        textTheme: customTextTheme,
+        appBarTheme: (themeSchemes[themeState.darkScheme] != null 
+            ? darkThemeForScheme(themeSchemes[themeState.darkScheme]!).appBarTheme
+            : darkTheme.appBarTheme).copyWith(
+          titleTextStyle: TextStyle(
+            fontFamily: chineseFont ?? englishFont,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
       home: const HomeScreen(),
-    );
-  }
-
-  TextTheme _buildTextTheme(FontPair fontPair) {
-    final chinese = fontPair.chineseFontFamily;
-    final english = fontPair.englishFontFamily;
-    
-    if (chinese == null && english == null) {
-      return Typography.material2021().black;
-    }
-    
-    return Typography.material2021().black.copyWith(
-      // Default body styles
-      bodyLarge: TextStyle(fontFamily: chinese ?? english),
-      bodyMedium: TextStyle(fontFamily: chinese ?? english),
-      bodySmall: TextStyle(fontFamily: chinese ?? english),
-      // Title styles
-      titleLarge: TextStyle(fontFamily: chinese ?? english),
-      titleMedium: TextStyle(fontFamily: chinese ?? english),
-      titleSmall: TextStyle(fontFamily: chinese ?? english),
-      // Headline styles
-      headlineLarge: TextStyle(fontFamily: chinese ?? english),
-      headlineMedium: TextStyle(fontFamily: chinese ?? english),
-      headlineSmall: TextStyle(fontFamily: chinese ?? english),
-      // Display styles
-      displayLarge: TextStyle(fontFamily: chinese ?? english),
-      displayMedium: TextStyle(fontFamily: chinese ?? english),
-      displaySmall: TextStyle(fontFamily: chinese ?? english),
-      // Label styles
-      labelLarge: TextStyle(fontFamily: chinese ?? english),
-      labelMedium: TextStyle(fontFamily: chinese ?? english),
-      labelSmall: TextStyle(fontFamily: chinese ?? english),
     );
   }
 }

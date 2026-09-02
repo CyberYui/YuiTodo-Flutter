@@ -36,57 +36,65 @@ class TaskCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // First row: color bar + icon + drag handle + title + date
-              Row(
-                children: [
-                  // Color indicator
-                  Container(
-                    width: 4,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: taskColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  
-                  // Icon with drag handle - long press to drag
-                  ReorderableDelayedDragStartListener(
-                    index: index,
-                    child: GestureDetector(
-                      onTap: () {}, // Don't trigger onTap
-                      child: Column(
-                        children: [
-                          if (task.icon != null)
-                            AppIcons.isAvatar(task.icon!)
-                                ? Image.asset('assets/icons/${task.icon}.png', width: 28, height: 28)
-                                : Icon(FlatIconMapper.getIcon(task.icon!), size: 28, color: taskColor)
-                            else
-                              Icon(Icons.task_alt, color: taskColor, size: 28),
-                          Icon(Icons.drag_handle, size: 14, color: theme.colorScheme.outline.withOpacity(0.4)),
-                        ],
+              // Left: Color bar + Icon with drag handle (stacked vertically)
+              SizedBox(
+                width: 48,
+                child: Column(
+                  children: [
+                    // Color indicator
+                    Container(
+                      width: 4,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: taskColor,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  
-                  // Title and date
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 4),
+                    // Icon with drag handle - long press to drag
+                    ReorderableDelayedDragStartListener(
+                      index: index,
+                      child: GestureDetector(
+                        onTap: () {},
+                        child: Column(
+                          children: [
+                            if (task.icon != null)
+                              AppIcons.isAvatar(task.icon!)
+                                  ? Image.asset('assets/icons/${task.icon}.png', width: 28, height: 28)
+                                  : Icon(FlatIconMapper.getIcon(task.icon!), size: 28, color: taskColor)
+                                else
+                                  Icon(Icons.task_alt, color: taskColor, size: 28),
+                            Icon(Icons.drag_handle, size: 14, color: theme.colorScheme.outline.withOpacity(0.4)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Right: Content aligned to icon's left edge
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title row
+                    Row(
                       children: [
-                        Text(
-                          task.title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            decoration: task.status == 'done' ? TextDecoration.lineThrough : null,
+                        Expanded(
+                          child: Text(
+                            task.title,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              decoration: task.status == 'done' ? TextDecoration.lineThrough : null,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                         if (task.endTime != null)
                           Text(
@@ -98,74 +106,67 @@ class TaskCard extends ConsumerWidget {
                           ),
                       ],
                     ),
-                  ),
-                  
-                  // Selection indicator
-                  if (isSelected)
-                    Icon(Icons.check_circle, color: theme.colorScheme.primary),
-                ],
+                    
+                    // Note preview
+                    if (task.note.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        task.note,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: theme.colorScheme.outline,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    
+                    // Tags
+                    if (task.tags.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 4,
+                        runSpacing: 2,
+                        children: task.tags.take(4).map((tag) {
+                          final tagColor = Color(int.parse(tag.color.replaceFirst('#', '0xFF')));
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: tagColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              tag.name,
+                              style: TextStyle(fontSize: 10, color: tagColor),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                    
+                    // Subtasks preview
+                    if (task.steps.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        '子任务 ${task.steps.where((s) => s.status == 'completed').length}/${task.steps.length}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.colorScheme.outline,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      ..._buildSubtaskPreview(context, ref),
+                    ],
+                  ],
+                ),
               ),
               
-              // Second row onwards: note, tags, subtasks
-              if (task.note.isNotEmpty || task.tags.isNotEmpty || task.steps.isNotEmpty) ...[
-                const SizedBox(height: 8),
+              // Selection indicator
+              if (isSelected)
                 Padding(
-                  padding: const EdgeInsets.only(left: 44), // Align with title
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Note preview
-                      if (task.note.isNotEmpty)
-                        Text(
-                          task.note,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: theme.colorScheme.outline,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      
-                      // Tags
-                      if (task.tags.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 4,
-                          runSpacing: 2,
-                          children: task.tags.take(4).map((tag) {
-                            final tagColor = Color(int.parse(tag.color.replaceFirst('#', '0xFF')));
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: tagColor.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                tag.name,
-                                style: TextStyle(fontSize: 10, color: tagColor),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                      
-                      // Subtasks preview
-                      if (task.steps.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          '子任务 ${task.steps.where((s) => s.status == 'completed').length}/${task.steps.length}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: theme.colorScheme.outline,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        ..._buildSubtaskPreview(context, ref),
-                      ],
-                    ],
-                  ),
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Icon(Icons.check_circle, color: theme.colorScheme.primary),
                 ),
-              ],
             ],
           ),
         ),
