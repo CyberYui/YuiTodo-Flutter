@@ -6,6 +6,7 @@ import '../providers/task_provider.dart';
 import '../providers/tag_provider.dart';
 import '../ui/screens/task_editor_screen.dart';
 import '../ui/screens/settings_screen.dart';
+import 'statistics_screen.dart';
 import '../ui/widgets/task_card.dart';
 import '../core/utils/undo_manager.dart';
 
@@ -164,7 +165,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               icon: const Icon(Icons.close),
               onPressed: () => ref.read(selectionProvider.notifier).clear(),
             ),
-          ] else ...[
+          } else [
+            IconButton(
+              icon: const Icon(Icons.bar_chart),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const StatisticsScreen()),
+              ),
+            ),
             IconButton(
               icon: const Icon(Icons.search),
               onPressed: () => setState(() => _showSearch = !_showSearch),
