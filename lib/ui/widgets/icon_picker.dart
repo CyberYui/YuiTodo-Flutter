@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/task.dart';
 import '../../core/icons/app_icons.dart';
+import '../../core/icons/flat_icon_mapper.dart';
 
-/// Icon picker with search and categories for 200+ icons
+/// Icon picker with lazy loading for 200+ icons
 class IconPickerBottomSheet extends ConsumerStatefulWidget {
   final String? selectedIcon;
   final ValueChanged<String> onSelected;
@@ -22,9 +22,11 @@ class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
   String _searchQuery = '';
   String _selectedCategory = 'all';
   final _searchController = TextEditingController();
+  int _displayCount = 50; // Initial display count
 
   static const _categories = [
     {'id': 'all', 'name': '全部'},
+    {'id': 'avatar', 'name': '二次元'},
     {'id': 'navigation', 'name': '导航'},
     {'id': 'notifications', 'name': '通知'},
     {'id': 'time', 'name': '时间'},
@@ -107,7 +109,10 @@ class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
                     child: FilterChip(
                       label: Text(cat['name']!),
                       selected: isSelected,
-                      onSelected: (_) => setState(() => _selectedCategory = cat['id']!),
+                      onSelected: (_) => setState(() {
+                        _selectedCategory = cat['id']!;
+                        _displayCount = 50;
+                      }),
                     ),
                   );
                 },
@@ -127,54 +132,94 @@ class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
   }
 
   Widget _buildIconGrid(BuildContext context, ScrollController scrollController) {
-    // For demo, show avatar icons since we have the assets
-    // In production, flat icons would be rendered as Material icons or custom painters
-    final avatarNames = _getFilteredAvatars();
+    final icons = _getFilteredIcons();
+    final displayIcons = icons.take(_displayCount).toList();
+    final hasMore = icons.length > _displayCount;
 
-    return GridView.builder(
+    return CustomScrollView(
       controller: scrollController,
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 5,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        childAspectRatio: 1,
-      ),
-      itemCount: avatarNames.length,
-      itemBuilder: (context, index) {
-        final name = avatarNames[index];
-        final isSelected = widget.selectedIcon == name;
+      slivers: [
+        SliverGrid(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 1,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final iconName = displayIcons[index];
+              final isSelected = widget.selectedIcon == iconName;
+              final isAvatar = AppIcons.isAvatar(iconName);
 
-        return GestureDetector(
-          onTap: () {
-            widget.onSelected(name);
-            Navigator.pop(context);
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : null,
-              borderRadius: BorderRadius.circular(12),
-              border: isSelected
-                  ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
-                  : Border.all(color: Colors.grey.withOpacity(0.2)),
-            ),
+              return GestureDetector(
+                onTap: () => widget.onSelected(iconName),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : null,
+                    borderRadius: BorderRadius.circular(12),
+                    border: isSelected
+                        ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
+                        : Border.all(color: Colors.grey.withOpacity(0.2)),
+                  ),
+                  child: isAvatar
+                      ? Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Image.asset(
+                            'assets/icons/$iconName.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.help_outline, color: Colors.grey),
+                          ),
+                        )
+                      : Icon(
+                          FlatIconMapper.getIcon(iconName),
+                          size: 24,
+                          color: isSelected ? Theme.of(context).colorScheme.primary : null,
+                        ),
+                ),
+              );
+            },
+            childCount: displayIcons.length,
+          ),
+        ),
+        if (hasMore)
+          SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Image.asset(
-                'assets/icons/$name.png',
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Icon(Icons.help_outline, color: Colors.grey),
+              padding: const EdgeInsets.all(16),
+              child: Center(
+                child: ElevatedButton.icon(
+                  onPressed: () => setState(() => _displayCount += 50),
+                  icon: const Icon(Icons.expand_more),
+                  label: Text('加载更多 (${icons.length - _displayCount})'),
+                ),
               ),
             ),
           ),
-        );
-      },
+      ],
     );
   }
 
-  List<String> _getFilteredAvatars() {
-    // Filter avatars by search query
-    if (_searchQuery.isEmpty) return AppIcons.avatarNames;
-    return AppIcons.avatarNames.where((name) => name.toLowerCase().contains(_searchQuery)).toList();
+  List<String> _getFilteredIcons() {
+    List<String> icons = [];
+    
+    if (_selectedCategory == 'all' || _selectedCategory == 'avatar') {
+      for (final name in AppIcons.avatarNames) {
+        if (_searchQuery.isEmpty || name.toLowerCase().contains(_searchQuery)) {
+          icons.add(name);
+        }
+      }
+    }
+    
+    if (_selectedCategory != 'avatar') {
+      for (final icon in AppIcons.flatIcons) {
+        if (_selectedCategory == 'all' || icon.category == _selectedCategory) {
+          if (_searchQuery.isEmpty || icon.name.toLowerCase().contains(_searchQuery)) {
+            icons.add(icon.name);
+          }
+        }
+      }
+    }
+    
+    return icons;
   }
 }

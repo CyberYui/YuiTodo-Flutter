@@ -351,7 +351,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                           }
                         },
                         onLongPress: () => _enterSelectionMode(task.id!),
-                        onStepToggle: (step) => _toggleStep(step),
+                        onStepToggle: (task, step) => _toggleStep(task, step),
                       ),
                     );
                   },
@@ -372,8 +372,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
     );
   }
 
-  void _toggleStep(TaskStep step) {
-    // TODO: Toggle step status
+  void _toggleStep(Task task, TaskStep step) {
+    if (step.id == null) return;
+    final newStatus = step.status == 'completed' ? 'pending' : 'completed';
+    ref.read(taskRepositoryProvider).updateStepStatus(step.id!, newStatus);
+    ref.read(taskListProvider.notifier).loadTasks();
   }
 
   Widget _filterChip(String id, String label, String currentFilter) {

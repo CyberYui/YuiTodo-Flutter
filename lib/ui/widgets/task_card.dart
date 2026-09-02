@@ -8,7 +8,7 @@ class TaskCard extends ConsumerWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
-  final Function(TaskStep)? onStepToggle;
+  final Function(Task, TaskStep)? onStepToggle;
 
   const TaskCard({
     super.key,
@@ -160,7 +160,7 @@ class TaskCard extends ConsumerWidget {
                 onTap: () {
                   // Toggle step
                   if (onStepToggle != null) {
-                    onStepToggle!(step);
+                    onStepToggle!(task, step);
                   }
                 },
                 child: Icon(

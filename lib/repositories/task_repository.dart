@@ -126,6 +126,11 @@ class TaskRepository {
     return db.insert('task_step', data);
   }
 
+  Future<void> updateStepStatus(int stepId, String status) async {
+    final db = await _db.database;
+    await db.update('task_step', {'status': status}, where: 'id = ?', whereArgs: [stepId]);
+  }
+
   Future<void> updateStep(TaskStep step) async {
     final db = await _db.database;
     await db.update('task_step', step.toMap(), where: 'id = ?', whereArgs: [step.id]);

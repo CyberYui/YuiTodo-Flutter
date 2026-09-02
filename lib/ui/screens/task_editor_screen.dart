@@ -4,6 +4,7 @@ import '../../models/task.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../core/icons/app_icons.dart';
+import '../../core/icons/flat_icon_mapper.dart';
 import '../../core/theme/task_colors.dart';
 import '../../core/utils/recurrence.dart';
 import '../widgets/recurrence_selector.dart';
@@ -91,6 +92,24 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         status: step.status == 'completed' ? 'pending' : 'completed',
       );
     });
+  }
+
+  Future<void> _showIconPicker(BuildContext context) async {
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => IconPickerBottomSheet(
+        selectedIcon: _icon,
+        onSelected: (icon) => Navigator.pop(context, icon),
+      ),
+    );
+    
+    if (result != null) {
+      setState(() => _icon = result);
+    }
   }
 
   Future<void> _saveTask() async {
@@ -290,23 +309,39 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
           // Icon picker
           const Text('图标', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: AppIcons.all.map((name) {
-              return GestureDetector(
-                onTap: () => setState(() => _icon = name),
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    border: _icon == name ? Border.all(color: theme.colorScheme.primary, width: 2) : null,
-                    borderRadius: BorderRadius.circular(8),
+          // Current icon display
+          GestureDetector(
+            onTap: () => _showIconPicker(context),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  if (_icon != null)
+                    AppIcons.isAvatar(_icon!)
+                        ? Image.asset('assets/icons/$_icon.png', width: 40, height: 40)
+                        : Icon(FlatIconMapper.getIcon(_icon!), size: 40)
+                    else
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceVariant,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.add_photo_alternate, color: theme.colorScheme.outline),
+                      ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(_icon == null ? '选择图标' : '当前: $_icon'),
                   ),
-                  child: Image.asset('assets/icons/$name.png', width: 40, height: 40),
-                ),
-              );
-            }).toList(),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 16),
 
