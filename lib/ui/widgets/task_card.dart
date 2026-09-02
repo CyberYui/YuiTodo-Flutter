@@ -30,112 +30,109 @@ class TaskCard extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       color: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : null,
-      child: Row(
-        children: [
-          // Drag handle on the icon area - long press to drag
-          ReorderableDelayedDragStartListener(
-            index: index,
-            child: GestureDetector(
-              onTap: () {}, // Don't trigger onTap when tapping the icon
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  children: [
-                    // Icon
-                    if (task.icon != null)
-                      AppIcons.isAvatar(task.icon!)
-                          ? Image.asset('assets/icons/${task.icon}.png', width: 32, height: 32)
-                          : Icon(FlatIconMapper.getIcon(task.icon!), size: 32, color: taskColor)
-                    else
-                      Icon(Icons.task_alt, color: taskColor, size: 32),
-                    // Drag handle indicator
-                    const SizedBox(height: 4),
-                    Icon(Icons.drag_handle, size: 16, color: theme.colorScheme.outline.withOpacity(0.5)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Task content - long press to select
-          Expanded(
-            child: InkWell(
-              onTap: onTap,
-              onLongPress: onLongPress,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Color indicator and title row
-                    Row(
-                      children: [
-                        // Color indicator
-                        Container(
-                          width: 4,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: taskColor,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Title and date
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                task.title,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  decoration: task.status == 'done' ? TextDecoration.lineThrough : null,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (task.endTime != null)
-                                Text(
-                                  _formatDate(task.endTime!),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: theme.colorScheme.outline,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        if (isSelected)
-                          Icon(Icons.check_circle, color: theme.colorScheme.primary),
-                      ],
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // First row: color bar + icon + drag handle + title + date
+              Row(
+                children: [
+                  // Color indicator
+                  Container(
+                    width: 4,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: taskColor,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-
-                    // Note preview
-                    if (task.note.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16),
-                        child: Text(
-                          task.note,
+                  ),
+                  const SizedBox(width: 8),
+                  
+                  // Icon with drag handle - long press to drag
+                  ReorderableDelayedDragStartListener(
+                    index: index,
+                    child: GestureDetector(
+                      onTap: () {}, // Don't trigger onTap
+                      child: Column(
+                        children: [
+                          if (task.icon != null)
+                            AppIcons.isAvatar(task.icon!)
+                                ? Image.asset('assets/icons/${task.icon}.png', width: 28, height: 28)
+                                : Icon(FlatIconMapper.getIcon(task.icon!), size: 28, color: taskColor)
+                            else
+                              Icon(Icons.task_alt, color: taskColor, size: 28),
+                          Icon(Icons.drag_handle, size: 14, color: theme.colorScheme.outline.withOpacity(0.4)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  
+                  // Title and date
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          task.title,
                           style: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.outline,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            decoration: task.status == 'done' ? TextDecoration.lineThrough : null,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-
-                    // Tags
-                    if (task.tags.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16),
-                        child: Wrap(
+                        if (task.endTime != null)
+                          Text(
+                            _formatDate(task.endTime!),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.outline,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Selection indicator
+                  if (isSelected)
+                    Icon(Icons.check_circle, color: theme.colorScheme.primary),
+                ],
+              ),
+              
+              // Second row onwards: note, tags, subtasks
+              if (task.note.isNotEmpty || task.tags.isNotEmpty || task.steps.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 44), // Align with title
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Note preview
+                      if (task.note.isNotEmpty)
+                        Text(
+                          task.note,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.colorScheme.outline,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      
+                      // Tags
+                      if (task.tags.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
                           spacing: 4,
                           runSpacing: 2,
-                          children: task.tags.take(3).map((tag) {
+                          children: task.tags.take(4).map((tag) {
                             final tagColor = Color(int.parse(tag.color.replaceFirst('#', '0xFF')));
                             return Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -150,36 +147,28 @@ class TaskCard extends ConsumerWidget {
                             );
                           }).toList(),
                         ),
-                      ),
-                    ],
-
-                    // Subtasks preview
-                    if (task.steps.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '子任务 ${task.steps.where((s) => s.status == 'completed').length}/${task.steps.length}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: theme.colorScheme.outline,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            ..._buildSubtaskPreview(context, ref),
-                          ],
+                      ],
+                      
+                      // Subtasks preview
+                      if (task.steps.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          '子任务 ${task.steps.where((s) => s.status == 'completed').length}/${task.steps.length}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: theme.colorScheme.outline,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
+                        ..._buildSubtaskPreview(context, ref),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              ],
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

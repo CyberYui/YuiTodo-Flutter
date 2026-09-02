@@ -14,6 +14,7 @@ enum AppThemeScheme {
   dracula,
   nord,
   gruvbox,
+  black,
 }
 
 class ThemeScheme {
@@ -128,6 +129,17 @@ const Map<AppThemeScheme, ThemeScheme> themeSchemes = {
     darkSecondary: Color(0xFFD3869B),
     darkBackground: Color(0xFF282828),
     darkSurface: Color(0xFF3C3836),
+  ),
+  AppThemeScheme.black: ThemeScheme(
+    name: '纯黑',
+    lightPrimary: Color(0xFF1A1A1A),
+    lightSecondary: Color(0xFF333333),
+    lightBackground: Color(0xFFF5F5F5),
+    lightSurface: Color(0xFFFFFFFF),
+    darkPrimary: Color(0xFFE0E0E0),
+    darkSecondary: Color(0xFFBDBDBD),
+    darkBackground: Color(0xFF000000),
+    darkSurface: Color(0xFF121212),
   ),
 };
 
