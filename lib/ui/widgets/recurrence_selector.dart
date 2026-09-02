@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/utils/recurrence.dart';
+import '../../core/utils/recurrence.dart';
 
 class RecurrenceSelector extends StatelessWidget {
   final RecurrenceType type;
@@ -20,8 +20,6 @@ class RecurrenceSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('重复', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-        const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           children: RecurrenceType.values.map((t) {

@@ -329,24 +329,34 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                   runSpacing: 8,
                   children: TaskColors.all.map((c) {
                     final isSelected = _color == c;
+                    final isCustom = TaskColors.isCustom(c);
+                    final color = isCustom ? Colors.grey.withOpacity(0.3) : Color(int.parse(c.replaceFirst('#', '0xFF')));
                     return GestureDetector(
-                      onTap: () => setState(() => _color = c),
+                      onTap: () {
+                        if (isCustom) {
+                          _showCustomColorPicker(context);
+                        } else {
+                          setState(() => _color = c);
+                        }
+                      },
                       child: Container(
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: Color(int.parse(c.replaceFirst('#', '0xFF'))),
+                          color: color,
                           shape: BoxShape.circle,
-                          border: isSelected ? Border.all(color: theme.colorScheme.outline, width: 3) : null,
+                          border: isSelected ? Border.all(color: theme.colorScheme.outline, width: 3) : Border.all(color: Colors.grey.withOpacity(0.2)),
                           boxShadow: isSelected ? [
                             BoxShadow(
-                              color: Color(int.parse(c.replaceFirst('#', '0xFF'))).withOpacity(0.4),
+                              color: color.withOpacity(0.4),
                               blurRadius: 8,
                               spreadRadius: 2,
                             ),
                           ] : null,
                         ),
-                        child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
+                        child: isCustom 
+                            ? const Icon(Icons.color_lens, color: Colors.white, size: 18) 
+                            : (isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : null),
                       ),
                     );
                   }).toList(),
@@ -574,8 +584,121 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               padding: const EdgeInsets.all(16),
               child: Text('自定义颜色', style: Theme.of(context).textTheme.titleLarge),
             ),
-            // TODO: Add color picker
             const SizedBox(height: 16),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCustomColorPicker(BuildContext context) {
+    Color currentColor = _color.isNotEmpty && _color != '#CUSTOM' 
+        ? Color(int.parse(_color.replaceFirst('#', '0xFF')))
+        : Colors.blue;
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('自定义颜色'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // RGB Sliders
+              StatefulBuilder(
+                builder: (context, setDialogState) {
+                  return Column(
+                    children: [
+                      // Red
+                      Row(
+                        children: [
+                          const Text('R'),
+                          Expanded(
+                            child: Slider(
+                              value: currentColor.red.toDouble(),
+                              min: 0,
+                              max: 255,
+                              activeColor: Colors.red,
+                              onChanged: (v) {
+                                setDialogState(() {
+                                  currentColor = Color.fromARGB(255, v.round(), currentColor.green, currentColor.blue);
+                                });
+                              },
+                            ),
+                          ),
+                          SizedBox(width: 30, child: Text('${currentColor.red}')),
+                        ],
+                      ),
+                      // Green
+                      Row(
+                        children: [
+                          const Text('G'),
+                          Expanded(
+                            child: Slider(
+                              value: currentColor.green.toDouble(),
+                              min: 0,
+                              max: 255,
+                              activeColor: Colors.green,
+                              onChanged: (v) {
+                                setDialogState(() {
+                                  currentColor = Color.fromARGB(255, currentColor.red, v.round(), currentColor.blue);
+                                });
+                              },
+                            ),
+                          ),
+                          SizedBox(width: 30, child: Text('${currentColor.green}')),
+                        ],
+                      ),
+                      // Blue
+                      Row(
+                        children: [
+                          const Text('B'),
+                          Expanded(
+                            child: Slider(
+                              value: currentColor.blue.toDouble(),
+                              min: 0,
+                              max: 255,
+                              activeColor: Colors.blue,
+                              onChanged: (v) {
+                                setDialogState(() {
+                                  currentColor = Color.fromARGB(255, currentColor.red, currentColor.green, v.round());
+                                });
+                              },
+                            ),
+                          ),
+                          SizedBox(width: 30, child: Text('${currentColor.blue}')),
+                        ],
+                      ),
+                      // Preview
+                      Container(
+                        width: double.infinity,
+                        height: 50,
+                        margin: const EdgeInsets.only(top: 16),
+                        decoration: BoxDecoration(
+                          color: currentColor,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () {
+                final hex = '#${currentColor.value.toRadixString(16).substring(2).toUpperCase()}';
+                setState(() => _color = hex);
+                Navigator.pop(context);
+              },
+              child: const Text('确定'),
+            ),
           ],
         );
       },

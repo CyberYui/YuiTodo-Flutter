@@ -30,7 +30,7 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
     final englishFont = fontPair.englishFontFamily;
 
     // Build text theme with custom font
-    final baseTextTheme = Typography.material2021().black;
+    final baseTextTheme = Theme.of(context).textTheme;
     final customTextTheme = baseTextTheme.copyWith(
       displayLarge: baseTextTheme.displayLarge?.copyWith(fontFamily: chineseFont ?? englishFont),
       displayMedium: baseTextTheme.displayMedium?.copyWith(fontFamily: chineseFont ?? englishFont),
@@ -49,37 +49,22 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
       labelSmall: baseTextTheme.labelSmall?.copyWith(fontFamily: chineseFont ?? englishFont),
     );
 
+    // Get light/dark themes
+    final lightScheme = themeSchemes[themeState.lightScheme];
+    final darkScheme = themeSchemes[themeState.darkScheme];
+    
+    final baseLightTheme = lightScheme != null ? lightThemeForScheme(lightScheme) : lightTheme;
+    final baseDarkTheme = darkScheme != null ? darkThemeForScheme(darkScheme) : darkTheme;
+
     return MaterialApp(
       title: 'YuiTodo',
       debugShowCheckedModeBanner: false,
       themeMode: themeState.mode,
-      theme: (themeSchemes[themeState.lightScheme] != null 
-          ? lightThemeForScheme(themeSchemes[themeState.lightScheme]!)
-          : lightTheme).copyWith(
+      theme: baseLightTheme.copyWith(
         textTheme: customTextTheme,
-        appBarTheme: (themeSchemes[themeState.lightScheme] != null 
-            ? lightThemeForScheme(themeSchemes[themeState.lightScheme]!).appBarTheme
-            : lightTheme.appBarTheme).copyWith(
-          titleTextStyle: TextStyle(
-            fontFamily: chineseFont ?? englishFont,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
       ),
-      darkTheme: (themeSchemes[themeState.darkScheme] != null 
-          ? darkThemeForScheme(themeSchemes[themeState.darkScheme]!)
-          : darkTheme).copyWith(
+      darkTheme: baseDarkTheme.copyWith(
         textTheme: customTextTheme,
-        appBarTheme: (themeSchemes[themeState.darkScheme] != null 
-            ? darkThemeForScheme(themeSchemes[themeState.darkScheme]!).appBarTheme
-            : darkTheme.appBarTheme).copyWith(
-          titleTextStyle: TextStyle(
-            fontFamily: chineseFont ?? englishFont,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
       ),
       home: const HomeScreen(),
     );

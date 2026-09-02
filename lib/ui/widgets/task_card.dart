@@ -28,55 +28,53 @@ class TaskCard extends ConsumerWidget {
     final taskColor = Color(int.parse(task.color.replaceFirst('#', '0xFF')));
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      color: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : null,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      color: isSelected ? theme.colorScheme.primary.withOpacity(0.08) : theme.colorScheme.surface,
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left: Color bar + Icon with drag handle (stacked vertically)
-              SizedBox(
-                width: 48,
-                child: Column(
-                  children: [
-                    // Color indicator
-                    Container(
-                      width: 4,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: taskColor,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Icon with drag handle - long press to drag
-                    ReorderableDelayedDragStartListener(
-                      index: index,
-                      child: GestureDetector(
-                        onTap: () {},
-                        child: Column(
-                          children: [
-                            if (task.icon != null)
-                              AppIcons.isAvatar(task.icon!)
-                                  ? Image.asset('assets/icons/${task.icon}.png', width: 28, height: 28)
-                                  : Icon(FlatIconMapper.getIcon(task.icon!), size: 28, color: taskColor)
-                                else
-                                  Icon(Icons.task_alt, color: taskColor, size: 28),
-                            Icon(Icons.drag_handle, size: 14, color: theme.colorScheme.outline.withOpacity(0.4)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+              // Color strip on the far left
+              Container(
+                width: 3,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: taskColor,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(width: 12),
-              // Right: Content aligned to icon's left edge
+              const SizedBox(width: 10),
+              
+              // Icon with drag handle - long press to reorder
+              ReorderableDelayedDragStartListener(
+                index: index,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: taskColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: task.icon != null
+                      ? AppIcons.isAvatar(task.icon!)
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.asset('assets/icons/${task.icon}.png', width: 32, height: 32),
+                            )
+                          : Icon(FlatIconMapper.getIcon(task.icon!), size: 20, color: taskColor)
+                      : Icon(Icons.task_alt, size: 20, color: taskColor),
+                ),
+              ),
+              const SizedBox(width: 10),
+              
+              // Content area
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,9 +86,10 @@ class TaskCard extends ConsumerWidget {
                           child: Text(
                             task.title,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.w500,
                               decoration: task.status == 'done' ? TextDecoration.lineThrough : null,
+                              color: task.status == 'done' ? theme.colorScheme.outline : null,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -99,74 +98,62 @@ class TaskCard extends ConsumerWidget {
                         if (task.endTime != null)
                           Text(
                             _formatDate(task.endTime!),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.colorScheme.outline,
-                            ),
+                            style: TextStyle(fontSize: 12, color: theme.colorScheme.outline),
                           ),
                       ],
                     ),
                     
-                    // Note preview
-                    if (task.note.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        task.note,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: theme.colorScheme.outline,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    
-                    // Tags
+                    // Tags row
                     if (task.tags.isNotEmpty) ...[
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Wrap(
                         spacing: 4,
                         runSpacing: 2,
-                        children: task.tags.take(4).map((tag) {
+                        children: task.tags.take(3).map((tag) {
                           final tagColor = Color(int.parse(tag.color.replaceFirst('#', '0xFF')));
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: tagColor.withOpacity(0.2),
+                              color: tagColor.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               tag.name,
-                              style: TextStyle(fontSize: 10, color: tagColor),
+                              style: TextStyle(fontSize: 10, color: tagColor, fontWeight: FontWeight.w500),
                             ),
                           );
                         }).toList(),
                       ),
                     ],
                     
+                    // Note preview
+                    if (task.note.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        task.note,
+                        style: TextStyle(fontSize: 12, color: theme.colorScheme.outline),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    
                     // Subtasks preview
                     if (task.steps.isNotEmpty) ...[
                       const SizedBox(height: 6),
-                      Text(
-                        '子任务 ${task.steps.where((s) => s.status == 'completed').length}/${task.steps.length}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: theme.colorScheme.outline,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      ..._buildSubtaskPreview(context, ref),
+                      ..._buildSubtasks(),
                     ],
                   ],
                 ),
               ),
               
-              // Selection indicator
-              if (isSelected)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Icon(Icons.check_circle, color: theme.colorScheme.primary),
+              // Drag handle icon (subtle, on the right)
+              ReorderableDragStartListener(
+                index: index,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8, top: 4),
+                  child: Icon(Icons.drag_indicator, size: 16, color: theme.colorScheme.outline.withOpacity(0.4)),
                 ),
+              ),
             ],
           ),
         ),
@@ -174,20 +161,22 @@ class TaskCard extends ConsumerWidget {
     );
   }
 
-  List<Widget> _buildSubtaskPreview(BuildContext context, WidgetRef ref) {
-    final maxVisible = 3;
+  List<Widget> _buildSubtasks() {
+    final maxVisible = 2;
     final visibleSteps = task.steps.take(maxVisible).toList();
     final remaining = task.steps.length - maxVisible;
+    final subtaskColor = Color(int.parse(task.color.replaceFirst('#', '0xFF')));
 
     final widgets = <Widget>[];
 
     for (final step in visibleSteps) {
       widgets.add(
         Padding(
-          padding: const EdgeInsets.only(top: 4),
+          padding: const EdgeInsets.only(top: 3),
           child: Row(
             children: [
               GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () {
                   if (onStepToggle != null) {
                     onStepToggle!(task, step);
@@ -220,13 +209,10 @@ class TaskCard extends ConsumerWidget {
     if (remaining > 0) {
       widgets.add(
         Padding(
-          padding: const EdgeInsets.only(top: 4, left: 24),
+          padding: const EdgeInsets.only(top: 3, left: 24),
           child: Text(
             '还有 $remaining 个...',
-            style: TextStyle(
-              fontSize: 11,
-              color: Theme.of(context).colorScheme.outline,
-            ),
+            style: TextStyle(fontSize: 11, color: subtaskColor.withOpacity(0.6)),
           ),
         ),
       );
