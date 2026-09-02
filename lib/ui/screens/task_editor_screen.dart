@@ -4,6 +4,9 @@ import '../models/task.dart';
 import '../providers/task_provider.dart';
 import '../providers/tag_provider.dart';
 import '../core/icons/app_icons.dart';
+import '../core/utils/recurrence.dart';
+import '../ui/widgets/recurrence_selector.dart';
+import '../ui/widgets/reminder_selector.dart';
 
 class TaskEditorScreen extends ConsumerStatefulWidget {
   final Task? task;
@@ -25,6 +28,9 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   String? _icon;
   List<TaskStep> _steps = [];
   List<Tag> _selectedTags = [];
+  RecurrenceType _recurrenceType = RecurrenceType.none;
+  int _recurrenceInterval = 1;
+  List<String> _reminderTimes = [];
 
   @override
   void initState() {
@@ -294,6 +300,22 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                 error: (_, __) => const Text('加载标签失败'),
               );
             },
+          ),
+          const SizedBox(height: 16),
+
+          // Recurrence
+          RecurrenceSelector(
+            type: _recurrenceType,
+            interval: _recurrenceInterval,
+            onTypeChanged: (t) => setState(() => _recurrenceType = t),
+            onIntervalChanged: (i) => setState(() => _recurrenceInterval = i),
+          ),
+          const SizedBox(height: 16),
+
+          // Reminder
+          ReminderSelector(
+            times: _reminderTimes,
+            onChanged: (times) => setState(() => _reminderTimes = times),
           ),
           const SizedBox(height: 16),
 
