@@ -7,7 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../services/backup_service.dart';
-import '../screens/tag_management_screen.dart';
+import 'tag_management_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});

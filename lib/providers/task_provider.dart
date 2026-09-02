@@ -35,7 +35,7 @@ class TaskNotifier extends StateNotifier<AsyncValue<List<Task>>> {
   }
 
   Future<void> deleteTask(int taskId) async {
-    await _repo.deleteTask(taskId);
+    await _repo.softDeleteTask(taskId);
     await loadTasks();
   }
 
@@ -56,7 +56,7 @@ class TaskNotifier extends StateNotifier<AsyncValue<List<Task>>> {
   }
 
   Future<void> batchDelete(List<int> taskIds) async {
-    await _repo.batchDelete(taskIds);
+    await _repo.batchSoftDelete(taskIds);
     await loadTasks();
   }
 
@@ -67,6 +67,21 @@ class TaskNotifier extends StateNotifier<AsyncValue<List<Task>>> {
 
   Future<void> batchRemoveTag(List<int> taskIds, int tagId) async {
     await _repo.batchRemoveTag(taskIds, tagId);
+    await loadTasks();
+  }
+
+  Future<void> softDeleteTask(int taskId) async {
+    await _repo.softDeleteTask(taskId);
+    await loadTasks();
+  }
+
+  Future<void> batchSoftDelete(List<int> taskIds) async {
+    await _repo.batchSoftDelete(taskIds);
+    await loadTasks();
+  }
+
+  Future<void> updateTaskSortOrder(int taskId, int newOrder) async {
+    await _repo.updateTaskSortOrder(taskId, newOrder);
     await loadTasks();
   }
 }

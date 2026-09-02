@@ -30,6 +30,47 @@ class TaskRepository {
     return tasks;
   }
 
+  Future<List<Task>> getDeletedTasks() async {
+    final db = await _db.database;
+    final maps = await db.query(
+      'task',
+      where: 'deleted_at IS NOT NULL AND deleted_at != 0',
+      orderBy: 'deleted_at DESC',
+    );
+    return maps.map((m) => Task.fromMap(m)).toList();
+  }
+
+  Future<void> softDeleteTask(int taskId) async {
+    final db = await _db.database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await db.update('task', {'deleted_at': now}, where: 'id = ?', whereArgs: [taskId]);
+  }
+
+  Future<void> batchSoftDelete(List<int> taskIds) async {
+    final db = await _db.database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final batch = db.batch();
+    for (final id in taskIds) {
+      batch.update('task', {'deleted_at': now}, where: 'id = ?', whereArgs: [id]);
+    }
+    await batch.commit();
+  }
+
+  Future<void> restoreTask(int taskId) async {
+    final db = await _db.database;
+    await db.update(
+      'task',
+      {'deleted_at': 0, 'updated_at': DateTime.now().millisecondsSinceEpoch},
+      where: 'id = ?',
+      whereArgs: [taskId],
+    );
+  }
+
+  Future<void> updateTaskSortOrder(int taskId, int newOrder) async {
+    final db = await _db.database;
+    await db.update('task', {'sort_order': newOrder}, where: 'id = ?', whereArgs: [taskId]);
+  }
+
   Future<List<Task>> getTasksByDate(DateTime date) async {
     final start = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
     final end = DateTime(date.year, date.month, date.day + 1).millisecondsSinceEpoch;
@@ -63,26 +104,6 @@ class TaskRepository {
 
   Future<void> deleteTask(int taskId) async {
     final db = await _db.database;
-    await db.update(
-      'task',
-      {'deleted_at': DateTime.now().millisecondsSinceEpoch},
-      where: 'id = ?',
-      whereArgs: [taskId],
-    );
-  }
-
-  Future<void> restoreTask(int taskId) async {
-    final db = await _db.database;
-    await db.update(
-      'task',
-      {'deleted_at': null, 'updated_at': DateTime.now().millisecondsSinceEpoch},
-      where: 'id = ?',
-      whereArgs: [taskId],
-    );
-  }
-
-  Future<void> permanentDelete(int taskId) async {
-    final db = await _db.database;
     await db.delete('task', where: 'id = ?', whereArgs: [taskId]);
   }
 
@@ -100,7 +121,9 @@ class TaskRepository {
 
   Future<int> createStep(TaskStep step) async {
     final db = await _db.database;
-    return db.insert('task_step', step.toMap());
+    final data = step.toMap();
+    data.remove('id');
+    return db.insert('task_step', data);
   }
 
   Future<void> updateStep(TaskStep step) async {
@@ -120,20 +143,31 @@ class TaskRepository {
     return maps.map((m) => Tag.fromMap(m)).toList();
   }
 
+  Future<int> createTag(Tag tag) async {
+    final db = await _db.database;
+    final data = tag.toMap();
+    data.remove('id');
+    return db.insert('tag', data);
+  }
+
+  Future<void> updateTag(Tag tag) async {
+    final db = await _db.database;
+    await db.update('tag', tag.toMap(), where: 'id = ?', whereArgs: [tag.id]);
+  }
+
+  Future<void> deleteTag(int tagId) async {
+    final db = await _db.database;
+    await db.delete('tag', where: 'id = ?', whereArgs: [tagId]);
+  }
+
   Future<List<Tag>> getTagsForTask(int taskId) async {
     final db = await _db.database;
     final maps = await db.rawQuery('''
       SELECT t.* FROM tag t
       INNER JOIN task_tag tt ON t.id = tt.tag_id
       WHERE tt.task_id = ?
-      ORDER BY t.name ASC
     ''', [taskId]);
     return maps.map((m) => Tag.fromMap(m)).toList();
-  }
-
-  Future<int> createTag(Tag tag) async {
-    final db = await _db.database;
-    return db.insert('tag', tag.toMap());
   }
 
   Future<void> addTagToTask(int taskId, int tagId) async {
@@ -146,34 +180,13 @@ class TaskRepository {
     await db.delete('task_tag', where: 'task_id = ? AND tag_id = ?', whereArgs: [taskId, tagId]);
   }
 
-  Future<void> deleteTag(int tagId) async {
-    final db = await _db.database;
-    await db.delete('task_tag', where: 'tag_id = ?', whereArgs: [tagId]);
-    await db.delete('tag', where: 'id = ?', whereArgs: [tagId]);
-  }
-
-  // Batch operations
-  Future<void> batchDelete(List<int> taskIds) async {
-    final db = await _db.database;
-    final batch = db.batch();
-    for (final id in taskIds) {
-      batch.update(
-        'task',
-        {'deleted_at': DateTime.now().millisecondsSinceEpoch},
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-    }
-    await batch.commit(noResult: true);
-  }
-
   Future<void> batchAddTag(List<int> taskIds, int tagId) async {
     final db = await _db.database;
     final batch = db.batch();
     for (final taskId in taskIds) {
       batch.insert('task_tag', {'task_id': taskId, 'tag_id': tagId});
     }
-    await batch.commit(noResult: true);
+    await batch.commit();
   }
 
   Future<void> batchRemoveTag(List<int> taskIds, int tagId) async {
@@ -182,6 +195,6 @@ class TaskRepository {
     for (final taskId in taskIds) {
       batch.delete('task_tag', where: 'task_id = ? AND tag_id = ?', whereArgs: [taskId, tagId]);
     }
-    await batch.commit(noResult: true);
+    await batch.commit();
   }
 }

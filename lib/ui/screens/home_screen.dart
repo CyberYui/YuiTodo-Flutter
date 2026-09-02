@@ -6,9 +6,9 @@ import '../../providers/task_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../providers/filter_provider.dart';
 import '../../repositories/task_repository.dart';
-import '../screens/task_editor_screen.dart';
-import '../screens/settings_screen.dart';
-import '../screens/statistics_screen.dart';
+import 'task_editor_screen.dart';
+import 'settings_screen.dart';
+import 'statistics_screen.dart';
 import '../widgets/task_card.dart';
 import '../../core/utils/undo_manager.dart';
 
@@ -21,6 +21,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _showSearch = false;
+  bool _showFilters = true;
   final _searchController = TextEditingController();
 
   @override
@@ -34,7 +35,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final tagFilter = ref.watch(tagFilterProvider);
     final searchQuery = _searchController.text.toLowerCase().trim();
     
-    var filtered = tasks;
+    var filtered = tasks.where((t) => t.deletedAt == null).toList();
     
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -91,7 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _deleteTaskWithUndo(Task task) {
-    ref.read(taskListProvider.notifier).deleteTask(task.id!);
+    ref.read(taskListProvider.notifier).softDeleteTask(task.id!);
     context.showUndoSnackBar('任务已删除', () {
       ref.read(taskListProvider.notifier).restoreTask(task.id!);
     });
@@ -181,48 +182,68 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: Column(
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                _filterChip('all', '全部', smartFilter),
-                const SizedBox(width: 8),
-                _filterChip('today', '今天', smartFilter),
-                const SizedBox(width: 8),
-                _filterChip('tomorrow', '明天', smartFilter),
-                const SizedBox(width: 8),
-                _filterChip('future', '未来', smartFilter),
-                const SizedBox(width: 8),
-                _filterChip('completed', '已完成', smartFilter),
-              ],
-            ),
-          ),
-          if (tagsAsync.hasValue && tagsAsync.value!.isNotEmpty)
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Row(
-                children: [
-                  FilterChip(
-                    label: const Text('全部标签'),
-                    selected: tagFilter == null,
-                    onSelected: (_) => ref.read(tagFilterProvider.notifier).setTag(null),
-                  ),
-                  const SizedBox(width: 8),
-                  ...tagsAsync.value!.map((tag) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
-                        label: Text(tag.name),
-                        selected: tagFilter == tag.id,
-                        onSelected: (_) => ref.read(tagFilterProvider.notifier).setTag(tag.id),
-                      ),
-                    );
-                  }),
-                ],
+          // Filter section
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            height: _showFilters ? null : 0,
+            clipBehavior: Clip.hardEdge,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              border: Border(
+                bottom: BorderSide(color: theme.dividerColor),
               ),
             ),
+            child: _showFilters
+                ? Column(
+                    children: [
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Row(
+                          children: [
+                            _filterChip('all', '全部', smartFilter),
+                            const SizedBox(width: 8),
+                            _filterChip('today', '今天', smartFilter),
+                            const SizedBox(width: 8),
+                            _filterChip('tomorrow', '明天', smartFilter),
+                            const SizedBox(width: 8),
+                            _filterChip('future', '未来', smartFilter),
+                            const SizedBox(width: 8),
+                            _filterChip('completed', '已完成', smartFilter),
+                          ],
+                        ),
+                      ),
+                      if (tagsAsync.hasValue && tagsAsync.value!.isNotEmpty)
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          child: Row(
+                            children: [
+                              FilterChip(
+                                label: const Text('全部标签'),
+                                selected: tagFilter == null,
+                                onSelected: (_) => ref.read(tagFilterProvider.notifier).setTag(null),
+                              ),
+                              const SizedBox(width: 8),
+                              ...tagsAsync.value!.map((tag) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: FilterChip(
+                                    label: Text(tag.name),
+                                    selected: tagFilter == tag.id,
+                                    onSelected: (_) => ref.read(tagFilterProvider.notifier).setTag(tag.id),
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+          // Task list with drag-and-drop
           Expanded(
             child: tasksAsync.when(
               data: (tasks) {
@@ -337,7 +358,7 @@ class BatchOperationsSheet extends ConsumerWidget {
             leading: Icon(Icons.delete, color: theme.colorScheme.error),
             title: const Text('批量删除'),
             onTap: () {
-              ref.read(taskListProvider.notifier).batchDelete(selectedIds);
+              ref.read(taskListProvider.notifier).batchSoftDelete(selectedIds);
               ref.read(selectionProvider.notifier).clear();
               Navigator.pop(context);
             },

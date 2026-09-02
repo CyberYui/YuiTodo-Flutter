@@ -1,4 +1,4 @@
-import '../models/task.dart';
+import '../../models/task.dart';
 
 /// Statistics data models
 class TaskStatistics {
