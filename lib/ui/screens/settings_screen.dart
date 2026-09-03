@@ -20,7 +20,7 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('设置'),
+        title: Text('设置', style: TextStyle(color: theme.colorScheme.onSurface)),
       ),
       body: ListView(
         children: [

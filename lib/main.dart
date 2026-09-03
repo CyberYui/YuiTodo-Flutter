@@ -26,9 +26,7 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
 
     // Get font family
     final fontPair = AppFontPairs.getPair(fontIndex);
-    final chineseFont = fontPair.chineseFontFamily;
-    final englishFont = fontPair.englishFontFamily;
-    final fontFamily = chineseFont ?? englishFont;
+    final fontFamily = fontPair.chineseFontFamily ?? fontPair.englishFontFamily;
 
     // Get light/dark themes
     final lightScheme = themeSchemes[themeState.lightScheme];
@@ -39,6 +37,7 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
 
     // Build text theme with custom font
     TextTheme buildTextTheme(TextTheme base) {
+      if (fontFamily == null) return base;
       return base.copyWith(
         displayLarge: base.displayLarge?.copyWith(fontFamily: fontFamily),
         displayMedium: base.displayMedium?.copyWith(fontFamily: fontFamily),
