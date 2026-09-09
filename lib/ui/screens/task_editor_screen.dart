@@ -35,6 +35,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   RecurrenceType _recurrenceType = RecurrenceType.none;
   int _recurrenceInterval = 1;
   List<String> _reminderTimes = [];
+  bool _showCustomPaletteIcon = false;
 
   @override
   void initState() {
@@ -291,54 +292,65 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Color section
+          // ==================== 颜色选择区块 ====================
           _buildSection(
             title: '颜色',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: () => _showColorPicker(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Color(int.parse(_color.replaceFirst('#', '0xFF'))).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Color(int.parse(_color.replaceFirst('#', '0xFF'))).withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: Color(int.parse(_color.replaceFirst('#', '0xFF'))),
-                            shape: BoxShape.circle,
-                          ),
+                // 当前选中颜色预览：显示当前任务颜色的圆形色块 + 十六进制值
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Color(int.parse(_color.replaceFirst('#', '0xFF'))).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Color(int.parse(_color.replaceFirst('#', '0xFF'))).withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      // 圆形色块：显示当前选中颜色
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Color(int.parse(_color.replaceFirst('#', '0xFF'))),
+                          shape: BoxShape.circle,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(child: Text('已选择: $_color')),
-                        const Icon(Icons.palette),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 12),
+                      // 十六进制颜色值文本
+                      Expanded(child: Text('已选择: $_color')),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),
+                // 颜色调色盘：显示所有可选颜色（16色 + 1自定义槽位）
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: TaskColors.all.map((c) {
+                    // 判断当前颜色是否被选中（包括自定义颜色槽位）
                     final isSelected = _color == c || (TaskColors.isCustom(c) && _color.isNotEmpty && _color != '#CUSTOM');
                     final isCustom = TaskColors.isCustom(c);
+                    // 自定义槽位颜色：如果已有自定义颜色则显示该颜色，否则显示灰色占位
                     final color = isCustom 
                         ? (_color.isNotEmpty && _color != '#CUSTOM' ? TaskColors.fromHex(_color) : Colors.grey.withOpacity(0.3))
                         : Color(int.parse(c.replaceFirst('#', '0xFF')));
                     return GestureDetector(
                       onTap: () {
                         if (isCustom) {
-                          _showCustomColorPicker(context);
+                          // 点击自定义槽位：如果调色盘图标已显示，则打开调色盘；否则显示调色盘图标
+                          if (_showCustomPaletteIcon) {
+                            _showCustomColorPicker(context);
+                          } else {
+                            setState(() => _showCustomPaletteIcon = true);
+                          }
                         } else {
-                          setState(() => _color = c);
+                          // 点击普通颜色：直接选中，重置自定义槽位状态
+                          setState(() {
+                            _color = c;
+                            _showCustomPaletteIcon = false;
+                          });
                         }
                       },
                       child: Container(
@@ -357,9 +369,11 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                           ] : null,
                         ),
                         child: isCustom 
-                            ? (_color.isNotEmpty && _color != '#CUSTOM' 
-                                ? (isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : null)
-                                : const Icon(Icons.color_lens, color: Colors.white, size: 18))
+                            ? (_showCustomPaletteIcon
+                                ? const Icon(Icons.palette, color: Colors.white, size: 18)
+                                : (_color.isNotEmpty && _color != '#CUSTOM' 
+                                    ? (isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : const Icon(Icons.palette, color: Colors.white, size: 18))
+                                    : const Icon(Icons.color_lens, color: Colors.white, size: 18)))
                             : (isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : null),
                       ),
                     );

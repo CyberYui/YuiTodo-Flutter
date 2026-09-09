@@ -21,6 +21,7 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('设置', style: TextStyle(color: theme.colorScheme.onSurface)),
+        backgroundColor: theme.appBarTheme.backgroundColor,
       ),
       body: ListView(
         children: [

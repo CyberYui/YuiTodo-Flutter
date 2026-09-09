@@ -19,10 +19,12 @@ class ThemeScheme {
   final Color lightSecondary;
   final Color lightBackground;
   final Color lightSurface;
+  final Color lightAppBar;
   final Color darkPrimary;
   final Color darkSecondary;
   final Color darkBackground;
   final Color darkSurface;
+  final Color darkAppBar;
   
   const ThemeScheme({
     required this.name,
@@ -30,10 +32,12 @@ class ThemeScheme {
     required this.lightSecondary,
     required this.lightBackground,
     required this.lightSurface,
+    required this.lightAppBar,
     required this.darkPrimary,
     required this.darkSecondary,
     required this.darkBackground,
     required this.darkSurface,
+    required this.darkAppBar,
   });
 }
 
@@ -44,10 +48,12 @@ const Map<AppThemeScheme, ThemeScheme> themeSchemes = {
     lightSecondary: Color(0xFF60A5FA),
     lightBackground: Color(0xFFF8FAFC),
     lightSurface: Color(0xFFFFFFFF),
+    lightAppBar: Color(0xFFE8F0FE),
     darkPrimary: Color(0xFF60A5FA),
     darkSecondary: Color(0xFF3B82F6),
     darkBackground: Color(0xFF0F172A),
     darkSurface: Color(0xFF1E293B),
+    darkAppBar: Color(0xFF1E293B),
   ),
   AppThemeScheme.green: ThemeScheme(
     name: '森林绿',
@@ -55,10 +61,12 @@ const Map<AppThemeScheme, ThemeScheme> themeSchemes = {
     lightSecondary: Color(0xFF34D399),
     lightBackground: Color(0xFFF0FDF4),
     lightSurface: Color(0xFFFFFFFF),
+    lightAppBar: Color(0xFFD1FAE5),
     darkPrimary: Color(0xFF34D399),
     darkSecondary: Color(0xFF10B981),
     darkBackground: Color(0xFF022C22),
     darkSurface: Color(0xFF064E3B),
+    darkAppBar: Color(0xFF064E3B),
   ),
   AppThemeScheme.purple: ThemeScheme(
     name: '紫罗兰',
@@ -66,10 +74,12 @@ const Map<AppThemeScheme, ThemeScheme> themeSchemes = {
     lightSecondary: Color(0xFFA78BFA),
     lightBackground: Color(0xFFFAF5FF),
     lightSurface: Color(0xFFFFFFFF),
+    lightAppBar: Color(0xFFEDE9FE),
     darkPrimary: Color(0xFFA78BFA),
     darkSecondary: Color(0xFF8B5CF6),
     darkBackground: Color(0xFF1E1B4B),
     darkSurface: Color(0xFF312E81),
+    darkAppBar: Color(0xFF312E81),
   ),
   AppThemeScheme.orange: ThemeScheme(
     name: '日落橙',
@@ -77,10 +87,12 @@ const Map<AppThemeScheme, ThemeScheme> themeSchemes = {
     lightSecondary: Color(0xFFFBBF24),
     lightBackground: Color(0xFFFFFBEB),
     lightSurface: Color(0xFFFFFFFF),
+    lightAppBar: Color(0xFFFEF3C7),
     darkPrimary: Color(0xFFFBBF24),
     darkSecondary: Color(0xFFF59E0B),
     darkBackground: Color(0xFF451A03),
     darkSurface: Color(0xFF78350F),
+    darkAppBar: Color(0xFF78350F),
   ),
   AppThemeScheme.monokai: ThemeScheme(
     name: 'Monokai',
@@ -88,10 +100,12 @@ const Map<AppThemeScheme, ThemeScheme> themeSchemes = {
     lightSecondary: Color(0xFF66D9EF),
     lightBackground: Color(0xFFF8F8F2),
     lightSurface: Color(0xFFFFFFFF),
+    lightAppBar: Color(0xFFEFEADC),
     darkPrimary: Color(0xFFA6E22E),
     darkSecondary: Color(0xFF66D9EF),
     darkBackground: Color(0xFF272822),
     darkSurface: Color(0xFF3E3D32),
+    darkAppBar: Color(0xFF3E3D32),
   ),
   AppThemeScheme.dracula: ThemeScheme(
     name: 'Dracula',
@@ -99,10 +113,12 @@ const Map<AppThemeScheme, ThemeScheme> themeSchemes = {
     lightSecondary: Color(0xFFBD93F9),
     lightBackground: Color(0xFFF8F8F2),
     lightSurface: Color(0xFFFFFFFF),
+    lightAppBar: Color(0xFFF5E6FA),
     darkPrimary: Color(0xFFFF79C6),
     darkSecondary: Color(0xFFBD93F9),
     darkBackground: Color(0xFF282A36),
     darkSurface: Color(0xFF44475A),
+    darkAppBar: Color(0xFF44475A),
   ),
   AppThemeScheme.nord: ThemeScheme(
     name: 'Nord',
@@ -110,10 +126,12 @@ const Map<AppThemeScheme, ThemeScheme> themeSchemes = {
     lightSecondary: Color(0xFF88C0D0),
     lightBackground: Color(0xFFECEFF4),
     lightSurface: Color(0xFFFFFFFF),
+    lightAppBar: Color(0xFFD8DEE9),
     darkPrimary: Color(0xFF81A1C1),
     darkSecondary: Color(0xFF88C0D0),
     darkBackground: Color(0xFF2E3440),
     darkSurface: Color(0xFF3B4252),
+    darkAppBar: Color(0xFF3B4252),
   ),
   AppThemeScheme.gruvbox: ThemeScheme(
     name: 'Gruvbox',
@@ -121,10 +139,12 @@ const Map<AppThemeScheme, ThemeScheme> themeSchemes = {
     lightSecondary: Color(0xFF458588),
     lightBackground: Color(0xFFFBF1C7),
     lightSurface: Color(0xFFFFFFFF),
+    lightAppBar: Color(0xFFEBDBB2),
     darkPrimary: Color(0xFFD3869B),
     darkSecondary: Color(0xFF83A598),
     darkBackground: Color(0xFF282828),
     darkSurface: Color(0xFF3C3836),
+    darkAppBar: Color(0xFF3C3836),
   ),
   AppThemeScheme.black: ThemeScheme(
     name: '纯黑',
@@ -132,10 +152,12 @@ const Map<AppThemeScheme, ThemeScheme> themeSchemes = {
     lightSecondary: Color(0xFF424242),
     lightBackground: Color(0xFFF5F5F5),
     lightSurface: Color(0xFFFFFFFF),
+    lightAppBar: Color(0xFFE0E0E0),
     darkPrimary: Color(0xFFE0E0E0),
     darkSecondary: Color(0xFF9E9E9E),
     darkBackground: Color(0xFF000000),
     darkSurface: Color(0xFF121212),
+    darkAppBar: Color(0xFF121212),
   ),
 };
 
@@ -157,7 +179,7 @@ ThemeData lightThemeForScheme(ThemeScheme scheme) {
     scaffoldBackgroundColor: scheme.lightBackground,
     cardColor: scheme.lightSurface,
     appBarTheme: AppBarTheme(
-      backgroundColor: scheme.lightSurface,
+      backgroundColor: scheme.lightAppBar,
       foregroundColor: const Color(0xFF1A1A1A),
       elevation: 0,
     ),
@@ -201,7 +223,7 @@ ThemeData darkThemeForScheme(ThemeScheme scheme) {
     scaffoldBackgroundColor: scheme.darkBackground,
     cardColor: scheme.darkSurface,
     appBarTheme: AppBarTheme(
-      backgroundColor: scheme.darkSurface,
+      backgroundColor: scheme.darkAppBar,
       foregroundColor: Colors.white,
       elevation: 0,
     ),
