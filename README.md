@@ -13,7 +13,14 @@
 
 [下载 APK](https://github.com/CyberYui/YuiTodo-Flutter/releases) · [功能介绍](#功能介绍) · [如何使用](#如何使用) · [开发文档](#开发)
 
-![主界面截图](.github/images/main.png)
+<!-- 截图展示区 - 三图并排 -->
+<table align="center">
+<tr>
+<td align="center"><img src=".github/images/main.png" width="200" alt="主界面"><br/><b>主界面</b></td>
+<td align="center"><img src=".github/images/info.png" width="200" alt="任务编辑"><br/><b>任务编辑</b></td>
+<td align="center"><img src=".github/images/hoti.png" width="200" alt="统计面板"><br/><b>统计面板</b></td>
+</tr>
+</table>
 
 </div>
 
@@ -89,8 +96,6 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 4. **搜索任务**：在主界面点击搜索图标
 5. **查看统计**：在主界面点击统计图标
 
-![任务编辑界面截图](.github/images/info.png)
-
 ---
 
 ## 🛠️ 开发
@@ -156,8 +161,6 @@ flutter test
 # 构建 APK
 flutter build apk --release
 ```
-
-![统计面板截图](.github/images/hoti.png)
 
 ---
 
