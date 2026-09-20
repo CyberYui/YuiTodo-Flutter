@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
 
-/// Font pairing system with system fonts
+/// ============================================================================
+/// 字体配对系统（Font Pairing System）
+/// ============================================================================
+/// 
+/// 本文件定义了所有可用的字体配对方案。
+/// 字体来源：本地嵌入字体文件（assets/fonts/）
+/// 
+/// 字体列表：
+///   - 华康少女文字W5：可爱少女风
+///   - 恋星圆体：圆润可爱风
+///   - LOGO圆体：标题圆体风
+///   - 萌神手写体：手写涂鸦风
+///   - 字体家AI造字福楷：AI生成楷书
+///   - MapleMono：等宽代码字体
+///   - FiraCodeNerdFontMono：Nerd Font 图标字体
+///   - ArkPixel：像素字体
+/// ============================================================================
+
+/// 单个字体配对方案
 class FontPair {
-  final String name;
-  final String? chineseFontFamily;
-  final String? englishFontFamily;
-  final String description;
+  final String name;                    // 显示名称
+  final String? chineseFontFamily;      // 中文字体名称（嵌入字体用 family 名称）
+  final String? englishFontFamily;      // 英文字体名称
+  final String description;             // 风格描述
   
   const FontPair({
     required this.name,
@@ -15,69 +33,64 @@ class FontPair {
   });
 }
 
-/// Available font pairings
+/// 所有可用的字体配对列表
 class AppFontPairs {
   static const List<FontPair> pairs = [
     FontPair(
       name: '系统默认',
-      description: '使用系统默认字体',
+      description: '使用系统默认字体（不指定 fontFamily）',
     ),
     FontPair(
-      name: '苹方无衬线',
-      chineseFontFamily: 'PingFang SC',
-      englishFontFamily: 'SF Pro Display',
-      description: '现代简洁，适合阅读',
+      name: '华康少女',
+      chineseFontFamily: '华康少女文字W5',
+      englishFontFamily: '华康少女文字W5',
+      description: '可爱少女风，圆润甜美',
     ),
     FontPair(
-      name: '黑体商务',
-      chineseFontFamily: 'Heiti SC',
-      englishFontFamily: 'Helvetica Neue',
-      description: '专业稳重，适合工作',
+      name: '恋星圆体',
+      chineseFontFamily: '恋星圆体',
+      englishFontFamily: '恋星圆体',
+      description: '圆润可爱，星星般闪耀',
     ),
     FontPair(
-      name: '宋体衬线',
-      chineseFontFamily: 'Songti SC',
-      englishFontFamily: 'Georgia',
-      description: '传统正式，适合长文',
+      name: 'LOGO圆体',
+      chineseFontFamily: 'LOGO圆体',
+      englishFontFamily: 'LOGO圆体',
+      description: '标题圆体，设计感强',
     ),
     FontPair(
-      name: '圆体可爱',
-      chineseFontFamily: 'Yuanti SC',
-      englishFontFamily: 'Nunito',
-      description: '活泼可爱，适合笔记',
+      name: '萌神手写',
+      chineseFontFamily: '萌神手写体',
+      englishFontFamily: '萌神手写体',
+      description: '手写涂鸦，萌趣十足',
     ),
     FontPair(
-      name: '翩翩手写',
-      chineseFontFamily: 'HanziPen SC',
-      englishFontFamily: 'Maple Mono',
-      description: '个性手写，适合日记',
+      name: 'AI造字福楷',
+      chineseFontFamily: '字体家AI造字福楷',
+      englishFontFamily: '字体家AI造字福楷',
+      description: 'AI生成楷书，传统与现代融合',
     ),
     FontPair(
-      name: '隶变古典',
-      chineseFontFamily: 'Libian SC',
-      englishFontFamily: 'Ma Shan Zheng',
-      description: '古典书法，适合标题',
+      name: 'MapleMono',
+      chineseFontFamily: 'MapleMono',
+      englishFontFamily: 'MapleMono',
+      description: '等宽代码字体，适合技术阅读',
     ),
     FontPair(
-      name: '娃娃童趣',
-      chineseFontFamily: 'Wawati SC',
-      englishFontFamily: 'Baloo 2',
-      description: '童趣活泼，适合轻松',
+      name: 'FiraCode',
+      chineseFontFamily: 'FiraCodeNerdFontMono',
+      englishFontFamily: 'FiraCodeNerdFontMono',
+      description: 'Nerd Font，支持编程图标',
     ),
     FontPair(
-      name: '雅痞时尚',
-      chineseFontFamily: 'Yuppy SC',
-      englishFontFamily: 'Vibur',
-      description: '时尚潮流，适合个性',
-    ),
-    FontPair(
-      name: '等宽代码',
-      chineseFontFamily: 'Heiti SC',
-      englishFontFamily: 'SF Mono',
-      description: '技术感，适合代码',
+      name: 'ArkPixel',
+      chineseFontFamily: 'ArkPixel',
+      englishFontFamily: 'ArkPixel',
+      description: '像素字体，复古游戏风',
     ),
   ];
   
+  /// 根据索引获取字体配对
   static FontPair getPair(int index) {
     if (index < 0 || index >= pairs.length) return pairs.first;
     return pairs[index];
