@@ -100,15 +100,31 @@ class AppDatabase {
     ''');
 
     // Create indexes
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_task_status ON task(status)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_task_start_date ON task(start_date)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_task_deleted_at ON task(deleted_at)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_step_task_id ON task_step(task_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_task_tag_task_id ON task_tag(task_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_task_tag_tag_id ON task_tag(tag_id)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_status ON task(status)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_start_date ON task(start_date)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_deleted_at ON task(deleted_at)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_step_task_id ON task_step(task_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_tag_task_id ON task_tag(task_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_tag_tag_id ON task_tag(tag_id)',
+    );
   }
 
-  Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
+  Future<void> _upgradeDatabase(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
     // Future migration logic here
   }
 

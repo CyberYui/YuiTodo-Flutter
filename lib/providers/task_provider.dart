@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/task.dart';
 import '../repositories/task_repository.dart';
 
 /// Task list provider
-final taskListProvider = StateNotifierProvider<TaskNotifier, AsyncValue<List<Task>>>((ref) {
-  return TaskNotifier(ref.watch(taskRepositoryProvider));
-});
+final taskListProvider =
+    StateNotifierProvider<TaskNotifier, AsyncValue<List<Task>>>((ref) {
+      return TaskNotifier(ref.watch(taskRepositoryProvider));
+    });
 
 class TaskNotifier extends StateNotifier<AsyncValue<List<Task>>> {
   final TaskRepository _repo;

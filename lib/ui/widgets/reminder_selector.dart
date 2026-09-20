@@ -39,7 +39,8 @@ class ReminderSelector extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () {
-                      final newTimes = List<String>.from(times)..removeAt(index);
+                      final newTimes = List<String>.from(times)
+                        ..removeAt(index);
                       onChanged(newTimes);
                     },
                   ),
@@ -63,7 +64,8 @@ class ReminderSelector extends StatelessWidget {
       initialTime: TimeOfDay.now(),
     );
     if (time != null) {
-      final timeStr = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+      final timeStr =
+          '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
       final newTimes = List<String>.from(times)..add(timeStr);
       onChanged(newTimes);
     }
@@ -80,7 +82,8 @@ class ReminderSelector extends StatelessWidget {
       initialTime: initialTime,
     );
     if (time != null) {
-      final timeStr = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+      final timeStr =
+          '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
       final newTimes = List<String>.from(times);
       newTimes[index] = timeStr;
       onChanged(newTimes);

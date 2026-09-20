@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/theme/theme_schemes.dart';
 import '../../core/theme/theme_state.dart';
 import '../screens/tag_management_screen.dart';
@@ -21,54 +22,65 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         children: [
           _SectionHeader(title: '外观'),
-          
+
           ListTile(
             title: const Text('主题模式'),
             subtitle: Text(_getThemeModeLabel(themeState.mode)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showThemeModePicker(context, ref),
           ),
-          
+
           ListTile(
             title: const Text('浅色主题'),
             subtitle: Text(themeSchemes[themeState.lightScheme]?.name ?? ''),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showLightThemePicker(context, ref),
           ),
-          
+
           ListTile(
             title: const Text('深色主题'),
             subtitle: Text(themeSchemes[themeState.darkScheme]?.name ?? ''),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showDarkThemePicker(context, ref),
           ),
-          
+
           SwitchListTile(
             title: const Text('定时自动切换'),
-            subtitle: Text(themeState.autoSwitchByTime 
-                ? '已开启: ${_formatTime(themeState.darkStartTime)} - ${_formatTime(themeState.darkEndTime)}'
-                : '关闭'),
+            subtitle: Text(
+              themeState.autoSwitchByTime
+                  ? '已开启: ${_formatTime(themeState.darkStartTime)} - ${_formatTime(themeState.darkEndTime)}'
+                  : '关闭',
+            ),
             value: themeState.autoSwitchByTime,
             onChanged: (value) {
               ref.read(themeStateProvider.notifier).setAutoSwitchByTime(value);
             },
           ),
-          
+
           if (themeState.autoSwitchByTime) ...[
             ListTile(
               title: const Text('深色模式开始时间'),
-              subtitle: Text(_formatTime(themeState.darkStartTime ?? const TimeOfDay(hour: 18, minute: 0))),
+              subtitle: Text(
+                _formatTime(
+                  themeState.darkStartTime ??
+                      const TimeOfDay(hour: 18, minute: 0),
+                ),
+              ),
               trailing: const Icon(Icons.access_time),
               onTap: () => _showTimePicker(context, ref, isStartTime: true),
             ),
             ListTile(
               title: const Text('深色模式结束时间'),
-              subtitle: Text(_formatTime(themeState.darkEndTime ?? const TimeOfDay(hour: 8, minute: 0))),
+              subtitle: Text(
+                _formatTime(
+                  themeState.darkEndTime ?? const TimeOfDay(hour: 8, minute: 0),
+                ),
+              ),
               trailing: const Icon(Icons.access_time),
               onTap: () => _showTimePicker(context, ref, isStartTime: false),
             ),
           ],
-          
+
           const Divider(),
           _SectionHeader(title: '数据管理'),
           ListTile(
@@ -101,15 +113,15 @@ class SettingsScreen extends ConsumerWidget {
               MaterialPageRoute(builder: (_) => const RecycleBinScreen()),
             ),
           ),
-          
+
           const Divider(),
           _SectionHeader(title: '关于'),
-          const ListTile(
-            title: Text('版本'),
-            subtitle: Text('v3.1.5'),
-          ),
+          const ListTile(title: Text('版本'), subtitle: Text('v3.1.5')),
           ListTile(
-            title: Text('数据存储', style: TextStyle(color: theme.colorScheme.outline)),
+            title: Text(
+              '数据存储',
+              style: TextStyle(color: theme.colorScheme.outline),
+            ),
             subtitle: const Text('纯本地 SQLite，无网络请求'),
           ),
         ],
@@ -119,9 +131,12 @@ class SettingsScreen extends ConsumerWidget {
 
   String _getThemeModeLabel(ThemeMode mode) {
     switch (mode) {
-      case ThemeMode.light: return '浅色模式';
-      case ThemeMode.dark: return '深色模式';
-      case ThemeMode.system: return '跟随系统';
+      case ThemeMode.light:
+        return '浅色模式';
+      case ThemeMode.dark:
+        return '深色模式';
+      case ThemeMode.system:
+        return '跟随系统';
     }
   }
 
@@ -139,11 +154,16 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('主题模式', style: Theme.of(context).textTheme.titleLarge),
+              child: Text(
+                '主题模式',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
             ListTile(
               title: const Text('浅色模式'),
-              trailing: ref.read(themeStateProvider).mode == ThemeMode.light ? const Icon(Icons.check) : null,
+              trailing: ref.read(themeStateProvider).mode == ThemeMode.light
+                  ? const Icon(Icons.check)
+                  : null,
               onTap: () {
                 ref.read(themeStateProvider.notifier).setMode(ThemeMode.light);
                 Navigator.pop(context);
@@ -151,7 +171,9 @@ class SettingsScreen extends ConsumerWidget {
             ),
             ListTile(
               title: const Text('深色模式'),
-              trailing: ref.read(themeStateProvider).mode == ThemeMode.dark ? const Icon(Icons.check) : null,
+              trailing: ref.read(themeStateProvider).mode == ThemeMode.dark
+                  ? const Icon(Icons.check)
+                  : null,
               onTap: () {
                 ref.read(themeStateProvider.notifier).setMode(ThemeMode.dark);
                 Navigator.pop(context);
@@ -159,7 +181,9 @@ class SettingsScreen extends ConsumerWidget {
             ),
             ListTile(
               title: const Text('跟随系统'),
-              trailing: ref.read(themeStateProvider).mode == ThemeMode.system ? const Icon(Icons.check) : null,
+              trailing: ref.read(themeStateProvider).mode == ThemeMode.system
+                  ? const Icon(Icons.check)
+                  : null,
               onTap: () {
                 ref.read(themeStateProvider.notifier).setMode(ThemeMode.system);
                 Navigator.pop(context);
@@ -182,7 +206,10 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('选择浅色主题', style: Theme.of(context).textTheme.titleLarge),
+                child: Text(
+                  '选择浅色主题',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
               ),
               Expanded(
                 child: ListView.builder(
@@ -191,9 +218,14 @@ class SettingsScreen extends ConsumerWidget {
                     final scheme = schemes[index];
                     return ListTile(
                       title: Text(themeSchemes[scheme]?.name ?? ''),
-                      trailing: ref.read(themeStateProvider).lightScheme == scheme ? const Icon(Icons.check) : null,
+                      trailing:
+                          ref.read(themeStateProvider).lightScheme == scheme
+                          ? const Icon(Icons.check)
+                          : null,
                       onTap: () {
-                        ref.read(themeStateProvider.notifier).setLightScheme(scheme);
+                        ref
+                            .read(themeStateProvider.notifier)
+                            .setLightScheme(scheme);
                         Navigator.pop(context);
                       },
                     );
@@ -218,7 +250,10 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('选择深色主题', style: Theme.of(context).textTheme.titleLarge),
+                child: Text(
+                  '选择深色主题',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
               ),
               Expanded(
                 child: ListView.builder(
@@ -227,9 +262,14 @@ class SettingsScreen extends ConsumerWidget {
                     final scheme = schemes[index];
                     return ListTile(
                       title: Text(themeSchemes[scheme]?.name ?? ''),
-                      trailing: ref.read(themeStateProvider).darkScheme == scheme ? const Icon(Icons.check) : null,
+                      trailing:
+                          ref.read(themeStateProvider).darkScheme == scheme
+                          ? const Icon(Icons.check)
+                          : null,
                       onTap: () {
-                        ref.read(themeStateProvider.notifier).setDarkScheme(scheme);
+                        ref
+                            .read(themeStateProvider.notifier)
+                            .setDarkScheme(scheme);
                         Navigator.pop(context);
                       },
                     );
@@ -243,16 +283,22 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showTimePicker(BuildContext context, WidgetRef ref, {required bool isStartTime}) async {
-    final currentTime = isStartTime 
-        ? ref.read(themeStateProvider).darkStartTime ?? const TimeOfDay(hour: 18, minute: 0)
-        : ref.read(themeStateProvider).darkEndTime ?? const TimeOfDay(hour: 8, minute: 0);
-    
+  Future<void> _showTimePicker(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isStartTime,
+  }) async {
+    final currentTime = isStartTime
+        ? ref.read(themeStateProvider).darkStartTime ??
+              const TimeOfDay(hour: 18, minute: 0)
+        : ref.read(themeStateProvider).darkEndTime ??
+              const TimeOfDay(hour: 8, minute: 0);
+
     final time = await showTimePicker(
       context: context,
       initialTime: currentTime,
     );
-    
+
     if (time != null) {
       if (isStartTime) {
         ref.read(themeStateProvider.notifier).setDarkStart(time);
@@ -263,15 +309,13 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _exportData(BuildContext context, WidgetRef ref) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('开发中...')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('开发中...')));
   }
 
   void _importData(BuildContext context, WidgetRef ref) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('开发中...')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('开发中...')));
   }
 }
 

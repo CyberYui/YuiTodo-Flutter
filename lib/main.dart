@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_state.dart';
 import 'core/theme/theme_schemes.dart';
@@ -23,9 +24,13 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
 
     final lightScheme = themeSchemes[themeState.lightScheme];
     final darkScheme = themeSchemes[themeState.darkScheme];
-    
-    final baseLightTheme = lightScheme != null ? lightThemeForScheme(lightScheme) : lightTheme;
-    final baseDarkTheme = darkScheme != null ? darkThemeForScheme(darkScheme) : darkTheme;
+
+    final baseLightTheme = lightScheme != null
+        ? lightThemeForScheme(lightScheme)
+        : lightTheme;
+    final baseDarkTheme = darkScheme != null
+        ? darkThemeForScheme(darkScheme)
+        : darkTheme;
 
     return MaterialApp(
       title: 'YuiTodo',

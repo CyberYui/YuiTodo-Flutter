@@ -179,12 +179,7 @@ class Tag {
   });
 
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'color': color,
-      'created_at': createdAt,
-    };
+    return {'id': id, 'name': name, 'color': color, 'created_at': createdAt};
   }
 
   factory Tag.fromMap(Map<String, dynamic> map) {

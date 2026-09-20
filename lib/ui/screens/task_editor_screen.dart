@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/task.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/tag_provider.dart';
@@ -25,7 +26,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   late TextEditingController _titleController;
   late TextEditingController _noteController;
   late TextEditingController _stepController;
-  
+
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 1));
   String _color = '#3B82F6';
@@ -43,10 +44,17 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
     _titleController = TextEditingController(text: widget.task?.title ?? '');
     _noteController = TextEditingController(text: widget.task?.note ?? '');
     _stepController = TextEditingController();
-    
+
     if (widget.task != null) {
-      _startDate = DateTime.fromMillisecondsSinceEpoch(widget.task!.startDate ?? widget.task!.startTime ?? DateTime.now().millisecondsSinceEpoch);
-      _endDate = DateTime.fromMillisecondsSinceEpoch(widget.task!.endTime ?? DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch);
+      _startDate = DateTime.fromMillisecondsSinceEpoch(
+        widget.task!.startDate ??
+            widget.task!.startTime ??
+            DateTime.now().millisecondsSinceEpoch,
+      );
+      _endDate = DateTime.fromMillisecondsSinceEpoch(
+        widget.task!.endTime ??
+            DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch,
+      );
       _color = widget.task!.color;
       _icon = widget.task!.icon;
       _steps = widget.task!.steps.toList();
@@ -65,13 +73,15 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   void _addStep() {
     final text = _stepController.text.trim();
     if (text.isEmpty) return;
-    
+
     setState(() {
-      _steps.add(TaskStep(
-        taskId: widget.task?.id ?? 0,
-        title: text,
-        sortOrder: _steps.length,
-      ));
+      _steps.add(
+        TaskStep(
+          taskId: widget.task?.id ?? 0,
+          title: text,
+          sortOrder: _steps.length,
+        ),
+      );
       _stepController.clear();
     });
   }
@@ -107,7 +117,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         onSelected: (icon) => Navigator.pop(context, icon),
       ),
     );
-    
+
     if (result != null) {
       setState(() => _icon = result);
     }
@@ -115,9 +125,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
 
   Future<void> _saveTask() async {
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请输入任务标题')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('请输入任务标题')));
       return;
     }
 
@@ -145,12 +154,14 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         taskId = await ref.read(taskRepositoryProvider).createTask(task);
         final repo = ref.read(taskRepositoryProvider);
         for (int i = 0; i < _steps.length; i++) {
-          await repo.createStep(TaskStep(
-            taskId: taskId,
-            title: _steps[i].title,
-            sortOrder: i,
-            status: _steps[i].status,
-          ));
+          await repo.createStep(
+            TaskStep(
+              taskId: taskId,
+              title: _steps[i].title,
+              sortOrder: i,
+              status: _steps[i].status,
+            ),
+          );
         }
         for (final tag in _selectedTags) {
           if (tag.id != null) {
@@ -162,7 +173,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         await ref.read(taskListProvider.notifier).updateTask(task);
         taskId = task.id!;
         final repo = ref.read(taskRepositoryProvider);
-        
+
         // Delete existing steps and re-add with correct order
         final existingSteps = await repo.getStepsForTask(taskId);
         for (final step in existingSteps) {
@@ -171,14 +182,16 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
           }
         }
         for (int i = 0; i < _steps.length; i++) {
-          await repo.createStep(TaskStep(
-            taskId: taskId,
-            title: _steps[i].title,
-            sortOrder: i,
-            status: _steps[i].status,
-          ));
+          await repo.createStep(
+            TaskStep(
+              taskId: taskId,
+              title: _steps[i].title,
+              sortOrder: i,
+              status: _steps[i].status,
+            ),
+          );
         }
-        
+
         // Update tags
         final existingTags = await repo.getTagsForTask(taskId);
         for (final tag in existingTags) {
@@ -194,9 +207,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('保存失败: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('保存失败: $e')));
       }
     }
   }
@@ -204,7 +216,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.task == null ? '新建任务' : '编辑任务'),
@@ -259,7 +271,9 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                   child: ListTile(
                     leading: const Icon(Icons.calendar_today),
                     title: const Text('开始日期'),
-                    subtitle: Text('${_startDate.year}-${_startDate.month}-${_startDate.day}'),
+                    subtitle: Text(
+                      '${_startDate.year}-${_startDate.month}-${_startDate.day}',
+                    ),
                     onTap: () async {
                       final date = await showDatePicker(
                         context: context,
@@ -275,7 +289,9 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                   child: ListTile(
                     leading: const Icon(Icons.event),
                     title: const Text('结束日期'),
-                    subtitle: Text('${_endDate.year}-${_endDate.month}-${_endDate.day}'),
+                    subtitle: Text(
+                      '${_endDate.year}-${_endDate.month}-${_endDate.day}',
+                    ),
                     onTap: () async {
                       final date = await showDatePicker(
                         context: context,
@@ -302,9 +318,13 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Color(int.parse(_color.replaceFirst('#', '0xFF'))).withOpacity(0.1),
+                    color: Color(int.parse(_color.replaceFirst('#', '0xFF')))
+                        .withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Color(int.parse(_color.replaceFirst('#', '0xFF'))).withOpacity(0.3)),
+                    border: Border.all(
+                      color: Color(int.parse(_color.replaceFirst('#', '0xFF')))
+                          .withOpacity(0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -313,7 +333,9 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                         width: 24,
                         height: 24,
                         decoration: BoxDecoration(
-                          color: Color(int.parse(_color.replaceFirst('#', '0xFF'))),
+                          color: Color(
+                            int.parse(_color.replaceFirst('#', '0xFF')),
+                          ),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -330,11 +352,17 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                   runSpacing: 8,
                   children: TaskColors.all.map((c) {
                     // 判断当前颜色是否被选中（包括自定义颜色槽位）
-                    final isSelected = _color == c || (TaskColors.isCustom(c) && _color.isNotEmpty && _color != '#CUSTOM');
+                    final isSelected =
+                        _color == c ||
+                        (TaskColors.isCustom(c) &&
+                            _color.isNotEmpty &&
+                            _color != '#CUSTOM');
                     final isCustom = TaskColors.isCustom(c);
                     // 自定义槽位颜色：如果已有自定义颜色则显示该颜色，否则显示灰色占位
-                    final color = isCustom 
-                        ? (_color.isNotEmpty && _color != '#CUSTOM' ? TaskColors.fromHex(_color) : Colors.grey.withOpacity(0.3))
+                    final color = isCustom
+                        ? (_color.isNotEmpty && _color != '#CUSTOM'
+                              ? TaskColors.fromHex(_color)
+                              : Colors.grey.withOpacity(0.3))
                         : Color(int.parse(c.replaceFirst('#', '0xFF')));
                     return GestureDetector(
                       onTap: () {
@@ -359,22 +387,53 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                         decoration: BoxDecoration(
                           color: color,
                           shape: BoxShape.circle,
-                          border: isSelected ? Border.all(color: theme.colorScheme.outline, width: 3) : Border.all(color: Colors.grey.withOpacity(0.2)),
-                          boxShadow: isSelected ? [
-                            BoxShadow(
-                              color: color.withOpacity(0.4),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ] : null,
+                          border: isSelected
+                              ? Border.all(
+                                  color: theme.colorScheme.outline,
+                                  width: 3,
+                                )
+                              : Border.all(color: Colors.grey.withOpacity(0.2)),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: color.withOpacity(0.4),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                  ),
+                                ]
+                              : null,
                         ),
-                        child: isCustom 
+                        child: isCustom
                             ? (_showCustomPaletteIcon
-                                ? const Icon(Icons.palette, color: Colors.white, size: 18)
-                                : (_color.isNotEmpty && _color != '#CUSTOM' 
-                                    ? (isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : const Icon(Icons.palette, color: Colors.white, size: 18))
-                                    : const Icon(Icons.color_lens, color: Colors.white, size: 18)))
-                            : (isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : null),
+                                  ? const Icon(
+                                      Icons.palette,
+                                      color: Colors.white,
+                                      size: 18,
+                                    )
+                                  : (_color.isNotEmpty && _color != '#CUSTOM'
+                                        ? (isSelected
+                                              ? const Icon(
+                                                  Icons.check,
+                                                  color: Colors.white,
+                                                  size: 18,
+                                                )
+                                              : const Icon(
+                                                  Icons.palette,
+                                                  color: Colors.white,
+                                                  size: 18,
+                                                ))
+                                        : const Icon(
+                                            Icons.color_lens,
+                                            color: Colors.white,
+                                            size: 18,
+                                          )))
+                            : (isSelected
+                                  ? const Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: 18,
+                                    )
+                                  : null),
                       ),
                     );
                   }).toList(),
@@ -393,26 +452,37 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withOpacity(0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
                     if (_icon != null)
                       AppIcons.isAvatar(_icon!)
-                          ? Image.asset('assets/icons/$_icon.png', width: 40, height: 40)
+                          ? Image.asset(
+                              'assets/icons/$_icon.png',
+                              width: 40,
+                              height: 40,
+                            )
                           : Icon(FlatIconMapper.getIcon(_icon!), size: 40)
-                        else
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceVariant,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(Icons.add_photo_alternate, color: theme.colorScheme.outline),
-                          ),
+                    else
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceVariant,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.add_photo_alternate,
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
                     const SizedBox(width: 12),
-                    Expanded(child: Text(_icon == null ? '选择图标' : '当前: $_icon')),
+                    Expanded(
+                      child: Text(_icon == null ? '选择图标' : '当前: $_icon'),
+                    ),
                     const Icon(Icons.chevron_right),
                   ],
                 ),
@@ -431,7 +501,9 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                   data: (tags) => Wrap(
                     spacing: 8,
                     children: tags.map((tag) {
-                      final isSelected = _selectedTags.any((t) => t.id == tag.id);
+                      final isSelected = _selectedTags.any(
+                        (t) => t.id == tag.id,
+                      );
                       return FilterChip(
                         label: Text(tag.name),
                         selected: isSelected,
@@ -511,14 +583,21 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                         children: [
                           ReorderableDragStartListener(
                             index: index,
-                            child: Icon(Icons.drag_handle, color: theme.colorScheme.outline),
+                            child: Icon(
+                              Icons.drag_handle,
+                              color: theme.colorScheme.outline,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           GestureDetector(
                             onTap: () => _toggleStepStatus(index),
                             child: Icon(
-                              step.status == 'completed' ? Icons.check_circle : Icons.circle_outlined,
-                              color: step.status == 'completed' ? theme.colorScheme.primary : null,
+                              step.status == 'completed'
+                                  ? Icons.check_circle
+                                  : Icons.circle_outlined,
+                              color: step.status == 'completed'
+                                  ? theme.colorScheme.primary
+                                  : null,
                             ),
                           ),
                         ],
@@ -526,7 +605,9 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                       title: Text(
                         step.title,
                         style: TextStyle(
-                          decoration: step.status == 'completed' ? TextDecoration.lineThrough : null,
+                          decoration: step.status == 'completed'
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
                       ),
                       trailing: IconButton(
@@ -565,7 +646,9 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   Widget _buildSection({required String title, required Widget child}) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -600,7 +683,10 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('自定义颜色', style: Theme.of(context).textTheme.titleLarge),
+              child: Text(
+                '自定义颜色',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
             const SizedBox(height: 16),
           ],
@@ -610,10 +696,10 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   }
 
   void _showCustomColorPicker(BuildContext context) {
-    Color currentColor = _color.isNotEmpty && _color != '#CUSTOM' 
+    Color currentColor = _color.isNotEmpty && _color != '#CUSTOM'
         ? Color(int.parse(_color.replaceFirst('#', '0xFF')))
         : Colors.blue;
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -639,12 +725,20 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                               activeColor: Colors.red,
                               onChanged: (v) {
                                 setDialogState(() {
-                                  currentColor = Color.fromARGB(255, v.round(), currentColor.green, currentColor.blue);
+                                  currentColor = Color.fromARGB(
+                                    255,
+                                    v.round(),
+                                    currentColor.green,
+                                    currentColor.blue,
+                                  );
                                 });
                               },
                             ),
                           ),
-                          SizedBox(width: 30, child: Text('${currentColor.red}')),
+                          SizedBox(
+                            width: 30,
+                            child: Text('${currentColor.red}'),
+                          ),
                         ],
                       ),
                       // Green
@@ -659,12 +753,20 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                               activeColor: Colors.green,
                               onChanged: (v) {
                                 setDialogState(() {
-                                  currentColor = Color.fromARGB(255, currentColor.red, v.round(), currentColor.blue);
+                                  currentColor = Color.fromARGB(
+                                    255,
+                                    currentColor.red,
+                                    v.round(),
+                                    currentColor.blue,
+                                  );
                                 });
                               },
                             ),
                           ),
-                          SizedBox(width: 30, child: Text('${currentColor.green}')),
+                          SizedBox(
+                            width: 30,
+                            child: Text('${currentColor.green}'),
+                          ),
                         ],
                       ),
                       // Blue
@@ -679,12 +781,20 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                               activeColor: Colors.blue,
                               onChanged: (v) {
                                 setDialogState(() {
-                                  currentColor = Color.fromARGB(255, currentColor.red, currentColor.green, v.round());
+                                  currentColor = Color.fromARGB(
+                                    255,
+                                    currentColor.red,
+                                    currentColor.green,
+                                    v.round(),
+                                  );
                                 });
                               },
                             ),
                           ),
-                          SizedBox(width: 30, child: Text('${currentColor.blue}')),
+                          SizedBox(
+                            width: 30,
+                            child: Text('${currentColor.blue}'),
+                          ),
                         ],
                       ),
                       // Preview
@@ -695,7 +805,9 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                         decoration: BoxDecoration(
                           color: currentColor,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                          border: Border.all(
+                            color: Colors.grey.withOpacity(0.3),
+                          ),
                         ),
                       ),
                     ],
@@ -711,7 +823,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
             ),
             TextButton(
               onPressed: () {
-                final hex = '#${currentColor.value.toRadixString(16).substring(2).toUpperCase()}';
+                final hex =
+                    '#${currentColor.value.toRadixString(16).substring(2).toUpperCase()}';
                 setState(() => _color = hex);
                 Navigator.pop(context);
               },

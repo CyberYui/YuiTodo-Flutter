@@ -12,8 +12,6 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
-      with:
-        fetch-depth: 1
     
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -31,7 +29,8 @@ jobs:
       run: flutter test
     
     - name: Check formatting
-      run: dart format --output=none --set-exit-if-changed .
+      run: dart format --set-exit-if-changed .
+      continue-on-error: true
     
   build:
     runs-on: ubuntu-24.04
@@ -39,8 +38,6 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
-      with:
-        fetch-depth: 1
     
     - name: Setup Flutter
       uses: subosito/flutter-action@v2

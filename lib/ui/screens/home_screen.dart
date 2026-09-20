@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/task.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/tag_provider.dart';
@@ -20,7 +22,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with TickerProviderStateMixin {
   bool _showSearch = false;
   bool _showFilters = false;
   final _searchController = TextEditingController();
@@ -63,9 +66,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
     final smartFilter = ref.watch(smartFilterProvider);
     final tagFilter = ref.watch(tagFilterProvider);
     final searchQuery = _searchController.text.toLowerCase().trim();
-    
+
     var filtered = tasks.where((t) => t.deletedAt == null).toList();
-    
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final todayEnd = today.add(const Duration(days: 1));
@@ -74,19 +77,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
     switch (smartFilter) {
       case 'today':
         filtered = filtered.where((t) {
-          final date = DateTime.fromMillisecondsSinceEpoch(t.startDate ?? t.startTime ?? 0);
-          return date.isAfter(today.subtract(const Duration(days: 1))) && date.isBefore(todayEnd);
+          final date = DateTime.fromMillisecondsSinceEpoch(
+            t.startDate ?? t.startTime ?? 0,
+          );
+          return date.isAfter(today.subtract(const Duration(days: 1))) &&
+              date.isBefore(todayEnd);
         }).toList();
         break;
       case 'tomorrow':
         filtered = filtered.where((t) {
-          final date = DateTime.fromMillisecondsSinceEpoch(t.startDate ?? t.startTime ?? 0);
-          return date.isAfter(todayEnd.subtract(const Duration(days: 1))) && date.isBefore(tomorrowEnd);
+          final date = DateTime.fromMillisecondsSinceEpoch(
+            t.startDate ?? t.startTime ?? 0,
+          );
+          return date.isAfter(todayEnd.subtract(const Duration(days: 1))) &&
+              date.isBefore(tomorrowEnd);
         }).toList();
         break;
       case 'future':
         filtered = filtered.where((t) {
-          final date = DateTime.fromMillisecondsSinceEpoch(t.startDate ?? t.startTime ?? 0);
+          final date = DateTime.fromMillisecondsSinceEpoch(
+            t.startDate ?? t.startTime ?? 0,
+          );
           return date.isAfter(tomorrowEnd.subtract(const Duration(days: 1)));
         }).toList();
         break;
@@ -96,7 +107,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
     }
 
     if (tagFilter != null) {
-      filtered = filtered.where((t) => t.tags.any((tag) => tag.id == tagFilter)).toList();
+      filtered = filtered
+          .where((t) => t.tags.any((tag) => tag.id == tagFilter))
+          .toList();
     }
 
     if (searchQuery.isNotEmpty) {
@@ -144,10 +157,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
 
   void _onReorder(int oldIndex, int newIndex, List<Task> filteredTasks) {
     if (oldIndex < newIndex) newIndex -= 1;
-    
+
     final movedTask = filteredTasks[oldIndex];
     final targetTask = filteredTasks[newIndex];
-    
+
     // Calculate new sort order
     int newSortOrder;
     if (newIndex == 0) {
@@ -159,8 +172,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
       final after = filteredTasks[newIndex + (oldIndex < newIndex ? 0 : 1)];
       newSortOrder = ((before.sortOrder + after.sortOrder) / 2).round();
     }
-    
-    ref.read(taskRepositoryProvider).updateTaskSortOrder(movedTask.id!, newSortOrder);
+
+    ref
+        .read(taskRepositoryProvider)
+        .updateTaskSortOrder(movedTask.id!, newSortOrder);
     ref.read(taskListProvider.notifier).loadTasks();
   }
 
@@ -242,16 +257,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
             child: Container(
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
-                border: Border(
-                  bottom: BorderSide(color: theme.dividerColor),
-                ),
+                border: Border(bottom: BorderSide(color: theme.dividerColor)),
               ),
               child: Column(
                 children: [
                   // Smart filter row
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Row(
                       children: [
                         _filterChip('all', '全部', smartFilter),
@@ -270,14 +286,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                   if (tagsAsync.hasValue && tagsAsync.value!.isNotEmpty)
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                       child: Row(
                         children: [
                           FilterChip(
                             label: const Text('全部'),
                             selected: tagFilter == null,
                             visualDensity: VisualDensity.compact,
-                            onSelected: (_) => ref.read(tagFilterProvider.notifier).setTag(null),
+                            onSelected: (_) => ref
+                                .read(tagFilterProvider.notifier)
+                                .setTag(null),
                           ),
                           const SizedBox(width: 8),
                           ...tagsAsync.value!.map((tag) {
@@ -287,7 +308,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                                 label: Text(tag.name),
                                 selected: tagFilter == tag.id,
                                 visualDensity: VisualDensity.compact,
-                                onSelected: (_) => ref.read(tagFilterProvider.notifier).setTag(tag.id),
+                                onSelected: (_) => ref
+                                    .read(tagFilterProvider.notifier)
+                                    .setTag(tag.id),
                               ),
                             );
                           }),
@@ -309,9 +332,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.task_alt, size: 64, color: theme.colorScheme.outline),
+                        Icon(
+                          Icons.task_alt,
+                          size: 64,
+                          color: theme.colorScheme.outline,
+                        ),
                         const SizedBox(height: 16),
-                        Text('暂无任务', style: TextStyle(color: theme.colorScheme.outline)),
+                        Text(
+                          '暂无任务',
+                          style: TextStyle(color: theme.colorScheme.outline),
+                        ),
                       ],
                     ),
                   );
@@ -319,7 +349,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                 return ReorderableListView.builder(
                   padding: const EdgeInsets.only(bottom: 80),
                   itemCount: filtered.length,
-                  onReorder: (oldIndex, newIndex) => _onReorder(oldIndex, newIndex, filtered),
+                  onReorder: (oldIndex, newIndex) =>
+                      _onReorder(oldIndex, newIndex, filtered),
                   itemBuilder: (context, index) {
                     final task = filtered[index];
                     return Dismissible(
@@ -351,13 +382,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                         index: index,
                         onTap: () {
                           if (isSelectionMode) {
-                            ref.read(selectionProvider.notifier).toggle(task.id!);
+                            ref
+                                .read(selectionProvider.notifier)
+                                .toggle(task.id!);
                           } else {
                             _openTaskEditor(task);
                           }
                         },
                         onLongPress: () => _enterSelectionMode(task.id!),
-                        onStepToggle: (Task task, TaskStep step) => _toggleStep(task, step),
+                        onStepToggle: (Task task, TaskStep step) =>
+                            _toggleStep(task, step),
                       ),
                     );
                   },
@@ -399,10 +433,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
 class BatchOperationsSheet extends ConsumerWidget {
   final List<int> selectedIds;
 
-  const BatchOperationsSheet({
-    super.key,
-    required this.selectedIds,
-  });
+  const BatchOperationsSheet({super.key, required this.selectedIds});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -417,7 +448,9 @@ class BatchOperationsSheet extends ConsumerWidget {
         children: [
           Text(
             '已选择 ${selectedIds.length} 个任务',
-            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 16),
           ListTile(
@@ -432,10 +465,15 @@ class BatchOperationsSheet extends ConsumerWidget {
           if (tagsAsync.hasValue)
             ...tagsAsync.value!.map((tag) {
               return ListTile(
-                leading: Icon(Icons.label, color: Color(int.parse(tag.color.replaceFirst('#', '0xFF')))),
+                leading: Icon(
+                  Icons.label,
+                  color: Color(int.parse(tag.color.replaceFirst('#', '0xFF'))),
+                ),
                 title: Text('添加标签: ${tag.name}'),
                 onTap: () {
-                  ref.read(taskListProvider.notifier).batchAddTag(selectedIds, tag.id!);
+                  ref
+                      .read(taskListProvider.notifier)
+                      .batchAddTag(selectedIds, tag.id!);
                   ref.read(selectionProvider.notifier).clear();
                   Navigator.pop(context);
                 },

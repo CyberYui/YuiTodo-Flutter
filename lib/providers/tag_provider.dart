@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/task.dart';
 import '../repositories/task_repository.dart';
 
 /// Tag list provider
-final tagListProvider = StateNotifierProvider<TagNotifier, AsyncValue<List<Tag>>>((ref) {
-  return TagNotifier(ref.watch(taskRepositoryProvider));
-});
+final tagListProvider =
+    StateNotifierProvider<TagNotifier, AsyncValue<List<Tag>>>((ref) {
+      return TagNotifier(ref.watch(taskRepositoryProvider));
+    });
 
 class TagNotifier extends StateNotifier<AsyncValue<List<Tag>>> {
   final TaskRepository _repo;
@@ -46,7 +48,9 @@ class TagNotifier extends StateNotifier<AsyncValue<List<Tag>>> {
 }
 
 /// Selection mode provider for multi-select
-final selectionProvider = StateNotifierProvider<SelectionNotifier, List<int>>((ref) {
+final selectionProvider = StateNotifierProvider<SelectionNotifier, List<int>>((
+  ref,
+) {
   return SelectionNotifier();
 });
 

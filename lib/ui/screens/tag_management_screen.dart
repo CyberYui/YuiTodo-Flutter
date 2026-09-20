@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/task.dart';
 import '../../providers/tag_provider.dart';
 import '../../core/theme/task_colors.dart';
@@ -8,7 +9,8 @@ class TagManagementScreen extends ConsumerStatefulWidget {
   const TagManagementScreen({super.key});
 
   @override
-  ConsumerState<TagManagementScreen> createState() => _TagManagementScreenState();
+  ConsumerState<TagManagementScreen> createState() =>
+      _TagManagementScreenState();
 }
 
 class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
@@ -25,11 +27,15 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
 
-    ref.read(tagListProvider.notifier).addTag(Tag(
-      name: name,
-      color: _selectedColor,
-      createdAt: DateTime.now().millisecondsSinceEpoch,
-    ));
+    ref
+        .read(tagListProvider.notifier)
+        .addTag(
+          Tag(
+            name: name,
+            color: _selectedColor,
+            createdAt: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
     _nameController.clear();
   }
 
@@ -42,7 +48,10 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('选择标签颜色', style: Theme.of(context).textTheme.titleLarge),
+              child: Text(
+                '选择标签颜色',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
             // Quick colors
             Padding(
@@ -63,7 +72,9 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                       decoration: BoxDecoration(
                         color: Color(int.parse(c.replaceFirst('#', '0xFF'))),
                         shape: BoxShape.circle,
-                        border: isSelected ? Border.all(color: Colors.white, width: 3) : null,
+                        border: isSelected
+                            ? Border.all(color: Colors.white, width: 3)
+                            : null,
                       ),
                     ),
                   );
@@ -114,7 +125,12 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                               activeColor: Colors.red,
                               onChanged: (v) {
                                 setDialogState(() {
-                                  currentColor = Color.fromARGB(255, v.round(), currentColor.green, currentColor.blue);
+                                  currentColor = Color.fromARGB(
+                                    255,
+                                    v.round(),
+                                    currentColor.green,
+                                    currentColor.blue,
+                                  );
                                 });
                               },
                             ),
@@ -134,7 +150,12 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                               activeColor: Colors.green,
                               onChanged: (v) {
                                 setDialogState(() {
-                                  currentColor = Color.fromARGB(255, currentColor.red, v.round(), currentColor.blue);
+                                  currentColor = Color.fromARGB(
+                                    255,
+                                    currentColor.red,
+                                    v.round(),
+                                    currentColor.blue,
+                                  );
                                 });
                               },
                             ),
@@ -154,7 +175,12 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                               activeColor: Colors.blue,
                               onChanged: (v) {
                                 setDialogState(() {
-                                  currentColor = Color.fromARGB(255, currentColor.red, currentColor.green, v.round());
+                                  currentColor = Color.fromARGB(
+                                    255,
+                                    currentColor.red,
+                                    currentColor.green,
+                                    v.round(),
+                                  );
                                 });
                               },
                             ),
@@ -185,7 +211,8 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
             ),
             TextButton(
               onPressed: () {
-                final hex = '#${currentColor.value.toRadixString(16).substring(2).toUpperCase()}';
+                final hex =
+                    '#${currentColor.value.toRadixString(16).substring(2).toUpperCase()}';
                 setState(() => _selectedColor = hex);
                 Navigator.pop(context);
               },
@@ -203,9 +230,7 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
     final tagsAsync = ref.watch(tagListProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('管理标签'),
-      ),
+      appBar: AppBar(title: const Text('管理标签')),
       body: Column(
         children: [
           Padding(
@@ -217,16 +242,11 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                     Expanded(
                       child: TextField(
                         controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: '新标签名称',
-                        ),
+                        decoration: const InputDecoration(labelText: '新标签名称'),
                         onSubmitted: (_) => _addTag(),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.add),
-                      onPressed: _addTag,
-                    ),
+                    IconButton(icon: const Icon(Icons.add), onPressed: _addTag),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -236,7 +256,9 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+                      border: Border.all(
+                        color: theme.colorScheme.outline.withOpacity(0.3),
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -245,14 +267,16 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                           width: 24,
                           height: 24,
                           decoration: BoxDecoration(
-                            color: Color(int.parse(_selectedColor.replaceFirst('#', '0xFF'))),
+                            color: Color(
+                              int.parse(
+                                _selectedColor.replaceFirst('#', '0xFF'),
+                              ),
+                            ),
                             shape: BoxShape.circle,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(
-                          child: Text('标签颜色: $_selectedColor'),
-                        ),
+                        Expanded(child: Text('标签颜色: $_selectedColor')),
                         const Icon(Icons.palette, size: 20),
                       ],
                     ),
@@ -272,20 +296,25 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                       width: 16,
                       height: 16,
                       decoration: BoxDecoration(
-                        color: Color(int.parse(tag.color.replaceFirst('#', '0xFF'))),
+                        color: Color(
+                          int.parse(tag.color.replaceFirst('#', '0xFF')),
+                        ),
                         shape: BoxShape.circle,
                       ),
                     ),
                     title: Text(
                       tag.name,
                       style: TextStyle(
-                        color: Color(int.parse(tag.color.replaceFirst('#', '0xFF'))),
+                        color: Color(
+                          int.parse(tag.color.replaceFirst('#', '0xFF')),
+                        ),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete),
-                      onPressed: () => ref.read(tagListProvider.notifier).deleteTag(tag.id!),
+                      onPressed: () =>
+                          ref.read(tagListProvider.notifier).deleteTag(tag.id!),
                     ),
                   );
                 },

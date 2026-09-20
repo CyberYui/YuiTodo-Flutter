@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,10 +9,8 @@ class UndoItem {
   final VoidCallback onUndo;
   final Timer timer;
 
-  UndoItem({
-    required this.message,
-    required this.onUndo,
-  }) : timer = Timer(const Duration(seconds: 5), () {});
+  UndoItem({required this.message, required this.onUndo})
+    : timer = Timer(const Duration(seconds: 5), () {});
 
   void cancel() => timer.cancel();
   bool get isValid => timer.isActive;
@@ -42,10 +41,7 @@ extension UndoSnackBar on BuildContext {
     ScaffoldMessenger.of(this).showSnackBar(
       SnackBar(
         content: Text(message),
-        action: SnackBarAction(
-          label: '撤销',
-          onPressed: onUndo,
-        ),
+        action: SnackBarAction(label: '撤销', onPressed: onUndo),
         duration: const Duration(seconds: 5),
       ),
     );
