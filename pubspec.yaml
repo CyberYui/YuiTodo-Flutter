@@ -1,7 +1,7 @@
 name: yuitodo
 description: "YuiTodo - A beautiful task management app"
 publish_to: 'none'
-version: 4.0.0+1
+version: 3.1.5+2
 
 environment:
   sdk: ^3.13.2
@@ -31,3 +31,32 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icons/
+  fonts:
+    - family: 华康少女文字W5
+      fonts:
+        - asset: assets/fonts/华康少女文字W5.ttf
+    - family: 恋星圆体
+      fonts:
+        - asset: assets/fonts/恋星圆体.ttf
+    - family: LOGO圆体
+      fonts:
+        - asset: assets/fonts/LOGO圆体.ttf
+    - family: 萌神手写体
+      fonts:
+        - asset: assets/fonts/萌神手写体.ttf
+    - family: 字体家AI造字福楷
+      fonts:
+        - asset: assets/fonts/字体家AI造字福楷.ttf
+    - family: MapleMono
+      fonts:
+        - asset: assets/fonts/MapleMono-Regular.ttf
+        - asset: assets/fonts/MapleMono-Bold.ttf
+          weight: 700
+    - family: FiraCodeNerdFontMono
+      fonts:
+        - asset: assets/fonts/FiraCodeNerdFontMono-Regular.ttf
+        - asset: assets/fonts/FiraCodeNerdFontMono-Bold.ttf
+          weight: 700
+    - family: ArkPixel
+      fonts:
+        - asset: assets/fonts/ark-pixel-10px-monospaced-zh_cn.ttf

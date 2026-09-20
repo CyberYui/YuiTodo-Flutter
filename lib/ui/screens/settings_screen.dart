@@ -81,11 +81,12 @@ class SettingsScreen extends ConsumerWidget {
           ],
           
           // Font
+          // 字体选择入口：点击打开字体选择器弹窗
           ListTile(
             title: const Text('字体'),
-            subtitle: Text(AppFontPairs.getPair(fontIndex).name),
+            subtitle: Text(AppFontPairs.getPair(fontIndex).name),  // 显示当前选中的字体名称
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showFontPicker(context, ref),
+            onTap: () => _showFontPicker(context, ref),  // 打开字体选择器
           ),
           
           const Divider(),
@@ -281,6 +282,9 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  /// 字体选择器弹窗
+  /// 显示所有可用的字体配对方案
+  /// 用户选择后更新 fontIndexProvider，触发整个应用的字体刷新
   void _showFontPicker(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
@@ -301,17 +305,23 @@ class SettingsScreen extends ConsumerWidget {
                 Expanded(
                   child: ListView.builder(
                     controller: scrollController,
-                    itemCount: AppFontPairs.pairs.length,
+                    itemCount: AppFontPairs.pairs.length,  // 字体配对总数
                     itemBuilder: (context, index) {
-                      final font = AppFontPairs.pairs[index];
-                      final currentIndex = ref.watch(fontIndexProvider);
+                      final font = AppFontPairs.pairs[index];  // 当前字体配对
+                      final currentIndex = ref.watch(fontIndexProvider);  // 当前选中的字体索引
                       return ListTile(
+                        // 字体名称（使用对应字体显示预览）
                         title: Text(font.name, style: TextStyle(fontFamily: font.chineseFontFamily)),
+                        // 字体风格描述
                         subtitle: Text(font.description),
+                        // 选中标记
                         trailing: currentIndex == index
                             ? const Icon(Icons.check)
                             : null,
+                        // 点击选中字体
                         onTap: () {
+                          // 更新字体索引 → 触发 main.dart 中的 build 方法重新执行
+                          // → 重新构建带新字体的 TextTheme → 整个应用字体刷新
                           ref.read(fontIndexProvider.notifier).state = index;
                           Navigator.pop(context);
                         },
