@@ -28,7 +28,7 @@ class AppDatabase {
 
   Future<void> _createTables(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE task (
+      CREATE TABLE IF NOT EXISTS task (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         note TEXT DEFAULT '',
@@ -49,7 +49,7 @@ class AppDatabase {
     ''');
 
     await db.execute('''
-      CREATE TABLE task_step (
+      CREATE TABLE IF NOT EXISTS task_step (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         task_id INTEGER NOT NULL,
         title TEXT NOT NULL,
@@ -60,7 +60,7 @@ class AppDatabase {
     ''');
 
     await db.execute('''
-      CREATE TABLE tag (
+      CREATE TABLE IF NOT EXISTS tag (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
         color TEXT DEFAULT '#6B7280',
@@ -69,7 +69,7 @@ class AppDatabase {
     ''');
 
     await db.execute('''
-      CREATE TABLE task_tag (
+      CREATE TABLE IF NOT EXISTS task_tag (
         task_id INTEGER NOT NULL,
         tag_id INTEGER NOT NULL,
         PRIMARY KEY (task_id, tag_id),
@@ -79,7 +79,7 @@ class AppDatabase {
     ''');
 
     await db.execute('''
-      CREATE TABLE recurrence_rule (
+      CREATE TABLE IF NOT EXISTS recurrence_rule (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         type TEXT NOT NULL,
         interval INTEGER DEFAULT 1,
@@ -93,7 +93,7 @@ class AppDatabase {
     ''');
 
     await db.execute('''
-      CREATE TABLE app_setting (
+      CREATE TABLE IF NOT EXISTS app_setting (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
       )
