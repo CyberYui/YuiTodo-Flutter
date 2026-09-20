@@ -13,9 +13,7 @@
 
 [下载 APK](https://github.com/CyberYui/YuiTodo-Flutter/releases) · [功能介绍](#功能介绍) · [如何使用](#如何使用) · [开发文档](#开发)
 
-<!-- TODO: 截图位置 1 - 主界面截图 -->
-<!-- 请在此处放置主界面截图，展示任务列表和标签筛选 -->
-<!-- 建议尺寸: 300x600 像素 -->
+![主界面截图](.github/images/main.png)
 
 </div>
 
@@ -91,9 +89,7 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 4. **搜索任务**：在主界面点击搜索图标
 5. **查看统计**：在主界面点击统计图标
 
-<!-- TODO: 截图位置 2 - 任务编辑界面截图 -->
-<!-- 请在此处放置任务编辑界面截图，展示颜色/图标/标签选择 -->
-<!-- 建议尺寸: 300x600 像素 -->
+![任务编辑界面截图](.github/images/info.png)
 
 ---
 
@@ -133,6 +129,9 @@ YuiTodo-Flutter/
 ├── assets/
 │   ├── icons/                       # 二次元头像图标（28 个 PNG）
 │   └── fonts/                       # 自定义字体文件（完整版）
+├── .github/
+│   ├── images/                      # README 截图展示
+│   └── workflows/                   # CI/CD 配置
 ├── test/                            # 单元测试和 Widget 测试
 ├── pubspec.yaml                     # 依赖配置
 └── README.md                        # 项目文档
@@ -158,9 +157,7 @@ flutter test
 flutter build apk --release
 ```
 
-<!-- TODO: 截图位置 3 - 统计面板截图 -->
-<!-- 请在此处放置统计面板截图，展示完成率和趋势图 -->
-<!-- 建议尺寸: 300x600 像素 -->
+![统计面板截图](.github/images/hoti.png)
 
 ---
 
