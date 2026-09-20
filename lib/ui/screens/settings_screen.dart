@@ -2,12 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/theme_schemes.dart';
 import '../../core/theme/theme_state.dart';
-import '../../core/theme/font_pairs.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
-
-/// Font index provider
-final fontIndexProvider = StateProvider<int>((ref) => 0);
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -16,7 +12,6 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final themeState = ref.watch(themeStateProvider);
-    final fontIndex = ref.watch(fontIndexProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -25,10 +20,8 @@ class SettingsScreen extends ConsumerWidget {
       ),
       body: ListView(
         children: [
-          // Theme section
           _SectionHeader(title: '外观'),
           
-          // Theme mode
           ListTile(
             title: const Text('主题模式'),
             subtitle: Text(_getThemeModeLabel(themeState.mode)),
@@ -36,7 +29,6 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => _showThemeModePicker(context, ref),
           ),
           
-          // Light theme
           ListTile(
             title: const Text('浅色主题'),
             subtitle: Text(themeSchemes[themeState.lightScheme]?.name ?? ''),
@@ -44,7 +36,6 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => _showLightThemePicker(context, ref),
           ),
           
-          // Dark theme
           ListTile(
             title: const Text('深色主题'),
             subtitle: Text(themeSchemes[themeState.darkScheme]?.name ?? ''),
@@ -52,7 +43,6 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => _showDarkThemePicker(context, ref),
           ),
           
-          // Auto switch by time
           SwitchListTile(
             title: const Text('定时自动切换'),
             subtitle: Text(themeState.autoSwitchByTime 
@@ -64,7 +54,6 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           
-          // Time pickers (only show when auto switch is enabled)
           if (themeState.autoSwitchByTime) ...[
             ListTile(
               title: const Text('深色模式开始时间'),
@@ -80,17 +69,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ],
           
-          // Font
-          ListTile(
-            title: const Text('字体'),
-            subtitle: Text(AppFontPairs.getPair(fontIndex).name),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showFontPicker(context, ref),
-          ),
-          
           const Divider(),
-
-          // Data section
           _SectionHeader(title: '数据管理'),
           ListTile(
             title: const Text('导出数据'),
@@ -124,12 +103,10 @@ class SettingsScreen extends ConsumerWidget {
           ),
           
           const Divider(),
-
-          // About section
           _SectionHeader(title: '关于'),
           const ListTile(
             title: Text('版本'),
-            subtitle: Text('v4.1.0'),
+            subtitle: Text('v3.1.5'),
           ),
           ListTile(
             title: Text('数据存储', style: TextStyle(color: theme.colorScheme.outline)),
@@ -142,12 +119,9 @@ class SettingsScreen extends ConsumerWidget {
 
   String _getThemeModeLabel(ThemeMode mode) {
     switch (mode) {
-      case ThemeMode.light:
-        return '浅色模式';
-      case ThemeMode.dark:
-        return '深色模式';
-      case ThemeMode.system:
-        return '跟随系统';
+      case ThemeMode.light: return '浅色模式';
+      case ThemeMode.dark: return '深色模式';
+      case ThemeMode.system: return '跟随系统';
     }
   }
 
@@ -169,9 +143,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             ListTile(
               title: const Text('浅色模式'),
-              trailing: ref.read(themeStateProvider).mode == ThemeMode.light
-                  ? const Icon(Icons.check)
-                  : null,
+              trailing: ref.read(themeStateProvider).mode == ThemeMode.light ? const Icon(Icons.check) : null,
               onTap: () {
                 ref.read(themeStateProvider.notifier).setMode(ThemeMode.light);
                 Navigator.pop(context);
@@ -179,9 +151,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             ListTile(
               title: const Text('深色模式'),
-              trailing: ref.read(themeStateProvider).mode == ThemeMode.dark
-                  ? const Icon(Icons.check)
-                  : null,
+              trailing: ref.read(themeStateProvider).mode == ThemeMode.dark ? const Icon(Icons.check) : null,
               onTap: () {
                 ref.read(themeStateProvider.notifier).setMode(ThemeMode.dark);
                 Navigator.pop(context);
@@ -189,9 +159,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             ListTile(
               title: const Text('跟随系统'),
-              trailing: ref.read(themeStateProvider).mode == ThemeMode.system
-                  ? const Icon(Icons.check)
-                  : null,
+              trailing: ref.read(themeStateProvider).mode == ThemeMode.system ? const Icon(Icons.check) : null,
               onTap: () {
                 ref.read(themeStateProvider.notifier).setMode(ThemeMode.system);
                 Navigator.pop(context);
@@ -211,7 +179,6 @@ class SettingsScreen extends ConsumerWidget {
         return SizedBox(
           height: MediaQuery.of(context).size.height * 0.5,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -224,9 +191,7 @@ class SettingsScreen extends ConsumerWidget {
                     final scheme = schemes[index];
                     return ListTile(
                       title: Text(themeSchemes[scheme]?.name ?? ''),
-                      trailing: ref.read(themeStateProvider).lightScheme == scheme
-                          ? const Icon(Icons.check)
-                          : null,
+                      trailing: ref.read(themeStateProvider).lightScheme == scheme ? const Icon(Icons.check) : null,
                       onTap: () {
                         ref.read(themeStateProvider.notifier).setLightScheme(scheme);
                         Navigator.pop(context);
@@ -250,7 +215,6 @@ class SettingsScreen extends ConsumerWidget {
         return SizedBox(
           height: MediaQuery.of(context).size.height * 0.5,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -263,9 +227,7 @@ class SettingsScreen extends ConsumerWidget {
                     final scheme = schemes[index];
                     return ListTile(
                       title: Text(themeSchemes[scheme]?.name ?? ''),
-                      trailing: ref.read(themeStateProvider).darkScheme == scheme
-                          ? const Icon(Icons.check)
-                          : null,
+                      trailing: ref.read(themeStateProvider).darkScheme == scheme ? const Icon(Icons.check) : null,
                       onTap: () {
                         ref.read(themeStateProvider.notifier).setDarkScheme(scheme);
                         Navigator.pop(context);
@@ -276,52 +238,6 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  void _showFontPicker(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.3,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text('选择字体', style: Theme.of(context).textTheme.titleLarge),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    itemCount: AppFontPairs.pairs.length,
-                    itemBuilder: (context, index) {
-                      final font = AppFontPairs.pairs[index];
-                      final currentIndex = ref.watch(fontIndexProvider);
-                      return ListTile(
-                        title: Text(font.name, style: TextStyle(fontFamily: font.chineseFontFamily)),
-                        subtitle: Text(font.description),
-                        trailing: currentIndex == index
-                            ? const Icon(Icons.check)
-                            : null,
-                        onTap: () {
-                          ref.read(fontIndexProvider.notifier).state = index;
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
         );
       },
     );
