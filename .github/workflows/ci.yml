@@ -8,15 +8,16 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     
     steps:
     - uses: actions/checkout@v4
     
     - name: Setup Flutter
-      uses: subosito/flutter-action@v2
+      uses: subosito/flutter-action@v4
       with:
         channel: 'stable'
+        architecture: x64
     
     - name: Get dependencies
       run: flutter pub get
@@ -31,16 +32,17 @@ jobs:
       run: dart format --output=none --set-exit-if-changed .
     
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: test
     
     steps:
     - uses: actions/checkout@v4
     
     - name: Setup Flutter
-      uses: subosito/flutter-action@v2
+      uses: subosito/flutter-action@v4
       with:
         channel: 'stable'
+        architecture: x64
     
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -59,3 +61,4 @@ jobs:
       with:
         name: app-release
         path: build/app/outputs/flutter-apk/app-release.apk
+        retention-days: 7
