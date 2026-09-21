@@ -134,6 +134,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           ListTile(
+            title: const Text('测试通知'),
+            subtitle: const Text('发送一条测试通知'),
+            trailing: const Icon(Icons.notifications),
+            onTap: () async {
+              await NotificationService.instance.showTestNotification();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('已发送测试通知，请检查通知栏')),
+                );
+              }
+            },
+          ),
+          ListTile(
             title: Text(
               '提醒说明',
               style: TextStyle(color: theme.colorScheme.outline),

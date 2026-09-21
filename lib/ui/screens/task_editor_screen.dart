@@ -212,14 +212,17 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       }
       if (mounted) Navigator.pop(context);
 
-      // Schedule notification if reminder is set (fire-and-forget, don't block UI)
-      if (_reminderTime != null && _reminderTime! > DateTime.now().millisecondsSinceEpoch) {
-        unawaited(_scheduleNotification(
+      // Schedule notification after pop (fire-and-forget)
+      if (_reminderTime != null && _reminderTime! > DateTime.now().millisecondsSinceEpoch + 5000) {
+        _scheduleNotification(
           taskId,
           _titleController.text.trim(),
           _noteController.text.isNotEmpty ? _noteController.text.trim() : '任务提醒',
           _reminderTime!,
-        ));
+        );
+      } else if (_reminderTime != null) {
+        // Reminder time is too soon (within 5 seconds), skip scheduling
+        debugPrint('Reminder time too soon, skipping notification');
       }
     } catch (e) {
       if (mounted) {

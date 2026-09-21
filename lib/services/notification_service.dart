@@ -50,7 +50,7 @@ class NotificationService {
             'task_reminders',
             'Task Reminders',
             description: 'Notifications for task reminders',
-            importance: Importance.high,
+            importance: Importance.max,
             enableVibration: true,
             playSound: true,
           ),
@@ -91,6 +91,11 @@ class NotificationService {
     return true;
   }
 
+  /// Get pending scheduled notifications (for debugging)
+  Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+    return await _plugin.pendingNotificationRequests();
+  }
+
   Future<void> scheduleReminder({
     required int id,
     required String title,
@@ -99,20 +104,21 @@ class NotificationService {
   }) async {
     await initialize();
 
-    // Ensure scheduled time is in the future
+    // Ensure scheduled time is in the future (at least 5 seconds from now)
     final now = DateTime.now();
-    if (scheduledTime.isBefore(now)) {
-      scheduledTime = now.add(const Duration(minutes: 1));
+    if (scheduledTime.isBefore(now.add(const Duration(seconds: 5)))) {
+      scheduledTime = now.add(const Duration(seconds: 10));
     }
 
     final androidDetails = const AndroidNotificationDetails(
       'task_reminders',
       'Task Reminders',
       channelDescription: 'Notifications for task reminders',
-      importance: Importance.high,
-      priority: Priority.high,
+      importance: Importance.max,
+      priority: Priority.max,
       enableVibration: true,
       playSound: true,
+      autoCancel: true,
     );
 
     const iosDetails = DarwinNotificationDetails();
@@ -122,9 +128,11 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    // Convert DateTime to TZDateTime
-    final location = tz.getLocation('Asia/Shanghai');
+    // Convert DateTime to TZDateTime using local timezone
+    final location = tz.local;
     final tzScheduledTime = tz.TZDateTime.from(scheduledTime, location);
+
+    debugPrint('Scheduling notification: id=$id, title=$title, time=$scheduledTime, tzTime=$tzScheduledTime');
 
     try {
       await _plugin.zonedSchedule(
@@ -133,10 +141,11 @@ class NotificationService {
         body,
         tzScheduledTime,
         details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
       );
+      debugPrint('Notification scheduled successfully');
     } catch (e) {
       debugPrint('Failed to schedule notification: $e');
       rethrow;
@@ -149,5 +158,24 @@ class NotificationService {
 
   Future<void> cancelAll() async {
     await _plugin.cancelAll();
+  }
+
+  /// Show an immediate test notification
+  Future<void> showTestNotification() async {
+    await initialize();
+    await _plugin.show(
+      9999,
+      '测试通知',
+      '通知功能正常工作',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'task_reminders',
+          'Task Reminders',
+          channelDescription: 'Notifications for task reminders',
+          importance: Importance.max,
+          priority: Priority.max,
+        ),
+      ),
+    );
   }
 }
