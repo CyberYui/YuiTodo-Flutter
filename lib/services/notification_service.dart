@@ -38,6 +38,26 @@ class NotificationService {
     );
 
     await _plugin.initialize(settings);
+
+    // Create notification channel for Android
+    if (Platform.isAndroid) {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) {
+        await android.createNotificationChannel(
+          const AndroidNotificationChannel(
+            'task_reminders',
+            'Task Reminders',
+            description: 'Notifications for task reminders',
+            importance: Importance.high,
+            enableVibration: true,
+            playSound: true,
+          ),
+        );
+      }
+    }
+
     _initialized = true;
   }
 
@@ -79,12 +99,20 @@ class NotificationService {
   }) async {
     await initialize();
 
-    final androidDetails = AndroidNotificationDetails(
+    // Ensure scheduled time is in the future
+    final now = DateTime.now();
+    if (scheduledTime.isBefore(now)) {
+      scheduledTime = now.add(const Duration(minutes: 1));
+    }
+
+    final androidDetails = const AndroidNotificationDetails(
       'task_reminders',
       'Task Reminders',
       channelDescription: 'Notifications for task reminders',
       importance: Importance.high,
       priority: Priority.high,
+      enableVibration: true,
+      playSound: true,
     );
 
     const iosDetails = DarwinNotificationDetails();
@@ -98,16 +126,21 @@ class NotificationService {
     final location = tz.getLocation('Asia/Shanghai');
     final tzScheduledTime = tz.TZDateTime.from(scheduledTime, location);
 
-    await _plugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tzScheduledTime,
-      details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        tzScheduledTime,
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (e) {
+      debugPrint('Failed to schedule notification: $e');
+      rethrow;
+    }
   }
 
   Future<void> cancelReminder(int id) async {

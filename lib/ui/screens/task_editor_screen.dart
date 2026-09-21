@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/task.dart';
@@ -209,23 +212,36 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       }
       if (mounted) Navigator.pop(context);
 
-      // Schedule notification if reminder is set
+      // Schedule notification if reminder is set (fire-and-forget, don't block UI)
       if (_reminderTime != null && _reminderTime! > DateTime.now().millisecondsSinceEpoch) {
-        final hasPermission = await NotificationService.instance.requestPermission();
-        if (hasPermission) {
-          await NotificationService.instance.scheduleReminder(
-            id: taskId,
-            title: _titleController.text.trim(),
-            body: _noteController.text.isNotEmpty ? _noteController.text.trim() : '任务提醒',
-            scheduledTime: DateTime.fromMillisecondsSinceEpoch(_reminderTime!),
-          );
-        }
+        unawaited(_scheduleNotification(
+          taskId,
+          _titleController.text.trim(),
+          _noteController.text.isNotEmpty ? _noteController.text.trim() : '任务提醒',
+          _reminderTime!,
+        ));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('保存失败: $e')));
       }
+    }
+  }
+
+  Future<void> _scheduleNotification(int taskId, String title, String body, int reminderEpoch) async {
+    try {
+      final hasPermission = await NotificationService.instance.requestPermission();
+      if (hasPermission) {
+        await NotificationService.instance.scheduleReminder(
+          id: taskId,
+          title: title,
+          body: body,
+          scheduledTime: DateTime.fromMillisecondsSinceEpoch(reminderEpoch),
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed to schedule notification: $e');
     }
   }
 
