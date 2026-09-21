@@ -21,6 +21,9 @@ class TaskColors {
     '#CUSTOM', // Custom color placeholder
   ];
 
+  /// Get only the solid colors (excluding CUSTOM) for color pickers
+  static List<String> get solidColors => all.where((c) => c != '#CUSTOM').toList();
+
   static Color colorFromHex(String hex) {
     if (hex == '#CUSTOM') return Colors.grey.withOpacity(0.3);
     if (hex == '#FFFFFF') return Colors.white;

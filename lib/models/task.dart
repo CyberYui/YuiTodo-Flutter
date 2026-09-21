@@ -16,6 +16,7 @@ class Task {
   final int createdAt;
   final int updatedAt;
   final int? deletedAt;
+  final int? reminderTime; // 提醒时间（epoch ms）
 
   // Relations (not stored in task table)
   final List<TaskStep> steps;
@@ -38,6 +39,7 @@ class Task {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.reminderTime,
     this.steps = const [],
     this.tags = const [],
   });
@@ -59,6 +61,7 @@ class Task {
     int? createdAt,
     int? updatedAt,
     int? deletedAt,
+    int? reminderTime,
     List<TaskStep>? steps,
     List<Tag>? tags,
   }) {
@@ -79,6 +82,7 @@ class Task {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      reminderTime: reminderTime ?? this.reminderTime,
       steps: steps ?? this.steps,
       tags: tags ?? this.tags,
     );
@@ -102,6 +106,7 @@ class Task {
       'created_at': createdAt,
       'updated_at': updatedAt,
       'deleted_at': deletedAt,
+      'reminder_time': reminderTime,
     };
   }
 
@@ -123,6 +128,7 @@ class Task {
       createdAt: map['created_at'] as int,
       updatedAt: map['updated_at'] as int,
       deletedAt: map['deleted_at'] as int?,
+      reminderTime: map['reminder_time'] as int?,
     );
   }
 }
@@ -180,6 +186,20 @@ class Tag {
 
   Map<String, dynamic> toMap() {
     return {'id': id, 'name': name, 'color': color, 'created_at': createdAt};
+  }
+
+  Tag copyWith({
+    int? id,
+    String? name,
+    String? color,
+    int? createdAt,
+  }) {
+    return Tag(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      color: color ?? this.color,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 
   factory Tag.fromMap(Map<String, dynamic> map) {

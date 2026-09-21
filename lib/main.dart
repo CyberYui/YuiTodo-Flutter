@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_state.dart';
 import 'core/theme/theme_schemes.dart';
+import 'services/notification_service.dart';
 import 'ui/screens/home_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.instance.initialize();
   runApp(const ProviderScope(child: YuiTodoApp()));
 }
 

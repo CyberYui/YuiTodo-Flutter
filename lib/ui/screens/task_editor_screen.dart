@@ -12,6 +12,7 @@ import '../widgets/recurrence_selector.dart';
 import '../widgets/reminder_selector.dart';
 import '../widgets/icon_picker.dart';
 import '../../repositories/task_repository.dart';
+import '../../services/notification_service.dart';
 
 class TaskEditorScreen extends ConsumerStatefulWidget {
   final Task? task;
@@ -35,7 +36,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   List<Tag> _selectedTags = [];
   RecurrenceType _recurrenceType = RecurrenceType.none;
   int _recurrenceInterval = 1;
-  List<String> _reminderTimes = [];
+  int? _reminderTime;
   bool _showCustomPaletteIcon = false;
 
   @override
@@ -59,6 +60,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       _icon = widget.task!.icon;
       _steps = widget.task!.steps.toList();
       _selectedTags = widget.task!.tags.toList();
+      _reminderTime = widget.task!.reminderTime;
     }
   }
 
@@ -146,6 +148,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       sortOrder: widget.task?.sortOrder ?? 0,
       createdAt: widget.task?.createdAt ?? now,
       updatedAt: now,
+      reminderTime: _reminderTime,
     );
 
     try {
@@ -205,6 +208,19 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         await ref.read(taskListProvider.notifier).loadTasks();
       }
       if (mounted) Navigator.pop(context);
+
+      // Schedule notification if reminder is set
+      if (_reminderTime != null && _reminderTime! > DateTime.now().millisecondsSinceEpoch) {
+        final hasPermission = await NotificationService.instance.requestPermission();
+        if (hasPermission) {
+          await NotificationService.instance.scheduleReminder(
+            id: taskId,
+            title: _titleController.text.trim(),
+            body: _noteController.text.isNotEmpty ? _noteController.text.trim() : '任务提醒',
+            scheduledTime: DateTime.fromMillisecondsSinceEpoch(_reminderTime!),
+          );
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -543,8 +559,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
           _buildSection(
             title: '提醒',
             child: ReminderSelector(
-              times: _reminderTimes,
-              onChanged: (times) => setState(() => _reminderTimes = times),
+              reminderTime: _reminderTime,
+              onChanged: (time) => setState(() => _reminderTime = time),
             ),
           ),
           const SizedBox(height: 16),

@@ -3,14 +3,54 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/theme_schemes.dart';
 import '../../core/theme/theme_state.dart';
+import '../../services/notification_permission_state.dart';
+import '../../services/notification_service.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool? _hasNotificationPermission;
+  bool _isCheckingPermission = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkNotificationPermission();
+  }
+
+  Future<void> _checkNotificationPermission() async {
+    final granted = await NotificationService.instance.checkPermission();
+    if (mounted) {
+      setState(() {
+        _hasNotificationPermission = granted;
+        _isCheckingPermission = false;
+      });
+    }
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    final granted = await NotificationService.instance.requestPermission();
+    if (mounted) {
+      setState(() {
+        _hasNotificationPermission = granted;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(granted ? '已授权通知权限' : '通知权限被拒绝'),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeState = ref.watch(themeStateProvider);
 
@@ -80,6 +120,26 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => _showTimePicker(context, ref, isStartTime: false),
             ),
           ],
+
+          const Divider(),
+          _SectionHeader(title: '通知'),
+          ListTile(
+            title: const Text('通知权限'),
+            subtitle: _isCheckingPermission
+                ? const Text('检查中...')
+                : Text(_hasNotificationPermission == true ? '已授权' : '未授权'),
+            trailing: TextButton(
+              onPressed: _requestNotificationPermission,
+              child: Text(_hasNotificationPermission == true ? '重新授权' : '申请授权'),
+            ),
+          ),
+          ListTile(
+            title: Text(
+              '提醒说明',
+              style: TextStyle(color: theme.colorScheme.outline),
+            ),
+            subtitle: const Text('开启通知权限后，任务提醒将在指定时间推送'),
+          ),
 
           const Divider(),
           _SectionHeader(title: '数据管理'),

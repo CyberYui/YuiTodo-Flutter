@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 class ReminderSelector extends StatelessWidget {
-  final List<String> times;
-  final ValueChanged<List<String>> onChanged;
+  final int? reminderTime; // epoch ms
+  final ValueChanged<int?> onChanged;
 
   const ReminderSelector({
     super.key,
-    required this.times,
+    this.reminderTime,
     required this.onChanged,
   });
 
@@ -15,78 +15,91 @@ class ReminderSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (times.isEmpty)
+        if (reminderTime == null)
           TextButton.icon(
-            onPressed: () => _addTime(context),
+            onPressed: () => _addReminder(context),
             icon: const Icon(Icons.add),
             label: const Text('添加提醒'),
           )
-        else
-          ...times.asMap().entries.map((entry) {
-            final index = entry.key;
-            final time = entry.value;
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.notifications_outlined),
-              title: Text(time),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => _editTime(context, index),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      final newTimes = List<String>.from(times)
-                        ..removeAt(index);
-                      onChanged(newTimes);
-                    },
-                  ),
-                ],
-              ),
-            );
-          }),
-        if (times.isNotEmpty)
-          TextButton.icon(
-            onPressed: () => _addTime(context),
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('添加提醒'),
+        else ...[
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.notifications_outlined),
+            title: Text(_formatDateTime(reminderTime!)),
+            subtitle: const Text('到期时通知提醒'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => _editReminder(context),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => onChanged(null),
+                ),
+              ],
+            ),
           ),
+        ],
       ],
     );
   }
 
-  Future<void> _addTime(BuildContext context) async {
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (time != null) {
-      final timeStr =
-          '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-      final newTimes = List<String>.from(times)..add(timeStr);
-      onChanged(newTimes);
-    }
+  String _formatDateTime(int epochMs) {
+    final dt = DateTime.fromMillisecondsSinceEpoch(epochMs);
+    final now = DateTime.now();
+    final isToday = dt.year == now.year && dt.month == now.month && dt.day == now.day;
+    final isTomorrow = dt.year == now.year && dt.month == now.month && dt.day == now.day + 1;
+    
+    final timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    
+    if (isToday) return '今天 $timeStr';
+    if (isTomorrow) return '明天 $timeStr';
+    return '${dt.month}月${dt.day}日 $timeStr';
   }
 
-  Future<void> _editTime(BuildContext context, int index) async {
-    final timeParts = times[index].split(':');
-    final initialTime = TimeOfDay(
-      hour: int.tryParse(timeParts[0]) ?? 0,
-      minute: int.tryParse(timeParts[1]) ?? 0,
+  Future<void> _addReminder(BuildContext context) async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: now.add(const Duration(hours: 1)),
+      firstDate: now,
+      lastDate: DateTime(now.year + 5),
     );
+    if (date == null) return;
+    if (!context.mounted) return;
+    
     final time = await showTimePicker(
       context: context,
-      initialTime: initialTime,
+      initialTime: TimeOfDay(hour: now.hour, minute: now.minute),
     );
-    if (time != null) {
-      final timeStr =
-          '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-      final newTimes = List<String>.from(times);
-      newTimes[index] = timeStr;
-      onChanged(newTimes);
-    }
+    if (time == null) return;
+    
+    final reminderDt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    onChanged(reminderDt.millisecondsSinceEpoch);
+  }
+
+  Future<void> _editReminder(BuildContext context) async {
+    if (reminderTime == null) return;
+    final current = DateTime.fromMillisecondsSinceEpoch(reminderTime!);
+    
+    final date = await showDatePicker(
+      context: context,
+      initialDate: current,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(DateTime.now().year + 5),
+    );
+    if (date == null) return;
+    if (!context.mounted) return;
+    
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: current.hour, minute: current.minute),
+    );
+    if (time == null) return;
+    
+    final reminderDt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    onChanged(reminderDt.millisecondsSinceEpoch);
   }
 }

@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -44,7 +44,8 @@ class AppDatabase {
         sort_order INTEGER DEFAULT 0,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
-        deleted_at INTEGER
+        deleted_at INTEGER,
+        reminder_time INTEGER
       )
     ''');
 
@@ -125,7 +126,9 @@ class AppDatabase {
     int oldVersion,
     int newVersion,
   ) async {
-    // Future migration logic here
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE task ADD COLUMN reminder_time INTEGER');
+    }
   }
 
   Future<void> close() async {

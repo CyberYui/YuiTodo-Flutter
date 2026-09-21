@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -17,9 +19,9 @@ class NotificationService {
       '@mipmap/ic_launcher',
     );
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     const settings = InitializationSettings(
@@ -31,14 +33,30 @@ class NotificationService {
     _initialized = true;
   }
 
-  Future<bool> requestPermissions() async {
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    if (android != null) {
-      final granted = await android.requestNotificationsPermission();
-      return granted ?? false;
+  /// Check if notification permission is granted (without requesting)
+  Future<bool> checkPermission() async {
+    if (Platform.isAndroid) {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) {
+        final granted = await android.areNotificationsEnabled();
+        return granted ?? false;
+      }
+    }
+    return true;
+  }
+
+  /// Request notification permission from system
+  Future<bool> requestPermission() async {
+    if (!kIsWeb && Platform.isAndroid) {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) {
+        final granted = await android.requestNotificationsPermission();
+        return granted ?? false;
+      }
     }
     return true;
   }
