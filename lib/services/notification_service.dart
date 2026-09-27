@@ -13,15 +13,21 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
   bool _tzInitialized = false;
+  tz.Location? _location;
+
+  Future<void> _ensureTimezoneInitialized() async {
+    if (!_tzInitialized) {
+      tz_data.initializeTimeZones();
+      _location = tz.getLocation('Asia/Shanghai');
+      _tzInitialized = true;
+    }
+  }
 
   Future<void> initialize() async {
     if (_initialized) return;
 
-    // Initialize timezone data
-    if (!_tzInitialized) {
-      tz_data.initializeTimeZones();
-      _tzInitialized = true;
-    }
+    // Initialize timezone data first
+    await _ensureTimezoneInitialized();
 
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
@@ -129,7 +135,7 @@ class NotificationService {
     );
 
     // Convert DateTime to TZDateTime using local timezone
-    final location = tz.local;
+    final location = _location ?? tz.getLocation('Asia/Shanghai');
     final tzScheduledTime = tz.TZDateTime.from(scheduledTime, location);
 
     debugPrint('Scheduling notification: id=$id, title=$title, time=$scheduledTime, tzTime=$tzScheduledTime');

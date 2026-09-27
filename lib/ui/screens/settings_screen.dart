@@ -7,8 +7,7 @@ import '../../core/theme/font_pairs.dart';
 import '../../services/notification_service.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
-
-final fontIndexProvider = StateProvider<int>((ref) => 0);
+import '../../providers/font_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
