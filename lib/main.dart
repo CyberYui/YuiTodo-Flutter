@@ -4,8 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_state.dart';
 import 'core/theme/theme_schemes.dart';
-import 'core/theme/font_pairs.dart';
-import 'providers/font_provider.dart';
 import 'services/notification_service.dart';
 import 'ui/screens/home_screen.dart';
 
@@ -26,10 +24,6 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
   @override
   Widget build(BuildContext context) {
     final themeState = ref.watch(themeStateProvider);
-    final fontIndex = ref.watch(fontIndexProvider);
-
-    final fontPair = AppFontPairs.getPair(fontIndex);
-    final fontFamily = fontPair.chineseFontFamily ?? fontPair.englishFontFamily;
 
     final lightScheme = themeSchemes[themeState.lightScheme];
     final darkScheme = themeSchemes[themeState.darkScheme];
@@ -41,38 +35,12 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
         ? darkThemeForScheme(darkScheme)
         : darkTheme;
 
-    TextTheme buildTextTheme(TextTheme base) {
-      if (fontFamily == null) return base;
-
-      return base.copyWith(
-        displayLarge: base.displayLarge?.copyWith(fontFamily: fontFamily),
-        displayMedium: base.displayMedium?.copyWith(fontFamily: fontFamily),
-        displaySmall: base.displaySmall?.copyWith(fontFamily: fontFamily),
-        headlineLarge: base.headlineLarge?.copyWith(fontFamily: fontFamily),
-        headlineMedium: base.headlineMedium?.copyWith(fontFamily: fontFamily),
-        headlineSmall: base.headlineSmall?.copyWith(fontFamily: fontFamily),
-        titleLarge: base.titleLarge?.copyWith(fontFamily: fontFamily),
-        titleMedium: base.titleMedium?.copyWith(fontFamily: fontFamily),
-        titleSmall: base.titleSmall?.copyWith(fontFamily: fontFamily),
-        bodyLarge: base.bodyLarge?.copyWith(fontFamily: fontFamily),
-        bodyMedium: base.bodyMedium?.copyWith(fontFamily: fontFamily),
-        bodySmall: base.bodySmall?.copyWith(fontFamily: fontFamily),
-        labelLarge: base.labelLarge?.copyWith(fontFamily: fontFamily),
-        labelMedium: base.labelMedium?.copyWith(fontFamily: fontFamily),
-        labelSmall: base.labelSmall?.copyWith(fontFamily: fontFamily),
-      );
-    }
-
     return MaterialApp(
       title: 'YuiTodo',
       debugShowCheckedModeBanner: false,
       themeMode: themeState.mode,
-      theme: baseLightTheme.copyWith(
-        textTheme: buildTextTheme(baseLightTheme.textTheme),
-      ),
-      darkTheme: baseDarkTheme.copyWith(
-        textTheme: buildTextTheme(baseDarkTheme.textTheme),
-      ),
+      theme: baseLightTheme,
+      darkTheme: baseDarkTheme,
       home: const HomeScreen(),
     );
   }
