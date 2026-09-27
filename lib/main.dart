@@ -5,6 +5,7 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_state.dart';
 import 'core/theme/theme_schemes.dart';
 import 'core/theme/font_pairs.dart';
+import 'providers/font_provider.dart';
 import 'services/notification_service.dart';
 import 'ui/screens/home_screen.dart';
 
