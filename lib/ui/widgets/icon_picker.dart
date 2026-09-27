@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/icons/app_icons.dart';
 import '../../core/icons/flat_icon_mapper.dart';
 
@@ -15,7 +16,8 @@ class IconPickerBottomSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<IconPickerBottomSheet> createState() => _IconPickerBottomSheetState();
+  ConsumerState<IconPickerBottomSheet> createState() =>
+      _IconPickerBottomSheetState();
 }
 
 class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
@@ -86,9 +88,13 @@ class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
-                    onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                    onChanged: (v) =>
+                        setState(() => _searchQuery = v.toLowerCase()),
                   ),
                 ],
               ),
@@ -122,16 +128,17 @@ class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
             const SizedBox(height: 8),
 
             // Icon grid
-            Expanded(
-              child: _buildIconGrid(context, scrollController),
-            ),
+            Expanded(child: _buildIconGrid(context, scrollController)),
           ],
         );
       },
     );
   }
 
-  Widget _buildIconGrid(BuildContext context, ScrollController scrollController) {
+  Widget _buildIconGrid(
+    BuildContext context,
+    ScrollController scrollController,
+  ) {
     final icons = _getFilteredIcons();
     final displayIcons = icons.take(_displayCount).toList();
     final hasMore = icons.length > _displayCount;
@@ -146,41 +153,48 @@ class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
             crossAxisSpacing: 8,
             childAspectRatio: 1,
           ),
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final iconName = displayIcons[index];
-              final isSelected = widget.selectedIcon == iconName;
-              final isAvatar = AppIcons.isAvatar(iconName);
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final iconName = displayIcons[index];
+            final isSelected = widget.selectedIcon == iconName;
+            final isAvatar = AppIcons.isAvatar(iconName);
 
-              return GestureDetector(
-                onTap: () => widget.onSelected(iconName),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : null,
-                    borderRadius: BorderRadius.circular(12),
-                    border: isSelected
-                        ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
-                        : Border.all(color: Colors.grey.withOpacity(0.2)),
-                  ),
-                  child: isAvatar
-                      ? Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Image.asset(
-                            'assets/icons/$iconName.png',
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.help_outline, color: Colors.grey),
-                          ),
+            return GestureDetector(
+              onTap: () => widget.onSelected(iconName),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                      : null,
+                  borderRadius: BorderRadius.circular(12),
+                  border: isSelected
+                      ? Border.all(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 2,
                         )
-                      : Icon(
-                          FlatIconMapper.getIcon(iconName),
-                          size: 24,
-                          color: isSelected ? Theme.of(context).colorScheme.primary : null,
-                        ),
+                      : Border.all(color: Colors.grey.withOpacity(0.2)),
                 ),
-              );
-            },
-            childCount: displayIcons.length,
-          ),
+                child: isAvatar
+                    ? Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Image.asset(
+                          'assets/icons/$iconName.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.help_outline,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        FlatIconMapper.getIcon(iconName),
+                        size: 24,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                      ),
+              ),
+            );
+          }, childCount: displayIcons.length),
         ),
         if (hasMore)
           SliverToBoxAdapter(
@@ -201,7 +215,7 @@ class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
 
   List<String> _getFilteredIcons() {
     List<String> icons = [];
-    
+
     if (_selectedCategory == 'all' || _selectedCategory == 'avatar') {
       for (final name in AppIcons.avatarNames) {
         if (_searchQuery.isEmpty || name.toLowerCase().contains(_searchQuery)) {
@@ -209,17 +223,18 @@ class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
         }
       }
     }
-    
+
     if (_selectedCategory != 'avatar') {
       for (final icon in AppIcons.flatIcons) {
         if (_selectedCategory == 'all' || icon.category == _selectedCategory) {
-          if (_searchQuery.isEmpty || icon.name.toLowerCase().contains(_searchQuery)) {
+          if (_searchQuery.isEmpty ||
+              icon.name.toLowerCase().contains(_searchQuery)) {
             icons.add(icon.name);
           }
         }
       }
     }
-    
+
     return icons;
   }
 }

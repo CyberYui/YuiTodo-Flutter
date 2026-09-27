@@ -19,7 +19,8 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
 
   bool get isDark {
     if (state == ThemeMode.system) {
-      return WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+      return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+          Brightness.dark;
     }
     return state == ThemeMode.dark;
   }

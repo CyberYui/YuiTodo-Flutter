@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Smart filter provider
-final smartFilterProvider = StateNotifierProvider<SmartFilterNotifier, String>((ref) {
+final smartFilterProvider = StateNotifierProvider<SmartFilterNotifier, String>((
+  ref,
+) {
   return SmartFilterNotifier();
 });
 

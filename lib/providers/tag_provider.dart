@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/task.dart';
 import '../repositories/task_repository.dart';
 
 /// Tag list provider
-final tagListProvider = StateNotifierProvider<TagNotifier, AsyncValue<List<Tag>>>((ref) {
-  return TagNotifier(ref.watch(taskRepositoryProvider));
-});
+final tagListProvider =
+    StateNotifierProvider<TagNotifier, AsyncValue<List<Tag>>>((ref) {
+      return TagNotifier(ref.watch(taskRepositoryProvider));
+    });
 
 class TagNotifier extends StateNotifier<AsyncValue<List<Tag>>> {
   final TaskRepository _repo;
@@ -29,6 +31,26 @@ class TagNotifier extends StateNotifier<AsyncValue<List<Tag>>> {
     await loadTags();
   }
 
+  Future<void> updateTag(Tag tag) async {
+    await _repo.updateTag(tag);
+    await loadTags();
+  }
+
+  Future<void> updateTaskTags(int taskId, List<Tag> tags) async {
+    // First remove all existing tags for this task
+    final existing = await _repo.getTagsForTask(taskId);
+    for (final tag in existing) {
+      await _repo.removeTagFromTask(taskId, tag.id!);
+    }
+    // Then add new tags
+    for (final tag in tags) {
+      if (tag.id != null) {
+        await _repo.addTagToTask(taskId, tag.id!);
+      }
+    }
+    await loadTags();
+  }
+
   Future<void> deleteTag(int tagId) async {
     await _repo.deleteTag(tagId);
     await loadTags();
@@ -46,7 +68,9 @@ class TagNotifier extends StateNotifier<AsyncValue<List<Tag>>> {
 }
 
 /// Selection mode provider for multi-select
-final selectionProvider = StateNotifierProvider<SelectionNotifier, List<int>>((ref) {
+final selectionProvider = StateNotifierProvider<SelectionNotifier, List<int>>((
+  ref,
+) {
   return SelectionNotifier();
 });
 

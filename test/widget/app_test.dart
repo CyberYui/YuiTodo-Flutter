@@ -7,7 +7,7 @@ void main() {
   group('YuiTodoApp', () {
     testWidgets('renders MaterialApp with correct title', (tester) async {
       await tester.pumpWidget(const ProviderScope(child: YuiTodoApp()));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.text('YuiTodo'), findsOneWidget);
     });

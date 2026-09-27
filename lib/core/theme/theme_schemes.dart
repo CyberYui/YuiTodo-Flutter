@@ -25,7 +25,7 @@ class ThemeScheme {
   final Color darkBackground;
   final Color darkSurface;
   final Color darkAppBar;
-  
+
   const ThemeScheme({
     required this.name,
     required this.lightPrimary,

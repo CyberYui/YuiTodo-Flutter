@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/task.dart';
 import '../core/database/database.dart';
 
@@ -17,22 +19,22 @@ class BackupService {
   /// Export all data to JSON file
   Future<String> export() async {
     final db = await _db.database;
-    
+
     // Get all tasks
     final taskMaps = await db.query(
       'task',
       where: 'deleted_at IS NULL OR deleted_at = 0',
     );
-    
+
     // Get all tags
     final tagMaps = await db.query('tag');
-    
+
     // Get all task-tag relations
     final taskTagMaps = await db.query('task_tag');
-    
+
     // Get all steps
     final stepMaps = await db.query('task_step');
-    
+
     // Get all recurrence rules
     final recurrenceMaps = await db.query('recurrence_rule');
 
@@ -100,9 +102,9 @@ class BackupService {
   bool isValidBackup(String jsonString) {
     try {
       final data = jsonDecode(jsonString) as Map<String, dynamic>;
-      return data.containsKey('version') && 
-             data.containsKey('tasks') && 
-             data['tasks'] is List;
+      return data.containsKey('version') &&
+          data.containsKey('tasks') &&
+          data['tasks'] is List;
     } catch (_) {
       return false;
     }
