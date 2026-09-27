@@ -3,11 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/theme_schemes.dart';
 import '../../core/theme/theme_state.dart';
-import '../../core/theme/font_pairs.dart';
 import '../../services/notification_service.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
-import '../../providers/font_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -122,14 +120,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
 
-          // Font
-          ListTile(
-            title: const Text('字体'),
-            subtitle: Text(AppFontPairs.getPair(ref.read(fontIndexProvider)).name),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showFontPicker(context, ref),
-          ),
-
           const Divider(),
           _SectionHeader(title: '通知'),
           ListTile(
@@ -198,7 +188,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const Divider(),
           _SectionHeader(title: '关于'),
-          const ListTile(title: Text('版本'), subtitle: Text('v3.1.5')),
+          const ListTile(title: Text('版本'), subtitle: Text('v3.1.8')),
           ListTile(
             title: Text(
               '数据存储',
@@ -360,53 +350,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  /// 字体选择器弹窗
-  void _showFontPicker(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.3,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text('选择字体', style: Theme.of(context).textTheme.titleLarge),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    itemCount: AppFontPairs.pairs.length,
-                    itemBuilder: (context, index) {
-                      final font = AppFontPairs.pairs[index];
-                      final currentIndex = ref.watch(fontIndexProvider);
-                      return ListTile(
-                        title: Text(font.name, style: TextStyle(fontFamily: font.chineseFontFamily)),
-                        subtitle: Text(font.description),
-                        trailing: currentIndex == index
-                            ? const Icon(Icons.check)
-                            : null,
-                        onTap: () {
-                          ref.read(fontIndexProvider.notifier).state = index;
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
         );
       },
     );
