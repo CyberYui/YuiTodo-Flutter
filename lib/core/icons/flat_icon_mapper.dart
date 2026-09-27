@@ -30,7 +30,7 @@ class FlatIconMapper {
       'arrow-square-up-left': Icons.north_west,
       'arrow-square-down-right': Icons.south_east,
       'arrow-square-down-left': Icons.south_west,
-      
+
       // Notifications
       'bell': Icons.notifications,
       'bell-ringing': Icons.notifications_active,
@@ -46,7 +46,7 @@ class FlatIconMapper {
       'envelope': Icons.email,
       'envelope-open': Icons.mail_outline,
       'envelope-simple': Icons.mail,
-      
+
       // Time
       'calendar-blank': Icons.calendar_today,
       'calendar-check': Icons.event_available,
@@ -63,7 +63,7 @@ class FlatIconMapper {
       'hourglass-medium': Icons.hourglass_full,
       'watch': Icons.watch,
       'stopwatch': Icons.timer_outlined,
-      
+
       // Files
       'folder': Icons.folder,
       'folder-open': Icons.folder_open,
@@ -81,7 +81,7 @@ class FlatIconMapper {
       'file-pdf': Icons.picture_as_pdf,
       'file-doc': Icons.article,
       'archive': Icons.archive,
-      
+
       // Actions
       'star': Icons.star,
       'star-half': Icons.star_half,
@@ -103,7 +103,7 @@ class FlatIconMapper {
       'x-circle': Icons.cancel,
       'plus': Icons.add,
       'minus': Icons.remove,
-      
+
       // Communication
       'phone': Icons.phone,
       'phone-call': Icons.call,
@@ -119,7 +119,7 @@ class FlatIconMapper {
       'link-break': Icons.link_off,
       'share': Icons.share,
       'paper-plane': Icons.send,
-      
+
       // Media
       'image': Icons.image,
       'image-square': Icons.crop_square,
@@ -140,7 +140,7 @@ class FlatIconMapper {
       'pause': Icons.pause,
       'skip-forward': Icons.skip_next,
       'skip-back': Icons.skip_previous,
-      
+
       // Weather
       'sun': Icons.wb_sunny,
       'sun-dim': Icons.wb_sunny_outlined,
@@ -158,7 +158,7 @@ class FlatIconMapper {
       'thermometer': Icons.thermostat,
       'drop': Icons.water_drop,
       'fire': Icons.whatshot,
-      
+
       // Food & Drink
       'coffee': Icons.coffee,
       'wine': Icons.wine_bar,
@@ -175,7 +175,7 @@ class FlatIconMapper {
       'cooking-pot': Icons.ramen_dining,
       'knife': Icons.content_cut,
       'fork': Icons.restaurant,
-      
+
       // Travel & Places
       'airplane': Icons.flight,
       'airplane-tilt': Icons.flight_takeoff,
@@ -195,7 +195,7 @@ class FlatIconMapper {
       'palmtree': Icons.nature,
       'buildings': Icons.location_city,
       'house-line': Icons.house,
-      
+
       // Objects & Things
       'lightbulb': Icons.lightbulb,
       'battery-full': Icons.battery_full,
@@ -236,7 +236,7 @@ class FlatIconMapper {
       'satellite': Icons.satellite_alt,
       'radar': Icons.radar,
       'plug-charging': Icons.electrical_services,
-      
+
       // Symbols & Signs
       'info': Icons.info,
       'warning': Icons.warning,
@@ -334,7 +334,7 @@ class FlatIconMapper {
       'road-horizon': Icons.edit_road,
       'bridge': Icons.architecture,
     };
-    
+
     return iconMap[name] ?? Icons.help_outline;
   }
 }

@@ -4,30 +4,53 @@ class IconData {
   final String? assetPath;
   final String? codePoint;
   final String category;
-  
+
   const IconData({
     required this.name,
     this.assetPath,
     this.codePoint,
     this.category = 'general',
   });
-  
+
   String get displayLabel => name;
 }
 
 /// All app icons (200+)
 class AppIcons {
   AppIcons._();
-  
+
   /// 28 built-in avatar icons (PNG assets)
   static const List<String> avatarNames = [
-    'aimisi', 'anke', 'bachi', 'buouxiong', 'changli', 'chun',
-    'dengdeng', 'feibi', 'huimu', 'jinxi', 'katixiya', 'kelaita',
-    'lamiya', 'lilisi', 'luokeke', 'luxiya', 'misaiya', 'moning',
-    'qianxiao', 'qishi', 'qu', 'taoqi', 'wanhua', 'woman',
-    'yalisha', 'yangyang', 'zhezhi', 'zhixia',
+    'aimisi',
+    'anke',
+    'bachi',
+    'buouxiong',
+    'changli',
+    'chun',
+    'dengdeng',
+    'feibi',
+    'huimu',
+    'jinxi',
+    'katixiya',
+    'kelaita',
+    'lamiya',
+    'lilisi',
+    'luokeke',
+    'luxiya',
+    'misaiya',
+    'moning',
+    'qianxiao',
+    'qishi',
+    'qu',
+    'taoqi',
+    'wanhua',
+    'woman',
+    'yalisha',
+    'yangyang',
+    'zhezhi',
+    'zhixia',
   ];
-  
+
   /// 200+ flat/vector icons (Phosphor Icons style names mapped to Material)
   static const List<IconData> flatIcons = [
     // Category: Navigation (20 icons)
@@ -51,7 +74,7 @@ class AppIcons {
     IconData(name: 'crosshair', category: 'navigation'),
     IconData(name: 'crosshair-simple', category: 'navigation'),
     IconData(name: 'target', category: 'navigation'),
-    
+
     // Category: Notifications (15 icons)
     IconData(name: 'bell', category: 'notifications'),
     IconData(name: 'bell-ringing', category: 'notifications'),
@@ -68,7 +91,7 @@ class AppIcons {
     IconData(name: 'envelope-open', category: 'notifications'),
     IconData(name: 'envelope-simple', category: 'notifications'),
     IconData(name: 'envelope-simple-open', category: 'notifications'),
-    
+
     // Category: Time (15 icons)
     IconData(name: 'calendar-blank', category: 'time'),
     IconData(name: 'calendar-check', category: 'time'),
@@ -85,7 +108,7 @@ class AppIcons {
     IconData(name: 'hourglass-medium', category: 'time'),
     IconData(name: 'watch', category: 'time'),
     IconData(name: 'stopwatch', category: 'time'),
-    
+
     // Category: Files (15 icons)
     IconData(name: 'folder', category: 'files'),
     IconData(name: 'folder-open', category: 'files'),
@@ -102,7 +125,7 @@ class AppIcons {
     IconData(name: 'file-minus', category: 'files'),
     IconData(name: 'file-pdf', category: 'files'),
     IconData(name: 'file-doc', category: 'files'),
-    
+
     // Category: Actions (20 icons)
     IconData(name: 'star', category: 'actions'),
     IconData(name: 'star-half', category: 'actions'),
@@ -124,7 +147,7 @@ class AppIcons {
     IconData(name: 'x-circle', category: 'actions'),
     IconData(name: 'plus', category: 'actions'),
     IconData(name: 'minus', category: 'actions'),
-    
+
     // Category: Arrows (15 icons)
     IconData(name: 'arrow-right', category: 'arrows'),
     IconData(name: 'arrow-left', category: 'arrows'),
@@ -141,7 +164,7 @@ class AppIcons {
     IconData(name: 'arrow-square-up-right', category: 'arrows'),
     IconData(name: 'arrow-square-up-left', category: 'arrows'),
     IconData(name: 'arrow-square-down-right', category: 'arrows'),
-    
+
     // Category: Communication (15 icons)
     IconData(name: 'envelope', category: 'communication'),
     IconData(name: 'chat-circle', category: 'communication'),
@@ -158,7 +181,7 @@ class AppIcons {
     IconData(name: 'link', category: 'communication'),
     IconData(name: 'link-break', category: 'communication'),
     IconData(name: 'share', category: 'communication'),
-    
+
     // Category: Media (15 icons)
     IconData(name: 'image', category: 'media'),
     IconData(name: 'image-square', category: 'media'),
@@ -175,7 +198,7 @@ class AppIcons {
     IconData(name: 'headphones', category: 'media'),
     IconData(name: 'speaker', category: 'media'),
     IconData(name: 'speaker-simple-none', category: 'media'),
-    
+
     // Category: Weather (15 icons)
     IconData(name: 'sun', category: 'weather'),
     IconData(name: 'sun-dim', category: 'weather'),
@@ -192,7 +215,7 @@ class AppIcons {
     IconData(name: 'wind', category: 'weather'),
     IconData(name: 'thermometer', category: 'weather'),
     IconData(name: 'drop', category: 'weather'),
-    
+
     // Category: Food & Drink (15 icons)
     IconData(name: 'coffee', category: 'food'),
     IconData(name: 'wine', category: 'food'),
@@ -209,7 +232,7 @@ class AppIcons {
     IconData(name: 'cooking-pot', category: 'food'),
     IconData(name: 'knife', category: 'food'),
     IconData(name: 'fork', category: 'food'),
-    
+
     // Category: Travel & Places (20 icons)
     IconData(name: 'airplane', category: 'travel'),
     IconData(name: 'airplane-tilt', category: 'travel'),
@@ -231,7 +254,7 @@ class AppIcons {
     IconData(name: 'buildings', category: 'travel'),
     IconData(name: 'house-line', category: 'travel'),
     IconData(name: 'globe', category: 'travel'),
-    
+
     // Category: Objects & Things (20 icons)
     IconData(name: 'lightbulb', category: 'objects'),
     IconData(name: 'battery-full', category: 'objects'),
@@ -253,7 +276,7 @@ class AppIcons {
     IconData(name: 'lock-open', category: 'objects'),
     IconData(name: 'key', category: 'objects'),
     IconData(name: 'shield', category: 'objects'),
-    
+
     // Category: Symbols & Signs (30 icons)
     IconData(name: 'info', category: 'symbols'),
     IconData(name: 'warning', category: 'symbols'),
@@ -286,13 +309,16 @@ class AppIcons {
     IconData(name: 'paint-bucket', category: 'symbols'),
     IconData(name: 'palette', category: 'symbols'),
   ];
-  
+
   /// Get all icon names (avatar + flat)
-  static List<String> get all => [...avatarNames, ...flatIcons.map((i) => i.name)];
-  
+  static List<String> get all => [
+    ...avatarNames,
+    ...flatIcons.map((i) => i.name),
+  ];
+
   /// Get avatar icon path
   static String avatarPath(String name) => 'assets/icons/$name.png';
-  
+
   /// Get flat icon data
   static IconData? flatIcon(String name) {
     try {
@@ -301,10 +327,10 @@ class AppIcons {
       return null;
     }
   }
-  
+
   /// Check if icon is avatar (PNG asset)
   static bool isAvatar(String name) => avatarNames.contains(name);
-  
+
   /// Get icon by name (returns path or null for flat icons)
   static String? pathFor(String name) {
     if (isAvatar(name)) return avatarPath(name);

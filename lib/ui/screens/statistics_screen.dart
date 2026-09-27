@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/task.dart';
 import '../../providers/task_provider.dart';
 import '../../statistics/statistics_calculator.dart';
@@ -14,9 +15,7 @@ class StatisticsScreen extends ConsumerWidget {
     final tasksAsync = ref.watch(taskListProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('统计'),
-      ),
+      appBar: AppBar(title: const Text('统计')),
       body: tasksAsync.when(
         data: (tasks) {
           final stats = StatisticsCalculator.calculate(tasks);
@@ -34,7 +33,13 @@ class StatisticsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('今日进度', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                        const Text(
+                          '今日进度',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         const SizedBox(height: 12),
                         Row(
                           children: [
@@ -54,7 +59,8 @@ class StatisticsScreen extends ConsumerWidget {
                                     '已完成',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                      color: theme.colorScheme.onSurface
+                                          .withOpacity(0.6),
                                     ),
                                   ),
                                 ],
@@ -66,7 +72,8 @@ class StatisticsScreen extends ConsumerWidget {
                               child: CircularProgressIndicator(
                                 value: todayProgress,
                                 strokeWidth: 8,
-                                backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                                backgroundColor: theme.colorScheme.primary
+                                    .withOpacity(0.1),
                               ),
                             ),
                           ],
@@ -130,7 +137,13 @@ class StatisticsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('完成率', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                        const Text(
+                          '完成率',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           '${(stats.completionRate * 100).toStringAsFixed(1)}%',
@@ -153,7 +166,13 @@ class StatisticsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('近 30 天趋势', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                        const Text(
+                          '近 30 天趋势',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         SizedBox(
                           height: 100,
@@ -162,9 +181,13 @@ class StatisticsScreen extends ConsumerWidget {
                             itemCount: stats.dailyCompletions.length,
                             itemBuilder: (context, index) {
                               final day = stats.dailyCompletions[index];
-                              final height = day.total > 0 ? (day.completed / day.total) * 80.0 : 0.0;
+                              final height = day.total > 0
+                                  ? (day.completed / day.total) * 80.0
+                                  : 0.0;
                               return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 2,
+                                ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
@@ -172,7 +195,8 @@ class StatisticsScreen extends ConsumerWidget {
                                       width: 16,
                                       height: height + 4,
                                       decoration: BoxDecoration(
-                                        color: theme.colorScheme.primary.withOpacity(0.7),
+                                        color: theme.colorScheme.primary
+                                            .withOpacity(0.7),
                                         borderRadius: BorderRadius.circular(2),
                                       ),
                                     ),
@@ -200,7 +224,13 @@ class StatisticsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('年度热力图', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                        const Text(
+                          '年度热力图',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         const SizedBox(height: 12),
                         AnnualHeatmap(
                           data: stats.heatmapData,

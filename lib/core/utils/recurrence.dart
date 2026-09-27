@@ -120,8 +120,8 @@ class RecurrenceCalculator {
   }) {
     if (type == RecurrenceType.none) {
       return taskStartDate.year == date.year &&
-             taskStartDate.month == date.month &&
-             taskStartDate.day == date.day;
+          taskStartDate.month == date.month &&
+          taskStartDate.day == date.day;
     }
 
     final occurrences = generateOccurrences(

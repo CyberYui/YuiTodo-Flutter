@@ -51,16 +51,14 @@ class MiniBarChart extends StatelessWidget {
   final List<double> values;
   final Color color;
 
-  const MiniBarChart({
-    super.key,
-    required this.values,
-    required this.color,
-  });
+  const MiniBarChart({super.key, required this.values, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    final maxValue = values.isEmpty ? 1.0 : values.reduce((a, b) => a > b ? a : b);
-    
+    final maxValue = values.isEmpty
+        ? 1.0
+        : values.reduce((a, b) => a > b ? a : b);
+
     return SizedBox(
       height: 80,
       child: Row(
@@ -89,45 +87,48 @@ class AnnualHeatmap extends StatelessWidget {
   final Map<DateTime, int> data;
   final Color baseColor;
 
-  const AnnualHeatmap({
-    super.key,
-    required this.data,
-    required this.baseColor,
-  });
+  const AnnualHeatmap({super.key, required this.data, required this.baseColor});
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final weeks = <List<_HeatmapDay>>[];
-    
+
     // Calculate start date (52 weeks ago)
     final startDate = now.subtract(const Duration(days: 365));
     var currentWeek = <_HeatmapDay>[];
-    
+
     // Pad the first week
     final firstWeekday = startDate.weekday;
     for (int i = 1; i < firstWeekday; i++) {
-      currentWeek.add(_HeatmapDay(date: startDate.subtract(Duration(days: firstWeekday - i)), count: -1));
+      currentWeek.add(
+        _HeatmapDay(
+          date: startDate.subtract(Duration(days: firstWeekday - i)),
+          count: -1,
+        ),
+      );
     }
-    
+
     for (int i = 0; i < 365; i++) {
       final date = startDate.add(Duration(days: i));
       final day = DateTime(date.year, date.month, date.day);
       final count = data[day] ?? 0;
       currentWeek.add(_HeatmapDay(date: day, count: count));
-      
+
       if (currentWeek.length == 7) {
         weeks.add(currentWeek);
         currentWeek = <_HeatmapDay>[];
       }
     }
-    
+
     if (currentWeek.isNotEmpty) {
       weeks.add(currentWeek);
     }
 
     // Find max count for color scaling
-    final maxCount = data.values.isEmpty ? 1 : data.values.reduce((a, b) => a > b ? a : b);
+    final maxCount = data.values.isEmpty
+        ? 1
+        : data.values.reduce((a, b) => a > b ? a : b);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,

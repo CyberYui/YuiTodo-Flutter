@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'theme_schemes.dart';
 
 /// Theme mode provider with enhanced features
-final themeStateProvider = StateNotifierProvider<ThemeStateNotifier, ThemeState>((ref) {
-  return ThemeStateNotifier();
-});
+final themeStateProvider =
+    StateNotifierProvider<ThemeStateNotifier, ThemeState>((ref) {
+      return ThemeStateNotifier();
+    });
 
 class ThemeState {
   final ThemeMode mode;
@@ -14,7 +16,7 @@ class ThemeState {
   final bool autoSwitchByTime;
   final TimeOfDay? darkStartTime;
   final TimeOfDay? darkEndTime;
-  
+
   ThemeState({
     required this.mode,
     required this.lightScheme,
@@ -23,7 +25,7 @@ class ThemeState {
     this.darkStartTime,
     this.darkEndTime,
   });
-  
+
   ThemeState copyWith({
     ThemeMode? mode,
     AppThemeScheme? lightScheme,
@@ -41,20 +43,21 @@ class ThemeState {
       darkEndTime: darkEndTime ?? this.darkEndTime,
     );
   }
-  
+
   bool get isDarkMode {
     if (mode == ThemeMode.system) {
-      return WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+      return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+          Brightness.dark;
     }
     if (autoSwitchByTime) {
       final now = TimeOfDay.now();
       final start = darkStartTime ?? const TimeOfDay(hour: 18, minute: 0);
       final end = darkEndTime ?? const TimeOfDay(hour: 8, minute: 0);
-      
+
       final nowMinutes = now.hour * 60 + now.minute;
       final startMinutes = start.hour * 60 + start.minute;
       final endMinutes = end.hour * 60 + end.minute;
-      
+
       if (startMinutes < endMinutes) {
         return nowMinutes >= startMinutes && nowMinutes < endMinutes;
       } else {
@@ -66,33 +69,36 @@ class ThemeState {
 }
 
 class ThemeStateNotifier extends StateNotifier<ThemeState> {
-  ThemeStateNotifier() : super(ThemeState(
-    mode: ThemeMode.system,
-    lightScheme: AppThemeScheme.blue,
-    darkScheme: AppThemeScheme.monokai,
-    autoSwitchByTime: false,
-  ));
-  
+  ThemeStateNotifier()
+    : super(
+        ThemeState(
+          mode: ThemeMode.system,
+          lightScheme: AppThemeScheme.blue,
+          darkScheme: AppThemeScheme.monokai,
+          autoSwitchByTime: false,
+        ),
+      );
+
   void setMode(ThemeMode mode) {
     state = state.copyWith(mode: mode);
   }
-  
+
   void setLightScheme(AppThemeScheme scheme) {
     state = state.copyWith(lightScheme: scheme);
   }
-  
+
   void setDarkScheme(AppThemeScheme scheme) {
     state = state.copyWith(darkScheme: scheme);
   }
-  
+
   void setAutoSwitchByTime(bool value) {
     state = state.copyWith(autoSwitchByTime: value);
   }
-  
+
   void setDarkStart(TimeOfDay time) {
     state = state.copyWith(darkStartTime: time);
   }
-  
+
   void setDarkEnd(TimeOfDay time) {
     state = state.copyWith(darkEndTime: time);
   }

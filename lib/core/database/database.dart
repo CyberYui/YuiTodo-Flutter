@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -28,7 +28,7 @@ class AppDatabase {
 
   Future<void> _createTables(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE task (
+      CREATE TABLE IF NOT EXISTS task (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         note TEXT DEFAULT '',
@@ -44,12 +44,13 @@ class AppDatabase {
         sort_order INTEGER DEFAULT 0,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
-        deleted_at INTEGER
+        deleted_at INTEGER,
+        reminder_time INTEGER
       )
     ''');
 
     await db.execute('''
-      CREATE TABLE task_step (
+      CREATE TABLE IF NOT EXISTS task_step (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         task_id INTEGER NOT NULL,
         title TEXT NOT NULL,
@@ -60,7 +61,7 @@ class AppDatabase {
     ''');
 
     await db.execute('''
-      CREATE TABLE tag (
+      CREATE TABLE IF NOT EXISTS tag (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
         color TEXT DEFAULT '#6B7280',
@@ -69,7 +70,7 @@ class AppDatabase {
     ''');
 
     await db.execute('''
-      CREATE TABLE task_tag (
+      CREATE TABLE IF NOT EXISTS task_tag (
         task_id INTEGER NOT NULL,
         tag_id INTEGER NOT NULL,
         PRIMARY KEY (task_id, tag_id),
@@ -79,7 +80,7 @@ class AppDatabase {
     ''');
 
     await db.execute('''
-      CREATE TABLE recurrence_rule (
+      CREATE TABLE IF NOT EXISTS recurrence_rule (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         type TEXT NOT NULL,
         interval INTEGER DEFAULT 1,
@@ -93,23 +94,41 @@ class AppDatabase {
     ''');
 
     await db.execute('''
-      CREATE TABLE app_setting (
+      CREATE TABLE IF NOT EXISTS app_setting (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
       )
     ''');
 
     // Create indexes
-    await db.execute('CREATE INDEX idx_task_status ON task(status)');
-    await db.execute('CREATE INDEX idx_task_start_date ON task(start_date)');
-    await db.execute('CREATE INDEX idx_task_deleted_at ON task(deleted_at)');
-    await db.execute('CREATE INDEX idx_step_task_id ON task_step(task_id)');
-    await db.execute('CREATE INDEX idx_task_tag_task_id ON task_tag(task_id)');
-    await db.execute('CREATE INDEX idx_task_tag_tag_id ON task_tag(tag_id)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_status ON task(status)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_start_date ON task(start_date)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_deleted_at ON task(deleted_at)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_step_task_id ON task_step(task_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_tag_task_id ON task_tag(task_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_tag_tag_id ON task_tag(tag_id)',
+    );
   }
 
-  Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
-    // Future migration logic here
+  Future<void> _upgradeDatabase(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE task ADD COLUMN reminder_time INTEGER');
+    }
   }
 
   Future<void> close() async {

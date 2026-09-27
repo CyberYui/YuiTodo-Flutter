@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/utils/recurrence.dart';
 
 class RecurrenceSelector extends StatelessWidget {
@@ -30,7 +31,8 @@ class RecurrenceSelector extends StatelessWidget {
             );
           }).toList(),
         ),
-        if (type == RecurrenceType.customDays || type == RecurrenceType.customWeeks) ...[
+        if (type == RecurrenceType.customDays ||
+            type == RecurrenceType.customWeeks) ...[
           const SizedBox(height: 8),
           Row(
             children: [

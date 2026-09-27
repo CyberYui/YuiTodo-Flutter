@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/task.dart';
 
 /// Recycle Bin Notifier
@@ -23,6 +24,7 @@ class RecycleBinNotifier extends StateNotifier<List<Task>> {
 }
 
 /// Recycle bin provider
-final recycleBinProvider = StateNotifierProvider<RecycleBinNotifier, List<Task>>((ref) {
-  return RecycleBinNotifier();
-});
+final recycleBinProvider =
+    StateNotifierProvider<RecycleBinNotifier, List<Task>>((ref) {
+      return RecycleBinNotifier();
+    });

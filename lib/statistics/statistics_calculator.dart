@@ -101,7 +101,10 @@ class StatisticsCalculator {
     );
   }
 
-  static List<DailyCompletion> _calculateDailyCompletions(List<Task> tasks, int days) {
+  static List<DailyCompletion> _calculateDailyCompletions(
+    List<Task> tasks,
+    int days,
+  ) {
     final now = DateTime.now();
     final result = <DailyCompletion>[];
 
@@ -114,40 +117,57 @@ class StatisticsCalculator {
       int completed = 0;
 
       for (final task in tasks) {
-        final taskDate = DateTime.fromMillisecondsSinceEpoch(task.startDate ?? task.startTime ?? 0);
+        final taskDate = DateTime.fromMillisecondsSinceEpoch(
+          task.startDate ?? task.startTime ?? 0,
+        );
         if (taskDate.isAfter(dayStart) && taskDate.isBefore(dayEnd)) {
           total++;
           if (task.status == 'done') completed++;
         }
       }
 
-      result.add(DailyCompletion(date: dayStart, completed: completed, total: total));
+      result.add(
+        DailyCompletion(date: dayStart, completed: completed, total: total),
+      );
     }
 
     return result;
   }
 
-  static List<WeeklyCompletion> _calculateWeeklyCompletions(List<Task> tasks, int weeks) {
+  static List<WeeklyCompletion> _calculateWeeklyCompletions(
+    List<Task> tasks,
+    int weeks,
+  ) {
     final now = DateTime.now();
     final result = <WeeklyCompletion>[];
 
     for (int i = weeks - 1; i >= 0; i--) {
       final weekStart = now.subtract(Duration(days: 7 * i));
-      final weekStartDay = weekStart.subtract(Duration(days: weekStart.weekday - 1));
+      final weekStartDay = weekStart.subtract(
+        Duration(days: weekStart.weekday - 1),
+      );
       final weekEnd = weekStartDay.add(const Duration(days: 7));
 
       int total = 0;
       int completed = 0;
 
       for (final task in tasks) {
-        final taskDate = DateTime.fromMillisecondsSinceEpoch(task.startDate ?? task.startTime ?? 0);
+        final taskDate = DateTime.fromMillisecondsSinceEpoch(
+          task.startDate ?? task.startTime ?? 0,
+        );
         if (taskDate.isAfter(weekStartDay) && taskDate.isBefore(weekEnd)) {
           total++;
           if (task.status == 'done') completed++;
         }
       }
 
-      result.add(WeeklyCompletion(weekStart: weekStartDay, completed: completed, total: total));
+      result.add(
+        WeeklyCompletion(
+          weekStart: weekStartDay,
+          completed: completed,
+          total: total,
+        ),
+      );
     }
 
     return result;
@@ -190,7 +210,9 @@ class StatisticsCalculator {
     int completed = 0;
 
     for (final task in tasks) {
-      final taskDate = DateTime.fromMillisecondsSinceEpoch(task.startDate ?? task.startTime ?? 0);
+      final taskDate = DateTime.fromMillisecondsSinceEpoch(
+        task.startDate ?? task.startTime ?? 0,
+      );
       if (taskDate.isAfter(today) && taskDate.isBefore(todayEnd)) {
         total++;
         if (task.status == 'done') completed++;
