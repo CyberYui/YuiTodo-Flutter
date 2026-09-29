@@ -7,11 +7,31 @@ import '../../statistics/statistics_calculator.dart';
 import '../../ui/widgets/stat_widgets.dart';
 import '../../ui/widgets/help_icon.dart';
 
-class StatisticsScreen extends ConsumerWidget {
+class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StatisticsScreen> createState() => _StatisticsScreenState();
+}
+
+class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
+  int _appOpenCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppOpenCount();
+  }
+
+  Future<void> _loadAppOpenCount() async {
+    // TODO: Load from AppUsageService
+    setState(() {
+      _appOpenCount = 1; // Placeholder
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tasksAsync = ref.watch(taskListProvider);
 
@@ -19,7 +39,7 @@ class StatisticsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('统计')),
       body: tasksAsync.when(
         data: (tasks) {
-          final stats = StatisticsCalculator.calculate(tasks);
+          final stats = StatisticsCalculator.calculate(tasks, appOpenCount: _appOpenCount);
           final todayProgress = StatisticsCalculator.getTodayProgress(tasks);
 
           return SingleChildScrollView(
@@ -94,7 +114,7 @@ class StatisticsScreen extends ConsumerWidget {
                         value: stats.totalTasks.toString(),
                         icon: Icons.task_alt,
                         color: theme.colorScheme.primary,
-                        height: 70,
+                        height: 100,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -104,7 +124,7 @@ class StatisticsScreen extends ConsumerWidget {
                         value: stats.completedTasks.toString(),
                         icon: Icons.check_circle,
                         color: Colors.green,
-                        height: 70,
+                        height: 100,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -114,7 +134,7 @@ class StatisticsScreen extends ConsumerWidget {
                         value: stats.pendingTasks.toString(),
                         icon: Icons.pending_actions,
                         color: Colors.orange,
-                        height: 70,
+                        height: 100,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -124,7 +144,7 @@ class StatisticsScreen extends ConsumerWidget {
                         value: stats.overdueTasks.toString(),
                         icon: Icons.warning,
                         color: Colors.red,
-                        height: 70,
+                        height: 100,
                       ),
                     ),
                   ],
@@ -160,67 +180,122 @@ class StatisticsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Daily trend - larger with hint
+                // Streak card
+                StreakCard(
+                  currentStreak: stats.currentStreak,
+                  longestStreak: stats.longestStreak,
+                  color: Colors.orange,
+                ),
+                const SizedBox(height: 16),
+
+                // Subtask completion rate
+                if (stats.totalSteps > 0)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '子任务完成率',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            '${(stats.stepCompletionRate * 100).toStringAsFixed(1)}%',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          Text(
+                            '${stats.completedSteps}/${stats.totalSteps} 子任务已完成',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+
+                // Starred tasks
+                CompactStatCard(
+                  label: '收藏任务',
+                  value: stats.starredTasks.toString(),
+                  icon: Icons.star,
+                  color: Colors.amber,
+                ),
+                const SizedBox(height: 8),
+
+                // App open count
+                CompactStatCard(
+                  label: '应用打开次数',
+                  value: stats.appOpenCount.toString(),
+                  icon: Icons.touch_app,
+                  color: Colors.purple,
+                ),
+                const SizedBox(height: 8),
+
+                // Total tags
+                CompactStatCard(
+                  label: '标签数量',
+                  value: stats.totalTags.toString(),
+                  icon: Icons.label,
+                  color: Colors.teal,
+                ),
+                const SizedBox(height: 16),
+
+                // Tag distribution
+                if (stats.tagStats.isNotEmpty)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '标签分布',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TagDistributionChart(
+                            tagStats: stats.tagStats,
+                            baseColor: theme.colorScheme.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+
+                // Weekday distribution
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            const Text(
-                              '近 30 天趋势',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '左右滑动查看',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: theme.colorScheme.outline,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 180,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: stats.dailyCompletions.length,
-                            itemBuilder: (context, index) {
-                              final day = stats.dailyCompletions[index];
-                              final height = day.total > 0
-                                  ? (day.completed / day.total) * 160.0
-                                  : 0.0;
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 2),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Container(
-                                      width: 16,
-                                      height: height + 4,
-                                      decoration: BoxDecoration(
-                                        color: theme.colorScheme.primary
-                                            .withOpacity(0.7),
-                                        borderRadius: BorderRadius.circular(2),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${day.date.day}',
-                                      style: const TextStyle(fontSize: 10),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                        const Text(
+                          '星期分布',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
+                        ),
+                        const SizedBox(height: 12),
+                        WeekdayDistributionChart(
+                          weekdayDistribution: stats.weekdayDistribution,
+                          baseColor: theme.colorScheme.primary,
                         ),
                       ],
                     ),
@@ -228,7 +303,7 @@ class StatisticsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Annual heatmap - with hint
+                // Contribution heatmap - GitHub style
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -238,7 +313,7 @@ class StatisticsScreen extends ConsumerWidget {
                         Row(
                           children: [
                             const Text(
-                              '年度热力图',
+                              '年度贡献图',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -255,7 +330,7 @@ class StatisticsScreen extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        AnnualHeatmap(
+                        ContributionHeatmap(
                           data: stats.heatmapData,
                           baseColor: theme.colorScheme.primary,
                         ),
