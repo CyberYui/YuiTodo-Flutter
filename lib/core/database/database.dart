@@ -130,7 +130,12 @@ class AppDatabase {
       await db.execute('ALTER TABLE task ADD COLUMN reminder_time INTEGER');
     }
     if (oldVersion < 3) {
-      await db.execute('ALTER TABLE task ADD COLUMN recurrence_id INTEGER');
+      // Check if column already exists before adding
+      final columns = await db.rawQuery('PRAGMA table_info(task)');
+      final columnNames = columns.map((c) => c['name'] as String).toList();
+      if (!columnNames.contains('recurrence_id')) {
+        await db.execute('ALTER TABLE task ADD COLUMN recurrence_id INTEGER');
+      }
     }
   }
 
