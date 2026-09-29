@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -128,6 +128,9 @@ class AppDatabase {
   ) async {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE task ADD COLUMN reminder_time INTEGER');
+    }
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE task ADD COLUMN recurrence_id INTEGER');
     }
   }
 

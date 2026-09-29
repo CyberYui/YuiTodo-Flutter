@@ -5,6 +5,7 @@ import '../../models/task.dart';
 import '../../providers/task_provider.dart';
 import '../../statistics/statistics_calculator.dart';
 import '../../ui/widgets/stat_widgets.dart';
+import '../../ui/widgets/help_icon.dart';
 
 class StatisticsScreen extends ConsumerWidget {
   const StatisticsScreen({super.key});
@@ -84,7 +85,7 @@ class StatisticsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Overview cards - use Row instead of GridView to avoid overflow
+                // Overview cards - compact row
                 Row(
                   children: [
                     Expanded(
@@ -93,42 +94,42 @@ class StatisticsScreen extends ConsumerWidget {
                         value: stats.totalTasks.toString(),
                         icon: Icons.task_alt,
                         color: theme.colorScheme.primary,
+                        height: 70,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: StatCard(
                         label: '已完成',
                         value: stats.completedTasks.toString(),
                         icon: Icons.check_circle,
                         color: Colors.green,
+                        height: 70,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
+                    const SizedBox(width: 8),
                     Expanded(
                       child: StatCard(
                         label: '待办',
                         value: stats.pendingTasks.toString(),
                         icon: Icons.pending_actions,
                         color: Colors.orange,
+                        height: 70,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: StatCard(
                         label: '逾期',
                         value: stats.overdueTasks.toString(),
                         icon: Icons.warning,
                         color: Colors.red,
+                        height: 70,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
                 // Completion rate
                 Card(
@@ -157,37 +158,47 @@ class StatisticsScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-                // Daily trend
+                // Daily trend - larger with hint
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          '近 30 天趋势',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        Row(
+                          children: [
+                            const Text(
+                              '近 30 天趋势',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '左右滑动查看',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         SizedBox(
-                          height: 100,
+                          height: 180,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             itemCount: stats.dailyCompletions.length,
                             itemBuilder: (context, index) {
                               final day = stats.dailyCompletions[index];
                               final height = day.total > 0
-                                  ? (day.completed / day.total) * 80.0
+                                  ? (day.completed / day.total) * 160.0
                                   : 0.0;
                               return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 2,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 2),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
@@ -215,21 +226,33 @@ class StatisticsScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-                // Annual heatmap
+                // Annual heatmap - with hint
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          '年度热力图',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        Row(
+                          children: [
+                            const Text(
+                              '年度热力图',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '颜色越深完成越多',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         AnnualHeatmap(

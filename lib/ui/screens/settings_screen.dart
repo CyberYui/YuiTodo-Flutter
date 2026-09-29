@@ -6,6 +6,7 @@ import '../../core/theme/theme_state.dart';
 import '../../services/notification_service.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
+import '../widgets/help_icon.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -121,7 +122,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
 
           const Divider(),
-          _SectionHeader(title: '通知'),
+          SectionHeaderWithHelp(
+            title: '通知',
+            helpText: '通知权限用于任务提醒。\n\n开启后，任务将在指定时间推送系统通知。',
+          ),
           ListTile(
             title: const Text('通知权限'),
             subtitle: _isCheckingPermission

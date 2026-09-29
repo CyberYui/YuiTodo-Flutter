@@ -10,7 +10,7 @@ class UndoItem {
   final Timer timer;
 
   UndoItem({required this.message, required this.onUndo})
-    : timer = Timer(const Duration(seconds: 5), () {});
+    : timer = Timer(const Duration(seconds: 3), () {});
 
   void cancel() => timer.cancel();
   bool get isValid => timer.isActive;
@@ -38,11 +38,14 @@ class UndoNotifier extends StateNotifier<UndoItem?> {
 /// Extension to show undo snackbar
 extension UndoSnackBar on BuildContext {
   void showUndoSnackBar(String message, VoidCallback onUndo) {
-    ScaffoldMessenger.of(this).showSnackBar(
+    final messenger = ScaffoldMessenger.of(this);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
         content: Text(message),
         action: SnackBarAction(label: '撤销', onPressed: onUndo),
-        duration: const Duration(seconds: 5),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/task.dart';
+import '../models/recurrence_rule.dart';
 import '../core/database/database.dart';
 
 /// Task repository provider
@@ -131,6 +132,13 @@ class TaskRepository {
     await db.delete('task', where: 'id = ?', whereArgs: [taskId]);
   }
 
+  Future<Task?> getTaskById(int taskId) async {
+    final db = await _db.database;
+    final maps = await db.query('task', where: 'id = ?', whereArgs: [taskId], limit: 1);
+    if (maps.isEmpty) return null;
+    return Task.fromMap(maps.first);
+  }
+
   // Steps
   Future<List<TaskStep>> getStepsForTask(int taskId) async {
     final db = await _db.database;
@@ -246,5 +254,80 @@ class TaskRepository {
       );
     }
     await batch.commit();
+  }
+
+  // Recurrence rules
+  Future<List<RecurrenceRule>> getRecurrenceRules() async {
+    final db = await _db.database;
+    final maps = await db.query('recurrence_rule', orderBy: 'created_at DESC');
+    return maps.map((m) => RecurrenceRule.fromMap(m)).toList();
+  }
+
+  Future<int> createRecurrenceRule(RecurrenceRule rule) async {
+    final db = await _db.database;
+    final data = rule.toMap();
+    data.remove('id');
+    return db.insert('recurrence_rule', data);
+  }
+
+  Future<void> updateRecurrenceRule(RecurrenceRule rule) async {
+    final db = await _db.database;
+    await db.update('recurrence_rule', rule.toMap(), where: 'id = ?', whereArgs: [rule.id]);
+  }
+
+  Future<void> deleteRecurrenceRule(int ruleId) async {
+    final db = await _db.database;
+    await db.delete('recurrence_rule', where: 'id = ?', whereArgs: [ruleId]);
+  }
+
+  // Duplicate a recurring task for a specific date
+  Future<int> duplicateTaskForDate(int originalTaskId, DateTime date) async {
+    final db = await _db.database;
+    final original = await db.query('task', where: 'id = ?', whereArgs: [originalTaskId]);
+    if (original.isEmpty) throw Exception('Task not found');
+
+    final taskMap = Map<String, dynamic>.from(original.first);
+    taskMap.remove('id');
+    taskMap['start_date'] = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
+    taskMap['end_time'] = DateTime(date.year, date.month, date.day, 23, 59, 59).millisecondsSinceEpoch;
+    taskMap['status'] = 'pending';
+    taskMap['created_at'] = DateTime.now().millisecondsSinceEpoch;
+    taskMap['updated_at'] = DateTime.now().millisecondsSinceEpoch;
+
+    final newId = await db.insert('task', taskMap);
+
+    // Copy steps
+    final steps = await getStepsForTask(originalTaskId);
+    for (final step in steps) {
+      await createStep(TaskStep(
+        taskId: newId,
+        title: step.title,
+        sortOrder: step.sortOrder,
+        status: 'pending',
+      ));
+    }
+
+    // Copy tags
+    final tags = await getTagsForTask(originalTaskId);
+    for (final tag in tags) {
+      await addTagToTask(newId, tag.id!);
+    }
+
+    return newId;
+  }
+
+  // Check if a task instance already exists for a given recurrence rule and date
+  Future<Task?> getTaskForDate(int originalTaskId, DateTime date) async {
+    final db = await _db.database;
+    final dayStart = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
+    final dayEnd = DateTime(date.year, date.month, date.day + 1).millisecondsSinceEpoch;
+
+    final maps = await db.query(
+      'task',
+      where: 'recurrence_id = ? AND start_date >= ? AND start_date < ? AND (deleted_at IS NULL OR deleted_at = 0)',
+      whereArgs: [originalTaskId, dayStart, dayEnd],
+      limit: 1,
+    );
+    return maps.isEmpty ? null : Task.fromMap(maps.first);
   }
 }
