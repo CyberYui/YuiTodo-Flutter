@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -100,6 +100,14 @@ class AppDatabase {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS app_usage (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        open_time INTEGER NOT NULL,
+        date TEXT NOT NULL
+      )
+    ''');
+
     // Create indexes
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_task_status ON task(status)',
@@ -136,6 +144,15 @@ class AppDatabase {
       if (!columnNames.contains('recurrence_id')) {
         await db.execute('ALTER TABLE task ADD COLUMN recurrence_id INTEGER');
       }
+    }
+    if (oldVersion < 4) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS app_usage (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          open_time INTEGER NOT NULL,
+          date TEXT NOT NULL
+        )
+      ''');
     }
   }
 

@@ -5,11 +5,14 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_state.dart';
 import 'core/theme/theme_schemes.dart';
 import 'services/notification_service.dart';
+import 'services/app_usage_service.dart';
 import 'ui/screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.instance.initialize();
+  // Record app open
+  await AppUsageService.instance.recordAppOpen();
   runApp(const ProviderScope(child: YuiTodoApp()));
 }
 
