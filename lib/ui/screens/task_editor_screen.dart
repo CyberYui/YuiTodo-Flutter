@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/task.dart';
+import '../../models/recurrence_rule.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../core/icons/app_icons.dart';
@@ -14,6 +15,7 @@ import '../../core/utils/recurrence.dart';
 import '../widgets/recurrence_selector.dart';
 import '../widgets/reminder_selector.dart';
 import '../widgets/icon_picker.dart';
+import '../widgets/help_icon.dart';
 import '../../repositories/task_repository.dart';
 import '../../services/notification_service.dart';
 
@@ -174,6 +176,16 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
             await repo.addTagToTask(taskId, tag.id!);
           }
         }
+        // Create recurrence rule if recurring
+        if (_recurrenceType != RecurrenceType.none) {
+          final ruleId = await repo.createRecurrenceRule(RecurrenceRule(
+            taskId: taskId,
+            type: _recurrenceType.name,
+            interval: _recurrenceInterval,
+            createdAt: now,
+          ));
+          await repo.updateTask(task.copyWith(recurrenceId: ruleId, id: taskId));
+        }
         await ref.read(taskListProvider.notifier).loadTasks();
       } else {
         await ref.read(taskListProvider.notifier).updateTask(task);
@@ -297,9 +309,19 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Date section
+          // Date section - disabled when recurrence is active
           _buildSection(
             title: '日期',
+            titleWidget: Row(
+              children: [
+                const Text('日期'),
+                const SizedBox(width: 4),
+                HelpIcon(
+                  text: '设置任务的开始和结束日期。\n\n注意：如果选择了重复规则，日期选择将被禁用。',
+                  size: 14,
+                ),
+              ],
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -309,15 +331,18 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                     subtitle: Text(
                       '${_startDate.year}-${_startDate.month}-${_startDate.day}',
                     ),
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _startDate,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2030),
-                      );
-                      if (date != null) setState(() => _startDate = date);
-                    },
+                    enabled: _recurrenceType == RecurrenceType.none,
+                    onTap: _recurrenceType == RecurrenceType.none
+                        ? () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _startDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                            );
+                            if (date != null) setState(() => _startDate = date);
+                          }
+                        : null,
                   ),
                 ),
                 Expanded(
@@ -327,15 +352,18 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                     subtitle: Text(
                       '${_endDate.year}-${_endDate.month}-${_endDate.day}',
                     ),
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _endDate,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2030),
-                      );
-                      if (date != null) setState(() => _endDate = date);
-                    },
+                    enabled: _recurrenceType == RecurrenceType.none,
+                    onTap: _recurrenceType == RecurrenceType.none
+                        ? () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _endDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                            );
+                            if (date != null) setState(() => _endDate = date);
+                          }
+                        : null,
                   ),
                 ),
               ],
@@ -565,10 +593,29 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
           // Recurrence section
           _buildSection(
             title: '重复',
+            titleWidget: Row(
+              children: [
+                const Text('重复'),
+                const SizedBox(width: 4),
+                HelpIcon(
+                  text: '设置任务重复规则。\n\n注意：重复任务与起止日期互斥，选择重复后将自动清除结束日期。',
+                  size: 14,
+                ),
+              ],
+            ),
             child: RecurrenceSelector(
               type: _recurrenceType,
               interval: _recurrenceInterval,
-              onTypeChanged: (t) => setState(() => _recurrenceType = t),
+              onTypeChanged: (t) {
+                setState(() {
+                  _recurrenceType = t;
+                  if (t != RecurrenceType.none) {
+                    // Switching to recurring: clear end date, set start to today
+                    _startDate = DateTime.now();
+                    _endDate = DateTime.now().add(const Duration(days: 1));
+                  }
+                });
+              },
               onIntervalChanged: (i) => setState(() => _recurrenceInterval = i),
             ),
           ),
@@ -577,6 +624,16 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
           // Reminder section
           _buildSection(
             title: '提醒',
+            titleWidget: Row(
+              children: [
+                const Text('提醒'),
+                const SizedBox(width: 4),
+                HelpIcon(
+                  text: '设置任务提醒时间。\n\n需要开启通知权限才能正常收到提醒。',
+                  size: 14,
+                ),
+              ],
+            ),
             child: ReminderSelector(
               reminderTime: _reminderTime,
               onChanged: (time) => setState(() => _reminderTime = time),
@@ -678,7 +735,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
     );
   }
 
-  Widget _buildSection({required String title, required Widget child}) {
+  Widget _buildSection({required String title, Widget? titleWidget, required Widget child}) {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
@@ -691,7 +748,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Text(
+            child: titleWidget ?? Text(
               title,
               style: TextStyle(
                 fontSize: 14,

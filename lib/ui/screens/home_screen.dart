@@ -322,83 +322,95 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
             ),
           ),
-          // Task list with drag-and-drop
+          // Task list with drag-and-drop and pull-to-refresh
           Expanded(
-            child: tasksAsync.when(
-              data: (tasks) {
-                final filtered = _filterTasks(tasks);
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await ref.read(taskListProvider.notifier).loadTasks();
+              },
+              child: tasksAsync.when(
+                data: (tasks) {
+                  final filtered = _filterTasks(tasks);
+                  if (filtered.isEmpty) {
+                    return ListView(
                       children: [
-                        Icon(
-                          Icons.task_alt,
-                          size: 64,
-                          color: theme.colorScheme.outline,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          '暂无任务',
-                          style: TextStyle(color: theme.colorScheme.outline),
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.3,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.task_alt,
+                                  size: 64,
+                                  color: theme.colorScheme.outline,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  '暂无任务',
+                                  style: TextStyle(color: theme.colorScheme.outline),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
-                    ),
-                  );
-                }
-                return ReorderableListView.builder(
-                  padding: const EdgeInsets.only(bottom: 80),
-                  itemCount: filtered.length,
-                  onReorder: (oldIndex, newIndex) =>
-                      _onReorder(oldIndex, newIndex, filtered),
-                  itemBuilder: (context, index) {
-                    final task = filtered[index];
-                    return Dismissible(
-                      key: Key('task-${task.id}'),
-                      background: Container(
-                        color: theme.colorScheme.primary,
-                        alignment: Alignment.centerLeft,
-                        padding: const EdgeInsets.only(left: 16),
-                        child: const Icon(Icons.check, color: Colors.white),
-                      ),
-                      secondaryBackground: Container(
-                        color: theme.colorScheme.error,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 16),
-                        child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      confirmDismiss: (direction) async {
-                        if (direction == DismissDirection.startToEnd) {
-                          _completeTaskWithUndo(task);
-                        } else {
-                          _deleteTaskWithUndo(task);
-                        }
-                        return false;
-                      },
-                      child: TaskCard(
-                        key: ValueKey(task.id),
-                        task: task,
-                        isSelected: selection.contains(task.id),
-                        index: index,
-                        onTap: () {
-                          if (isSelectionMode) {
-                            ref
-                                .read(selectionProvider.notifier)
-                                .toggle(task.id!);
-                          } else {
-                            _openTaskEditor(task);
-                          }
-                        },
-                        onLongPress: () => _enterSelectionMode(task.id!),
-                        onStepToggle: (Task task, TaskStep step) =>
-                            _toggleStep(task, step),
-                      ),
                     );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('加载失败: $e')),
+                  }
+                  return ReorderableListView.builder(
+                    padding: const EdgeInsets.only(bottom: 80),
+                    itemCount: filtered.length,
+                    onReorder: (oldIndex, newIndex) =>
+                        _onReorder(oldIndex, newIndex, filtered),
+                    itemBuilder: (context, index) {
+                      final task = filtered[index];
+                      return Dismissible(
+                        key: Key('task-${task.id}'),
+                        background: Container(
+                          color: theme.colorScheme.primary,
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.only(left: 16),
+                          child: const Icon(Icons.check, color: Colors.white),
+                        ),
+                        secondaryBackground: Container(
+                          color: theme.colorScheme.error,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 16),
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        confirmDismiss: (direction) async {
+                          if (direction == DismissDirection.startToEnd) {
+                            _completeTaskWithUndo(task);
+                          } else {
+                            _deleteTaskWithUndo(task);
+                          }
+                          return false;
+                        },
+                        child: TaskCard(
+                          key: ValueKey(task.id),
+                          task: task,
+                          isSelected: selection.contains(task.id),
+                          index: index,
+                          onTap: () {
+                            if (isSelectionMode) {
+                              ref
+                                  .read(selectionProvider.notifier)
+                                  .toggle(task.id!);
+                            } else {
+                              _openTaskEditor(task);
+                            }
+                          },
+                          onLongPress: () => _enterSelectionMode(task.id!),
+                          onStepToggle: (Task task, TaskStep step) =>
+                              _toggleStep(task, step),
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('加载失败: $e')),
+              ),
             ),
           ),
         ],
