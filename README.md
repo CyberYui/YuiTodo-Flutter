@@ -5,7 +5,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-3.1.5-blue)
+![Version](https://img.shields.io/badge/Version-3.4.1-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
@@ -53,7 +53,7 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 | 🔄 循环任务 | 日/周/月/年/自定义间隔 |
 | ⏰ 提醒通知 | 本地通知，支持多时间点 |
 | 🗑️ 回收站 | 软删除，支持恢复和永久删除 |
-| 📊 统计面板 | 完成率、趋势图、年度热力图 |
+| 📊 统计面板 | 完成率、标签分布、星期分布、月度贡献热力图、连续打卡、应用打开次数 |
 | 💾 数据导入导出 | JSON 格式备份恢复 |
 
 ### 主题系统
@@ -84,7 +84,7 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 ### 安装方法
 
 1. 前往 [Releases](https://github.com/CyberYui/YuiTodo-Flutter/releases) 页面
-2. 下载最新版本的 `YuiTodo-vx.x.x-opensource.apk`
+2. 下载最新版本的 `YuiTodo-vx.x.x-opensource.apk`（开源版）或 `YuiTodo-vx.x.x.x-full.apk`（完整版）
 3. 在 Android 设备上安装
 4. 允许"未知来源"安装权限
 
@@ -131,6 +131,8 @@ YuiTodo-Flutter/
 │   └── ui/                          # 界面层
 │       ├── screens/                 # 页面（首页/设置/统计/回收站/标签管理/任务编辑）
 │       └── widgets/                 # 可复用组件（任务卡片/图标选择器/循环选择器/提醒选择器）
+├── tool/
+│   └── gen_app_icon.py            # 应用图标生成脚本（透明背景方案）
 ├── assets/
 │   ├── icons/                       # 二次元头像图标（28 个 PNG）
 │   └── fonts/                       # 自定义字体文件（完整版）
