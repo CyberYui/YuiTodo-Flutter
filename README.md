@@ -5,7 +5,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-3.1.5-blue)
+![Version](https://img.shields.io/badge/Version-3.4.1.1-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
@@ -53,7 +53,7 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 | 🔄 循环任务 | 日/周/月/年/自定义间隔 |
 | ⏰ 提醒通知 | 本地通知，支持多时间点 |
 | 🗑️ 回收站 | 软删除，支持恢复和永久删除 |
-| 📊 统计面板 | 完成率、趋势图、年度热力图 |
+| 📊 统计面板 | 完成率、标签分布、星期分布、月度贡献热力图、连续打卡、应用打开次数 |
 | 💾 数据导入导出 | JSON 格式备份恢复 |
 
 ### 主题系统
