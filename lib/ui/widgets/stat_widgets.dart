@@ -140,15 +140,34 @@ class MiniBarChart extends StatelessWidget {
   }
 }
 
-/// GitHub-style contribution heatmap
+/// 月度贡献热力图（GitHub 绿墙风格）。
+///
+/// 布局说明：
+/// - 竖屏（默认）：7 列（周一~周日）× 若干行，格子用 LayoutBuilder 平分宽度，
+///   必然铺满整张卡片；格子尺寸随屏幕宽度自适应放大。
+/// - 横屏（[sideBySide] = true）：格子边长被 [maxCellSize] 限制为与竖屏相近的大小，
+///   避免横屏时格子被过度放大；网格与右侧的汇总数字并排，填满横向空间。
 class ContributionHeatmap extends StatelessWidget {
+  /// 日期 -> 当日完成任务数，key 为当天 0 点的 DateTime。
   final Map<DateTime, int> data;
+
+  /// 热力格子的基色（通常取主题色）。
   final Color baseColor;
+
+  /// 格子最大边长（逻辑像素）。
+  /// - null：不限制，格子平分宽度（竖屏）。
+  /// - 有值：格子不超过该边长，用于横屏时保持与竖屏相近的视觉大小。
+  final double? maxCellSize;
+
+  /// 是否采用「网格 + 汇总数字」左右并排布局（横屏用）。
+  final bool sideBySide;
 
   const ContributionHeatmap({
     super.key,
     required this.data,
     required this.baseColor,
+    this.maxCellSize,
+    this.sideBySide = false,
   });
 
   @override
@@ -156,9 +175,9 @@ class ContributionHeatmap extends StatelessWidget {
     final now = DateTime.now();
     final weeks = <List<_HeatmapDay>>[];
 
-    // Calculate start date (52 weeks ago, aligned to Monday)
-    final startDate = now.subtract(const Duration(days: 364));
-    final monday = startDate.subtract(Duration(days: startDate.weekday - 1));
+    // Calculate start date (first day of current month, aligned to Monday)
+    final firstDayOfMonth = DateTime(now.year, now.month, 1);
+    final monday = firstDayOfMonth.subtract(Duration(days: firstDayOfMonth.weekday - 1));
     var currentWeek = <_HeatmapDay>[];
 
     // Pad the first week
@@ -172,8 +191,12 @@ class ContributionHeatmap extends StatelessWidget {
       );
     }
 
-    for (int i = 0; i < 364; i++) {
-      final date = monday.add(Duration(days: i));
+    // Generate weeks for current month only
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    // Start from the first day of the current month
+    final firstDayOfCurrentMonth = DateTime(now.year, now.month, 1);
+    for (int i = 0; i < daysInMonth; i++) {
+      final date = firstDayOfCurrentMonth.add(Duration(days: i));
       final day = DateTime(date.year, date.month, date.day);
       final count = data[day] ?? 0;
       currentWeek.add(_HeatmapDay(date: day, count: count));
@@ -193,48 +216,152 @@ class ContributionHeatmap extends StatelessWidget {
         ? 1
         : data.values.reduce((a, b) => a > b ? a : b);
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: weeks.asMap().entries.map((entry) {
-          final weekIndex = entry.key;
-          final week = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(right: 2),
+    // Calculate monthly stats
+    int monthTotal = 0;
+    int monthActiveDays = 0;
+    for (int i = 1; i <= daysInMonth; i++) {
+      final day = DateTime(now.year, now.month, i);
+      final count = data[day] ?? 0;
+      monthTotal += count;
+      if (count > 0) monthActiveDays++;
+    }
+
+    // Calculate yearly stats
+    int yearTotal = 0;
+    int yearActiveDays = 0;
+    for (final entry in data.entries) {
+      if (entry.key.year == now.year) {
+        yearTotal += entry.value;
+        if (entry.value > 0) yearActiveDays++;
+      }
+    }
+
+    final grid = _buildGrid(context, weeks, maxCount);
+    final monthLabel = Text(
+      '${now.month}月',
+      style: TextStyle(
+        fontSize: 10,
+        color: Theme.of(context).colorScheme.outline,
+      ),
+    );
+
+    // ---------- 4. 横屏：网格 + 汇总数字左右并排 ----------
+    // 网格格子被 maxCellSize 限制为与竖屏相近的大小，避免横屏时被过度放大；
+    // 右侧放 2×2 汇总数字，充分利用横向空间，不留下大片空白。
+    if (sideBySide) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          grid,
+          const SizedBox(width: 20),
+          Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Week label (month name on first week of month)
-                if (weekIndex % 4 == 0 && week.isNotEmpty)
-                  SizedBox(
-                    height: 14,
-                    child: Text(
-                      _getMonthLabel(week.first.date),
-                      style: TextStyle(
-                        fontSize: 8,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                  )
-                else
-                  const SizedBox(height: 14),
-                ...week.map((day) {
-                  if (day.count < 0) {
-                    return const SizedBox(width: 10, height: 10);
-                  }
-                  final intensity = maxCount > 0 ? day.count / maxCount : 0.0;
-                  return Container(
-                    width: 10,
-                    height: 10,
-                    margin: const EdgeInsets.all(1),
-                    decoration: BoxDecoration(
-                      color: day.count == 0
-                          ? baseColor.withOpacity(0.08)
-                          : baseColor.withOpacity(0.2 + intensity * 0.8),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  );
-                }),
+                monthLabel,
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: _buildSummaryItem(context, '本月完成', '$monthTotal', '任务')),
+                    Expanded(child: _buildSummaryItem(context, '活跃天数', '$monthActiveDays', '天')),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(child: _buildSummaryItem(context, '年度完成', '$yearTotal', '任务')),
+                    Expanded(child: _buildSummaryItem(context, '年度活跃', '$yearActiveDays', '天')),
+                  ],
+                ),
               ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // ---------- 5. 竖屏：月份标签 + 铺满整张卡片宽度的网格 + 一行汇总 ----------
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 14,
+          child: Align(alignment: Alignment.centerLeft, child: monthLabel),
+        ),
+        grid,
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _buildSummaryItem(context, '本月完成', '$monthTotal', '任务')),
+            Expanded(child: _buildSummaryItem(context, '活跃天数', '$monthActiveDays', '天')),
+            Expanded(child: _buildSummaryItem(context, '年度完成', '$yearTotal', '任务')),
+            Expanded(child: _buildSummaryItem(context, '年度活跃', '$yearActiveDays', '天')),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 构建热力网格。
+  ///
+  /// - [maxCellSize] 为 null：格子用 LayoutBuilder 平分可用宽度，必然铺满整张卡片（竖屏）。
+  /// - 指定 [maxCellSize]：格子边长不超过该值，网格整体宽度固定（横屏，配合 sideBySide 使用）。
+  ///   注意：此时不能再用 LayoutBuilder 取宽度——因为在 Row 中作为非弹性子组件，
+  ///   LayoutBuilder 会拿到无限宽度约束，算不出正确尺寸。
+  Widget _buildGrid(BuildContext context, List<List<_HeatmapDay>> weeks, int maxCount) {
+    if (maxCellSize != null) {
+      // 固定格子大小（横屏）
+      return _gridWithCellSize(maxCellSize!, weeks, maxCount);
+    }
+    // 铺满可用宽度（竖屏）
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 7 列，列间距 2，共 6 个间距
+        final cell = (constraints.maxWidth - 6 * 2) / 7;
+        return _gridWithCellSize(cell, weeks, maxCount);
+      },
+    );
+  }
+
+  /// 按给定格子边长渲染整个网格。
+  Widget _gridWithCellSize(double cell, List<List<_HeatmapDay>> weeks, int maxCount) {
+    final totalWidth = cell * 7 + 6 * 2;
+    return SizedBox(
+      width: totalWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: weeks.map((week) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              children: List.generate(7, (col) {
+                final day = col < week.length ? week[col] : null;
+                // count < 0 表示当前月份之外的占位空格，渲染为透明
+                final isEmpty = day == null || day.count < 0;
+                final intensity =
+                    (day != null && maxCount > 0) ? day.count / maxCount : 0.0;
+                // 非空格子的颜色：无任务=极浅底色，有任务=随完成数加深（0.2 ~ 1.0）
+                final Color cellColor;
+                if (isEmpty) {
+                  cellColor = Colors.transparent;
+                } else if (day.count == 0) {
+                  cellColor = baseColor.withOpacity(0.08);
+                } else {
+                  cellColor = baseColor.withOpacity(0.2 + intensity * 0.8);
+                }
+                return Padding(
+                  padding: EdgeInsets.only(right: col < 6 ? 2 : 0),
+                  child: Container(
+                    width: cell,
+                    height: cell,
+                    decoration: BoxDecoration(
+                      color: cellColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                );
+              }),
             ),
           );
         }).toList(),
@@ -242,12 +369,26 @@ class ContributionHeatmap extends StatelessWidget {
     );
   }
 
-  String _getMonthLabel(DateTime date) {
-    const months = ['1月', '3月', '5月', '7月', '9月', '11月'];
-    if (date.day <= 7 && months.contains('${date.month}月')) {
-      return '${date.month}月';
-    }
-    return '';
+  Widget _buildSummaryItem(BuildContext context, String label, String value, String unit) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: baseColor,
+          ),
+        ),
+        Text(
+          '$label($unit)',
+          style: TextStyle(
+            fontSize: 10,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -354,36 +495,52 @@ class WeekdayDistributionChart extends StatelessWidget {
     const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
 
     return SizedBox(
-      height: 100,
+      height: 130,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: List.generate(7, (index) {
           final weekday = index + 1;
           final count = weekdayDistribution[weekday] ?? 0;
-          final height = maxValue > 0 ? (count / maxValue) * 80 : 0.0;
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(
-                '$count',
-                style: const TextStyle(fontSize: 10),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                width: 24,
-                height: height + 4,
-                decoration: BoxDecoration(
-                  color: baseColor.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(4),
+          final barHeight = maxValue > 0 ? (count / maxValue) * 70 : 0.0;
+          return SizedBox(
+            width: 32,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // 数字标签 - 固定在柱子上方
+                SizedBox(
+                  height: 16,
+                  child: Text(
+                    '$count',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                weekdays[index],
-                style: const TextStyle(fontSize: 12),
-              ),
-            ],
+                const SizedBox(height: 2),
+                // 柱子
+                Container(
+                  width: 20,
+                  height: barHeight + 2,
+                  decoration: BoxDecoration(
+                    color: count > 0
+                        ? baseColor.withOpacity(0.7)
+                        : baseColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // 星期标签
+                SizedBox(
+                  height: 16,
+                  child: Text(
+                    weekdays[index],
+                    style: const TextStyle(fontSize: 11),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
           );
         }),
       ),
