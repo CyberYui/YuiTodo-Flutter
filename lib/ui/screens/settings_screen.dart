@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/theme/theme_schemes.dart';
 import '../../core/theme/theme_state.dart';
 import '../../core/theme/font_pairs.dart';
@@ -128,10 +129,7 @@ class SettingsScreen extends ConsumerWidget {
 
           // About section
           _SectionHeader(title: '关于'),
-          const ListTile(
-            title: Text('版本'),
-            subtitle: Text('v4.1.0'),
-          ),
+          _VersionTile(),
           ListTile(
             title: Text('数据存储', style: TextStyle(color: theme.colorScheme.outline)),
             subtitle: const Text('纯本地 SQLite，无网络请求'),
@@ -365,6 +363,41 @@ class SettingsScreen extends ConsumerWidget {
   void _importData(BuildContext context, WidgetRef ref) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('开发中...')),
+    );
+  }
+}
+
+/// Version display tile - reads version from PackageInfo (set in pubspec.yaml)
+class _VersionTile extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_VersionTile> createState() => _VersionTileState();
+}
+
+class _VersionTileState extends ConsumerState<_VersionTile> {
+  String _version = '未知';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() => _version = 'v${info.version}');
+      }
+    } catch (_) {
+      if (mounted) setState(() => _version = '未知');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: const Text('版本'),
+      subtitle: Text(_version),
     );
   }
 }
