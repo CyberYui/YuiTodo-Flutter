@@ -1,30 +1,56 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/task.dart';
+import '../../repositories/task_repository.dart';
 
-/// Recycle Bin Notifier
-class RecycleBinNotifier extends StateNotifier<List<Task>> {
-  RecycleBinNotifier() : super([]);
+/// Recycle Bin Provider - tracks deleted tasks (DB-backed)
+final recycleBinProvider =
+    StateNotifierProvider<RecycleBinNotifier, AsyncValue<List<Task>>>((ref) {
+  return RecycleBinNotifier(ref.watch(taskRepositoryProvider));
+});
+
+class RecycleBinNotifier extends StateNotifier<AsyncValue<List<Task>>> {
+  final TaskRepository _repo;
+
+  RecycleBinNotifier(this._repo) : super(const AsyncValue.loading()) {
+    loadDeletedTasks();
+  }
+
+  Future<void> loadDeletedTasks() async {
+    state = const AsyncValue.loading();
+    try {
+      final tasks = await _repo.getDeletedTasks();
+      state = AsyncValue.data(tasks);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
 
   void addDeleted(Task task) {
-    state = [...state, task];
+    state.whenData((tasks) {
+      // Avoid duplicates
+      if (tasks.any((t) => t.id == task.id)) return;
+      state = AsyncValue.data([task, ...tasks]);
+    });
   }
 
-  void restore(Task task) {
-    state = state.where((t) => t.id != task.id).toList();
+  Future<void> restore(Task task) async {
+    await _repo.restoreTask(task.id!);
+    await loadDeletedTasks();
   }
 
-  void permanentDelete(int taskId) {
-    state = state.where((t) => t.id != taskId).toList();
+  Future<void> permanentDelete(int taskId) async {
+    await _repo.deleteTask(taskId);
+    await loadDeletedTasks();
   }
 
-  void clearAll() {
-    state = [];
+  Future<void> clearAll() async {
+    final tasks = state.valueOrNull ?? [];
+    if (tasks.isEmpty) return;
+    final ids = tasks.map((t) => t.id!).toList();
+    for (final id in ids) {
+      await _repo.deleteTask(id);
+    }
+    await loadDeletedTasks();
   }
 }
-
-/// Recycle bin provider
-final recycleBinProvider =
-    StateNotifierProvider<RecycleBinNotifier, List<Task>>((ref) {
-      return RecycleBinNotifier();
-    });
