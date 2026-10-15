@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -82,6 +82,7 @@ class AppDatabase {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS recurrence_rule (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id INTEGER NOT NULL,
         type TEXT NOT NULL,
         interval INTEGER DEFAULT 1,
         days_of_week TEXT,
@@ -285,6 +286,14 @@ class AppDatabase {
           date TEXT NOT NULL
         )
       ''');
+    }
+    if (oldVersion < 5) {
+      // Add task_id to recurrence_rule (fix: column was missing)
+      final columns = await db.rawQuery('PRAGMA table_info(recurrence_rule)');
+      final columnNames = columns.map((c) => c['name'] as String).toList();
+      if (!columnNames.contains('task_id')) {
+        await db.execute('ALTER TABLE recurrence_rule ADD COLUMN task_id INTEGER');
+      }
     }
   }
 

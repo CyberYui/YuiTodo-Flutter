@@ -2,33 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/task.dart';
+import '../../providers/recycle_bin_provider.dart';
 import '../../providers/task_provider.dart';
-
-/// Recycle Bin Provider - tracks deleted tasks
-final recycleBinProvider =
-    StateNotifierProvider<RecycleBinNotifier, List<Task>>((ref) {
-      return RecycleBinNotifier();
-    });
-
-class RecycleBinNotifier extends StateNotifier<List<Task>> {
-  RecycleBinNotifier() : super([]);
-
-  void addDeleted(Task task) {
-    state = [...state, task];
-  }
-
-  void restore(Task task) {
-    state = state.where((t) => t.id != task.id).toList();
-  }
-
-  void permanentDelete(int taskId) {
-    state = state.where((t) => t.id != taskId).toList();
-  }
-
-  void clearAll() {
-    state = [];
-  }
-}
 
 class RecycleBinScreen extends ConsumerWidget {
   const RecycleBinScreen({super.key});
@@ -36,29 +11,41 @@ class RecycleBinScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final deletedTasks = ref.watch(recycleBinProvider);
+    final deletedTasksAsync = ref.watch(recycleBinProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('回收站'),
         actions: [
-          if (deletedTasks.isNotEmpty) ...[
-            IconButton(
-              icon: const Icon(Icons.checklist),
-              tooltip: '多选',
-              onPressed: () => _enterSelectionMode(context, ref),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_forever),
-              tooltip: '清空回收站',
-              onPressed: () => _showClearDialog(context, ref),
-            ),
-          ],
+          deletedTasksAsync.when(
+            data: (tasks) => tasks.isEmpty
+                ? const SizedBox.shrink()
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.checklist),
+                        tooltip: '多选',
+                        onPressed: () => _enterSelectionMode(context, ref),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_forever),
+                        tooltip: '清空回收站',
+                        onPressed: () => _showClearDialog(context, ref),
+                      ),
+                    ],
+                  ),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
         ],
       ),
-      body: deletedTasks.isEmpty
-          ? _buildEmptyState(theme)
-          : _buildTaskList(context, ref, deletedTasks),
+      body: deletedTasksAsync.when(
+        data: (tasks) =>
+            tasks.isEmpty ? _buildEmptyState(theme) : _buildTaskList(context, ref, tasks),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, __) => Center(child: Text('加载回收站失败: $e')),
+      ),
     );
   }
 
@@ -149,7 +136,6 @@ class RecycleBinScreen extends ConsumerWidget {
   }
 
   void _restoreTask(BuildContext context, WidgetRef ref, Task task) {
-    ref.read(taskListProvider.notifier).restoreTask(task.id!);
     ref.read(recycleBinProvider.notifier).restore(task);
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text('已恢复 "${task.title}"')));
