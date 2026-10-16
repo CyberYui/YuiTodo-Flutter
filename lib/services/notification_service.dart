@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -138,6 +139,17 @@ class NotificationService {
     final location = _location ?? tz.getLocation('Asia/Shanghai');
     final tzScheduledTime = tz.TZDateTime.from(scheduledTime, location);
 
+    // Exact alarms require the SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM permission.
+    // Some OEMs (e.g. ColorOS) deny it, so fall back to inexact when not permitted.
+    AndroidScheduleMode scheduleMode = AndroidScheduleMode.exactAllowWhileIdle;
+    if (Platform.isAndroid) {
+      final exactAllowed = await Permission.scheduleExactAlarm.status;
+      if (!exactAllowed.isGranted) {
+        scheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
+        debugPrint('Exact alarms not permitted; scheduling inexact reminder');
+      }
+    }
+
     debugPrint('Scheduling notification: id=$id, title=$title, time=$scheduledTime, tzTime=$tzScheduledTime');
 
     try {
@@ -147,7 +159,7 @@ class NotificationService {
         body,
         tzScheduledTime,
         details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: scheduleMode,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
       );
