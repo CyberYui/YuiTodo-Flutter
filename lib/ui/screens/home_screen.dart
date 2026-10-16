@@ -13,7 +13,7 @@ import '../screens/task_editor_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/statistics_screen.dart';
 import '../widgets/task_card.dart';
-import '../../core/utils/undo_manager.dart';
+import '../../core/utils/app_banner.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -70,35 +70,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     var filtered = tasks.where((t) => t.deletedAt == null).toList();
 
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final todayEnd = today.add(const Duration(days: 1));
-    final tomorrowEnd = today.add(const Duration(days: 2));
+    final todayStamp =
+        DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
+    final tomorrowStamp =
+        todayStamp + const Duration(days: 1).inMilliseconds;
+
+    // Start-of-day timestamp for a task's start date.
+    int? dayStampOf(Task t) {
+      final ts = t.startDate ?? t.startTime;
+      if (ts == null) return null;
+      final d = DateTime.fromMillisecondsSinceEpoch(ts);
+      return DateTime(d.year, d.month, d.day).millisecondsSinceEpoch;
+    }
 
     switch (smartFilter) {
       case 'today':
-        filtered = filtered.where((t) {
-          final date = DateTime.fromMillisecondsSinceEpoch(
-            t.startDate ?? t.startTime ?? 0,
-          );
-          return date.isAfter(today.subtract(const Duration(days: 1))) &&
-              date.isBefore(todayEnd);
-        }).toList();
+        filtered = filtered.where((t) => dayStampOf(t) == todayStamp).toList();
         break;
       case 'tomorrow':
-        filtered = filtered.where((t) {
-          final date = DateTime.fromMillisecondsSinceEpoch(
-            t.startDate ?? t.startTime ?? 0,
-          );
-          return date.isAfter(todayEnd.subtract(const Duration(days: 1))) &&
-              date.isBefore(tomorrowEnd);
-        }).toList();
+        filtered =
+            filtered.where((t) => dayStampOf(t) == tomorrowStamp).toList();
         break;
+      // "未来" includes tomorrow and everything after it.
       case 'future':
         filtered = filtered.where((t) {
-          final date = DateTime.fromMillisecondsSinceEpoch(
-            t.startDate ?? t.startTime ?? 0,
-          );
-          return date.isAfter(tomorrowEnd.subtract(const Duration(days: 1)));
+          final s = dayStampOf(t);
+          return s != null && s >= tomorrowStamp;
         }).toList();
         break;
       case 'completed':
@@ -141,7 +138,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void _deleteTaskWithUndo(Task task) {
     ref.read(taskListProvider.notifier).softDeleteTask(task.id!);
     ref.read(recycleBinProvider.notifier).addDeleted(task);
-    context.showUndoSnackBar('任务已删除', () {
+    context.showTopBanner('任务已删除', actionLabel: '撤销', onAction: () {
       ref.read(taskListProvider.notifier).restoreTask(task.id!);
       ref.read(recycleBinProvider.notifier).restore(task);
     });
@@ -150,9 +147,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void _completeTaskWithUndo(Task task) {
     ref.read(taskListProvider.notifier).toggleComplete(task);
     final wasDone = task.status == 'done';
-    context.showUndoSnackBar(wasDone ? '已取消完成' : '已完成', () {
-      ref.read(taskListProvider.notifier).toggleComplete(task);
-    });
+    context.showTopBanner(
+      wasDone ? '已取消完成' : '已完成',
+      actionLabel: '撤销',
+      onAction: () {
+        ref.read(taskListProvider.notifier).toggleComplete(task);
+      },
+    );
   }
 
   void _onReorder(int oldIndex, int newIndex, List<Task> filteredTasks) {

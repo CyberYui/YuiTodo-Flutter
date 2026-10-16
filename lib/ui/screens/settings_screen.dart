@@ -4,11 +4,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/theme/theme_schemes.dart';
 import '../../core/theme/theme_state.dart';
 import '../../core/theme/font_pairs.dart';
+import '../../core/theme/font_state.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
-
-/// Font index provider
-final fontIndexProvider = StateProvider<int>((ref) => 0);
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -320,7 +318,7 @@ class SettingsScreen extends ConsumerWidget {
                         onTap: () {
                           // 更新字体索引 → 触发 main.dart 中的 build 方法重新执行
                           // → 重新构建带新字体的 TextTheme → 整个应用字体刷新
-                          ref.read(fontIndexProvider.notifier).state = index;
+                          ref.read(fontIndexProvider.notifier).setIndex(index);
                           Navigator.pop(context);
                         },
                       );

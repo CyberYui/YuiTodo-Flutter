@@ -289,7 +289,10 @@ class TaskRepository {
     final taskMap = Map<String, dynamic>.from(original.first);
     taskMap.remove('id');
     taskMap['start_date'] = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
+    taskMap['start_time'] = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
     taskMap['end_time'] = DateTime(date.year, date.month, date.day, 23, 59, 59).millisecondsSinceEpoch;
+    // Link the instance back to its original task so getTaskForDate can find it.
+    taskMap['recurrence_id'] = originalTaskId;
     taskMap['status'] = 'pending';
     taskMap['created_at'] = DateTime.now().millisecondsSinceEpoch;
     taskMap['updated_at'] = DateTime.now().millisecondsSinceEpoch;
@@ -322,12 +325,34 @@ class TaskRepository {
     final dayStart = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
     final dayEnd = DateTime(date.year, date.month, date.day + 1).millisecondsSinceEpoch;
 
+    // 1. A generated instance for this date (instances point back to the
+    //    original task via recurrence_id).
     final maps = await db.query(
       'task',
       where: 'recurrence_id = ? AND start_date >= ? AND start_date < ? AND (deleted_at IS NULL OR deleted_at = 0)',
       whereArgs: [originalTaskId, dayStart, dayEnd],
       limit: 1,
     );
-    return maps.isEmpty ? null : Task.fromMap(maps.first);
+    if (maps.isNotEmpty) return Task.fromMap(maps.first);
+
+    // 2. The original task itself may already be the instance for its own
+    //    start date (e.g. the day the recurring task was created).
+    final originals = await db.query(
+      'task',
+      where: 'id = ?',
+      whereArgs: [originalTaskId],
+      limit: 1,
+    );
+    if (originals.isNotEmpty) {
+      final original = Task.fromMap(originals.first);
+      final originalTs = original.startDate ?? original.startTime;
+      if (originalTs != null) {
+        final d = DateTime.fromMillisecondsSinceEpoch(originalTs);
+        if (d.year == date.year && d.month == date.month && d.day == date.day) {
+          return original;
+        }
+      }
+    }
+    return null;
   }
 }
