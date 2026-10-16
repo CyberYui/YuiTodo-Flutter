@@ -150,11 +150,6 @@ class TaskNotifier extends StateNotifier<AsyncValue<List<Task>>> {
     await loadTasks();
   }
 
-  Future<void> toggleStar(Task task) async {
-    await _repo.updateTask(task.copyWith(isStarred: !task.isStarred));
-    await loadTasks();
-  }
-
   Future<void> batchDelete(List<int> taskIds) async {
     await _repo.batchSoftDelete(taskIds);
     await loadTasks();

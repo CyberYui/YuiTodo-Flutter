@@ -36,9 +36,12 @@ class TaskCard extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       decoration: BoxDecoration(
         color: isSelected
-            ? theme.colorScheme.primary.withOpacity(0.08)
+            ? theme.colorScheme.primary.withOpacity(0.15)
             : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
+        border: isSelected
+            ? Border.all(color: theme.colorScheme.primary.withOpacity(0.4))
+            : null,
       ),
       child: InkWell(
         onTap: onTap,
@@ -115,14 +118,7 @@ class TaskCard extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (task.endTime != null)
-                              Text(
-                                _formatDate(task.endTime!),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.outline,
-                                ),
-                              ),
+                            _buildDateLabel(theme),
                           ],
                         ),
 
@@ -277,6 +273,26 @@ class TaskCard extends ConsumerWidget {
     }
 
     return widgets;
+  }
+
+  /// 构建日期标签：显示开始日期；若结束日期是另一天则一并显示范围。
+  Widget _buildDateLabel(ThemeData theme) {
+    final startTs = task.startDate ?? task.startTime;
+    if (startTs == null) return const SizedBox.shrink();
+    final startLabel = _formatDate(startTs);
+    final endTs = task.endTime;
+    final showEnd = endTs != null && !_isSameDay(startTs, endTs);
+    final text = showEnd ? '$startLabel → ${_formatDate(endTs)}' : startLabel;
+    return Text(
+      text,
+      style: TextStyle(fontSize: 12, color: theme.colorScheme.outline),
+    );
+  }
+
+  bool _isSameDay(int a, int b) {
+    final da = DateTime.fromMillisecondsSinceEpoch(a);
+    final db = DateTime.fromMillisecondsSinceEpoch(b);
+    return da.year == db.year && da.month == db.month && da.day == db.day;
   }
 
   /// 格式化日期显示

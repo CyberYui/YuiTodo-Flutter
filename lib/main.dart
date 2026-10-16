@@ -4,17 +4,24 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_state.dart';
 import 'core/theme/theme_schemes.dart';
 import 'core/theme/font_pairs.dart';  // ← 导入字体配对系统
+import 'core/theme/font_state.dart';  // ← 字体索引（已持久化）
+import 'core/storage/app_prefs.dart';
 import 'services/notification_service.dart';
 import 'services/app_usage_service.dart';
 import 'ui/screens/home_screen.dart';
-import 'ui/screens/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await AppPrefs.load();
   await NotificationService.instance.initialize();
   // Record app open
   await AppUsageService.instance.recordAppOpen();
-  runApp(const ProviderScope(child: YuiTodoApp()));
+  runApp(
+    ProviderScope(
+      overrides: [appPrefsProvider.overrideWithValue(prefs)],
+      child: const YuiTodoApp(),
+    ),
+  );
 }
 
 class YuiTodoApp extends ConsumerStatefulWidget {
@@ -77,7 +84,8 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
     return MaterialApp(
       title: 'YuiTodo',
       debugShowCheckedModeBanner: false,
-      themeMode: themeState.mode,  // 主题模式（light/dark/system）
+      // Resolve system brightness + timed auto-switch into a concrete mode.
+      themeMode: themeState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       // 应用带字体的浅色主题
       theme: baseLightTheme.copyWith(
         textTheme: buildTextTheme(baseLightTheme.textTheme),
