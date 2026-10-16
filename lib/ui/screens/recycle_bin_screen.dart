@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/task.dart';
 import '../../providers/task_provider.dart';
+import '../../core/utils/app_banner.dart';
 
 /// Recycle Bin Provider - tracks deleted tasks
 final recycleBinProvider =
@@ -151,14 +152,12 @@ class RecycleBinScreen extends ConsumerWidget {
   void _restoreTask(BuildContext context, WidgetRef ref, Task task) {
     ref.read(taskListProvider.notifier).restoreTask(task.id!);
     ref.read(recycleBinProvider.notifier).restore(task);
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('已恢复 "${task.title}"')));
+    context.showTopBanner('已恢复 "${task.title}"');
   }
 
   void _permanentDelete(BuildContext context, WidgetRef ref, int taskId) {
     ref.read(recycleBinProvider.notifier).permanentDelete(taskId);
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('已永久删除')));
+    context.showTopBanner('已永久删除');
   }
 
   void _enterSelectionMode(BuildContext context, WidgetRef ref) {
@@ -180,8 +179,7 @@ class RecycleBinScreen extends ConsumerWidget {
             onPressed: () {
               ref.read(recycleBinProvider.notifier).clearAll();
               Navigator.pop(context);
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(const SnackBar(content: Text('回收站已清空')));
+              context.showTopBanner('回收站已清空');
             },
             child: const Text('确定', style: TextStyle(color: Colors.red)),
           ),

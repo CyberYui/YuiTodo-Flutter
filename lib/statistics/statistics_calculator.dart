@@ -15,8 +15,6 @@ class TaskStatistics {
   final int totalSteps;
   final int completedSteps;
   final double stepCompletionRate;
-  final int starredTasks;
-  final int totalTags;
   final List<TagStat> tagStats;
   final int currentStreak;
   final int longestStreak;
@@ -37,8 +35,6 @@ class TaskStatistics {
     this.totalSteps = 0,
     this.completedSteps = 0,
     this.stepCompletionRate = 0.0,
-    this.starredTasks = 0,
-    this.totalTags = 0,
     this.tagStats = const [],
     this.currentStreak = 0,
     this.longestStreak = 0,
@@ -102,7 +98,6 @@ class StatisticsCalculator {
     int completed = 0;
     int pending = 0;
     int overdue = 0;
-    int starred = 0;
     int totalSteps = 0;
     int completedSteps = 0;
 
@@ -124,8 +119,6 @@ class StatisticsCalculator {
           }
         }
       }
-
-      if (task.isStarred) starred++;
 
       // Steps
       totalSteps += task.steps.length;
@@ -191,8 +184,6 @@ class StatisticsCalculator {
       totalSteps: totalSteps,
       completedSteps: completedSteps,
       stepCompletionRate: stepRate,
-      starredTasks: starred,
-      totalTags: tagMap.length,
       tagStats: tagMap.values.toList()..sort((a, b) => b.total.compareTo(a.total)),
       currentStreak: streaks.$1,
       longestStreak: streaks.$2,

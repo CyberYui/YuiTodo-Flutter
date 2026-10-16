@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/task.dart';
 import '../../providers/task_provider.dart';
+import '../../providers/tag_provider.dart';
 import '../../services/app_usage_service.dart';
 import '../../statistics/statistics_calculator.dart';
 import '../../ui/widgets/stat_widgets.dart';
@@ -37,6 +38,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tasksAsync = ref.watch(taskListProvider);
+    final tagsAsync = ref.watch(tagListProvider);
     final orientation = MediaQuery.of(context).orientation;
     final isLandscape = orientation == Orientation.landscape;
 
@@ -46,11 +48,17 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
         data: (tasks) {
           final stats = StatisticsCalculator.calculate(tasks, appOpenCount: _appOpenCount);
           final todayProgress = StatisticsCalculator.getTodayProgress(tasks);
+          final now = DateTime.now();
+          final todayCreated = tasks.where((t) {
+            final d = DateTime.fromMillisecondsSinceEpoch(t.createdAt);
+            return d.year == now.year && d.month == now.month && d.day == now.day;
+          }).length;
+          final tagCount = tagsAsync.value?.length ?? 0;
 
           if (isLandscape) {
-            return _buildLandscapeLayout(theme, stats, todayProgress);
+            return _buildLandscapeLayout(theme, stats, todayProgress, todayCreated, tagCount);
           }
-          return _buildPortraitLayout(theme, stats, todayProgress);
+          return _buildPortraitLayout(theme, stats, todayProgress, todayCreated, tagCount);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('加载失败: $e')),
@@ -58,7 +66,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     );
   }
 
-  Widget _buildPortraitLayout(ThemeData theme, TaskStatistics stats, double todayProgress) {
+  Widget _buildPortraitLayout(ThemeData theme, TaskStatistics stats, double todayProgress, int todayCreated, int tagCount) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -77,10 +85,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           ),
           const SizedBox(height: 16),
           CompactStatCard(
-            label: '收藏任务',
-            value: stats.starredTasks.toString(),
-            icon: Icons.star,
-            color: Colors.amber,
+            label: '今日新增',
+            value: todayCreated.toString(),
+            icon: Icons.add_task,
+            color: Colors.blue,
           ),
           const SizedBox(height: 8),
           CompactStatCard(
@@ -92,7 +100,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           const SizedBox(height: 8),
           CompactStatCard(
             label: '标签数量',
-            value: stats.totalTags.toString(),
+            value: tagCount.toString(),
             icon: Icons.label,
             color: Colors.teal,
           ),
@@ -183,7 +191,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     );
   }
 
-  Widget _buildLandscapeLayout(ThemeData theme, TaskStatistics stats, double todayProgress) {
+  Widget _buildLandscapeLayout(ThemeData theme, TaskStatistics stats, double todayProgress, int todayCreated, int tagCount) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -220,10 +228,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             children: [
               Expanded(
                 child: CompactStatCard(
-                  label: '收藏任务',
-                  value: stats.starredTasks.toString(),
-                  icon: Icons.star,
-                  color: Colors.amber,
+                  label: '今日新增',
+                  value: todayCreated.toString(),
+                  icon: Icons.add_task,
+                  color: Colors.blue,
                 ),
               ),
               const SizedBox(width: 8),
@@ -239,7 +247,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
               Expanded(
                 child: CompactStatCard(
                   label: '标签数量',
-                  value: stats.totalTags.toString(),
+                  value: tagCount.toString(),
                   icon: Icons.label,
                   color: Colors.teal,
                 ),
