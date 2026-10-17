@@ -549,7 +549,7 @@ orphan = query(status=0 &amp;&amp; start_time &lt; now - 1h)
 <div class="callout warn">
 <b>Phase 3 实现说明与延后项</b>
 - 习惯：创建时提供名称/颜色/每周目标，图标暂用默认勾选；历史网格为近 30 天（未做 7/90 切换）。
-- 统计：时间范围与鼓励语已完成；鼓励语基于"今日完成率"。
+- 统计：时间范围与鼓励语已完成；鼓励语基于"今日完成率"；新增「统计时排除习惯」开关（Phase 4）。
 - 提醒：重复任务已在保存和应用启动时预排未来 7 天；<code>task_reminder</code> 表已建但多提醒 UI、每任务铃声、稍后提醒、BOOT_COMPLETED 重排尚未接入（留到 Phase 4）。
 </div>
 
@@ -569,15 +569,32 @@ orphan = query(status=0 &amp;&amp; start_time &lt; now - 1h)
 
 <h3>7.1 体验打磨</h3>
 <ul class="chk">
-  <li>页面转场统一（fade + slide），底部面板 spring 动画</li>
+  <li class="done">页面转场统一（fade + slide），底部面板 spring 动画</li>
   <li>任务完成/删除的列表动画（AnimatedList / 隐式动画）</li>
-  <li>滑动/勾选触觉反馈（HapticFeedback）</li>
-  <li>分区折叠/展开动画</li>
+  <li class="done">滑动/勾选触觉反馈（HapticFeedback）</li>
+  <li class="done">分区折叠/展开动画</li>
   <li>月历切换月份动画</li>
   <li>主题切换过渡平顺（避免闪白）</li>
   <li>滑动阈值 / 动画曲线调优（或改用 <code>ScrollMotion</code> 并加长拖动阈值），提升跟手度</li>
-  <li>滑动渐变方案统一：同色系按钮渐变 + 卡片交界处跨色渐变（两者兼得）</li>
+  <li class="done">滑动渐变方案统一：同色系按钮渐变 + 卡片交界处跨色渐变（两者兼得）</li>
 </ul>
+
+<div class="callout ok">
+<b>Phase 4 已完成（打磨）</b>
+- 页面转场：全局 <code>CupertinoPageTransitionsBuilder</code>（左右滑入）。
+- 滑动：<code>dragStartBehavior.down</code> 让拖动更跟手；渐变为"同色系渐变 + 交界处跨色渐变"。
+- 触觉：完成/删除/星标/跳过均有 <code>HapticFeedback</code>。
+- 分区折叠：标题箭头 <code>AnimatedRotation</code>。
+- 统计：新增「统计时排除习惯」开关（持久化，默认关闭）。
+</div>
+
+<div class="callout warn">
+<b>仍未完成（留到真机阶段/后续）</b>
+- 滑动阈值与动画曲线的手感微调（需真机体验）。
+- 任务完成/删除的列表增删动画、月历翻月动画、主题切换过渡。
+- 增量更新/月历缓存等性能优化。
+- 专注结束通知、多提醒 UI、稍后提醒、BOOT_COMPLETED 重排。
+</div>
 
 <h3>7.2 性能与健壮性</h3>
 <ul class="chk">
