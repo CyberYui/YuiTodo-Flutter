@@ -57,6 +57,13 @@ class AppPrefs {
     _prefs.setString('section_order', value);
   }
 
+  // ---- Statistics ----
+  bool get statsExcludeHabits =>
+      _prefs.getBool('stats_exclude_habits') ?? false;
+  set statsExcludeHabits(bool value) {
+    _prefs.setBool('stats_exclude_habits', value);
+  }
+
   // ---- Font ----
   int get fontIndex => _prefs.getInt(_kFontIndex) ?? 0;
   set fontIndex(int value) {

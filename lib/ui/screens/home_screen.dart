@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
@@ -175,6 +177,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Future<void> _deleteTaskWithUndo(Task task) async {
+    HapticFeedback.mediumImpact();
     final deletedAt = DateTime.now().millisecondsSinceEpoch;
     await ref.read(taskListProvider.notifier).softDeleteTask(task.id!);
     ref.read(recycleBinProvider.notifier).addDeleted(
@@ -190,6 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Future<void> _completeOccurrenceWithUndo(TaskOccurrence occ) async {
+    HapticFeedback.lightImpact();
     final wasDone = occ.isDone;
     await ref.read(occurrenceListProvider.notifier).setDone(occ, !wasDone);
     if (!mounted) return;
@@ -554,10 +558,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
         child: Row(
           children: [
-            Icon(
-              collapsed ? Icons.expand_more : Icons.expand_less,
-              size: 18,
-              color: theme.colorScheme.outline,
+            AnimatedRotation(
+              turns: collapsed ? 0.0 : 0.5,
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                Icons.expand_more,
+                size: 18,
+                color: theme.colorScheme.outline,
+              ),
             ),
             const SizedBox(width: 4),
             Text(
@@ -622,6 +630,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return Slidable(
       key: ValueKey('occ-${task.id}-${occ.dayKey}'),
       groupTag: 'tasks',
+      dragStartBehavior: DragStartBehavior.down,
       startActionPane: ActionPane(
         motion: const DrawerMotion(),
         extentRatio: 0.5,
@@ -763,6 +772,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Future<void> _toggleStarOccurrence(TaskOccurrence occ) async {
+    HapticFeedback.selectionClick();
     final task = occ.task;
     final next = !task.isStarred;
     await ref
@@ -783,6 +793,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Future<void> _skipOccurrence(TaskOccurrence occ) async {
+    HapticFeedback.lightImpact();
     await ref.read(occurrenceListProvider.notifier).skip(occ);
     if (!mounted) return;
     context.showTopBanner('已跳过本次', actionLabel: '撤销', onAction: () async {

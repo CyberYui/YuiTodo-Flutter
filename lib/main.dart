@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -109,10 +110,22 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
       // 应用带字体的浅色主题
       theme: baseLightTheme.copyWith(
         textTheme: buildTextTheme(baseLightTheme.textTheme),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
       ),
       // 应用带字体的深色主题
       darkTheme: baseDarkTheme.copyWith(
         textTheme: buildTextTheme(baseDarkTheme.textTheme),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
       ),
       home: const HomeScreen(),
     );
