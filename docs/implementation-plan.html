@@ -112,7 +112,7 @@
 
 <h1>YuiTodo × Todoery 对齐<br>详细实施计划</h1>
 <p class="lede">把 <code>docs/todoery-analysis.html</code> 的结论落成可执行的工程步骤：按依赖顺序分 5 个阶段，每阶段可独立验证。</p>
-<p class="meta">目标：Android 单端 · 纯本地 · 无智能捕捉/语音/云同步 · 保留开源版与 full 版的字体差异</p>
+<p class="meta">基线：v3.4.2.2（分支已对齐、撤销修复已发布）· 目标：Android 单端 · 纯本地 · 无智能捕捉/语音/云同步 · 保留开源版与 full 版的字体差异</p>
 
 <div class="kpi">
   <div class="box"><div class="v">5</div><div class="l">阶段（Phase 0–4）</div></div>
@@ -151,6 +151,23 @@
 </ul>
 </div>
 
+<h3>0.3 已完成的前置对齐（v3.4.2.2）</h3>
+<div class="card">
+<p>本轮已先把两个分支对齐并发布基线版本，<b>新功能施工从该基线开始</b>：</p>
+<table>
+<tr><th>项目</th><th>状态</th></tr>
+<tr><td>分支对齐</td><td><span class="tag t-ok">已完成</span> full 与 opensource 仅差字体功能（非字体差异 6 个文件）</td></tr>
+<tr><td>首启测试数据</td><td><span class="tag t-ok">已移除</span> 全新安装为空状态，不再插入假任务</td></tr>
+<tr><td>撤销 / 恢复失效</td><td><span class="tag t-ok">已修复</span> <code>restoreTask</code> 统一写 <code>deleted_at=NULL</code>；首页兼容历史 0；回收站恢复后刷新列表</td></tr>
+<tr><td>opensource 历史缺口</td><td><span class="tag t-ok">已补齐</span> DB v5 / DB 持久化回收站 / <code>package_info_plus</code> / MIT LICENSE</td></tr>
+<tr><td>自动化测试</td><td><span class="tag t-ok">16/16 通过</span>（含修复的 widget 冒烟测试）</td></tr>
+<tr><td>版本</td><td><code>3.4.2+3</code> / versionName <code>3.4.2.2</code></td></tr>
+<tr><td>分支</td><td><code>full</code> · <code>main</code> · <code>release/v3.4.2-opensource</code>（旧的 <code>release/v3.4.1-opensource</code> 已删除）</td></tr>
+<tr><td>发布</td><td>GitHub Release <code>v3.4.2.2-opensource</code>（仅开源版 APK）</td></tr>
+</table>
+<p class="small">因此下文 Phase 0 的数据库迁移从 <b>v5 → v6</b> 开始（当前已是 v5）。</p>
+</div>
+
 <!-- ============ 架构 ============ -->
 <h2 id="arch"><span class="num">01</span>目标架构</h2>
 <div class="card">
@@ -163,7 +180,7 @@
    │
 <span class="c">TaskRepository</span>（扩展 occurrence / focus / habit 查询）
    │
-<span class="c">AppDatabase (sqflite v5)</span> + AppPrefs</pre>
+<span class="c">AppDatabase (sqflite v6)</span> + AppPrefs</pre>
 <p class="small">读写分离：读走虚拟实例；写只落"定义 + 例外（occurrence）"。</p>
 </div>
 
@@ -177,7 +194,7 @@
 }</pre>
 
 <!-- ============ Schema ============ -->
-<h2 id="schema"><span class="num">02</span>数据模型变更（v4 → v5）</h2>
+<h2 id="schema"><span class="num">02</span>数据模型变更（v5 → v6）</h2>
 
 <div class="callout warn">
 <b>迁移策略</b>
@@ -266,14 +283,14 @@ Todoery 的习惯本质是"带重复的任务"。复用 <code>task(is_habit=1)</
 
 <h3>任务清单</h3>
 <ul class="chk">
-  <li>database.dart：版本 4→5，建新表/加列，写迁移（折叠旧实例）</li>
+  <li>database.dart：版本 5→6，建新表/加列，写迁移（折叠旧实例）</li>
   <li>重写 <code>RecurrenceCalculator</code>：真正使用 daysOfWeek / dayOfMonth / monthOfYear / endType / 跳过规则</li>
   <li>新增 <code>lib/models/task_occurrence.dart</code></li>
   <li>新增 <code>lib/core/date/task_date_query_engine.dart</code>（范围查询 + occurrence 叠加 + 简单缓存）</li>
   <li>repository：新增 occurrence 的 complete/skip/undo/按范围查询；<b>移除</b> <code>duplicateTaskForDate</code> 与自动物化逻辑</li>
   <li>task_provider：改为消费虚拟实例；保留 <code>AsyncValue</code> 接口不变，减少 UI 改动</li>
   <li>统计/通知/首页改为读 occurrence</li>
-  <li>回归：你之前修的 A/B/C/E/F 六项不能回退</li>
+  <li>回归：此前的 A/B/C/E/F 六项 + 撤销/恢复修复不能回退</li>
 </ul>
 
 <h3>关键实现要点</h3>
@@ -512,21 +529,21 @@ orphan = query(status=0 &amp;&amp; start_time &lt; now - 1h)
 <ul class="chk">
   <li>增量更新替代全量 <code>loadTasks()</code>（至少首页/日历范围）</li>
   <li>月历查询加内存缓存（按月份缓存，任务变更时失效）</li>
-  <li>回收站改为查 <code>deleted_at</code>（持久化）</li>
+  <li class="done">回收站已改为查 <code>deleted_at</code>（DB 持久化）</li>
   <li>status 字符串 → 枚举（可选，降低出错率）</li>
   <li>空态、错误态、加载态统一</li>
 </ul>
 
 <h3>7.3 双版本构建</h3>
-<div class="callout warn">
-<b>两分支差异已确认不止字体</b>
-<code>full</code> 与 <code>release/v3.4.1-opensource</code> 之间还差 <code>database.dart</code>、<code>recycle_bin_provider.dart</code>、<code>recycle_bin_screen.dart</code>、<code>styles.xml</code>、<code>.gitignore</code> 等。因此<b>不能直接 cherry-pick</b>，必须用"从 full 派生 + 确定性剥离字体"的方式。
+<div class="callout ok">
+<b>前置对齐已完成（v3.4.2.2）</b>
+<code>full</code> 与 <code>release/v3.4.2-opensource</code> 现在仅差字体功能；旧的 <code>release/v3.4.1-opensource</code> 已删除。<code>tool/strip_fonts.py</code> 已就绪，发布时从 full 派生即可，不再手工剥离。
 </div>
 <ul class="chk">
   <li>发布前在 full 分支完成全部功能与测试</li>
   <li>从 full 新建 <code>release/v3.5.0-opensource</code></li>
   <li>执行字体剥离：删 <code>assets/fonts/*.ttf</code>；删 <code>font_pairs.dart</code>/<code>font_state.dart</code>；移除 <code>pubspec.yaml</code> fonts 段；移除 settings 字体选择器与 main.dart 字体应用</li>
-  <li>（推荐）加 <code>tool/strip_fonts.py</code> 固化剥离步骤，避免手工遗漏</li>
+  <li class="done">已创建 <code>tool/strip_fonts.py</code>，固化剥离步骤</li>
   <li>版本号：pubspec <code>3.5.0+3</code>；full 的 gradle <code>versionName "3.5.0"</code></li>
   <li>构建两个 APK，分别安装测试（先卸载旧包）</li>
 </ul>
@@ -573,7 +590,7 @@ orphan = query(status=0 &amp;&amp; start_time &lt; now - 1h)
 <div class="scroll">
 <table class="files">
 <tr><th>路径</th><th>改动</th><th>阶段</th></tr>
-<tr><td>lib/core/database/database.dart</td><td>v5 迁移、新表、加列</td><td>0</td></tr>
+<tr><td>lib/core/database/database.dart</td><td>v6 迁移、新表、加列</td><td>0</td></tr>
 <tr><td>lib/core/utils/recurrence.dart</td><td>重写计算（修复参数未用）</td><td>0</td></tr>
 <tr><td>lib/models/recurrence_rule.dart</td><td>新增 endType/monthMode/weekIndex 等</td><td>0</td></tr>
 <tr><td>lib/models/task.dart</td><td>新增 isOnlyDay/symbol/isHabit/ringtone</td><td>0</td></tr>
@@ -619,7 +636,7 @@ orphan = query(status=0 &amp;&amp; start_time &lt; now - 1h)
   <li>习惯打卡 → 连续天数 +1；撤销 → 回退</li>
   <li>统计范围切换数字一致</li>
   <li>主题切换、字体切换（full）正常</li>
-  <li>之前六项修复（重复/持久化/日期/统计/顶部Banner/选中高亮）不回退</li>
+  <li>此前修复（重复/持久化/日期/统计/顶部Banner/选中高亮/撤销恢复）不回退</li>
 </ul>
 
 <h3>9.3 真机清单（发布前）</h3>
@@ -642,7 +659,7 @@ orphan = query(status=0 &amp;&amp; start_time &lt; now - 1h)
 <tr><td>月历查询性能</td><td>中</td><td>按月份缓存 + 索引 + 只为可见范围计算</td></tr>
 <tr><td>升级数据损坏</td><td>中</td><td>升级前本地导出；迁移幂等；失败可清库（数据简单）</td></tr>
 <tr><td>两版本分叉</td><td>中</td><td>只改 full；发布时从 full 派生并用脚本剥离字体；两版各自冒烟</td></tr>
-<tr><td>重构波及旧修复</td><td>高</td><td>每阶段跑六项回归；impact 分析；detect_changes</td></tr>
+<tr><td>重构波及旧修复</td><td>高</td><td>每阶段跑旧修复回归；impact 分析；detect_changes</td></tr>
 <tr><td>专注计时漂移</td><td>低</td><td>以真实时间差计算，不依赖 tick；前台重算</td></tr>
 </table>
 </div>
@@ -698,7 +715,7 @@ gh release create v3.5.0-opensource --title "YuiTodo v3.5.0" --notes "..." &lt;a
 <div class="card">
 <table>
 <tr><th>阶段</th><th>完成标准</th></tr>
-<tr><td>Phase 0</td><td>重复实例虚拟化；完成/跳过只写 occurrence；task 表行数不随天数增长；重写后的 recurrence 全部单元测试通过；六项旧修复无回退</td></tr>
+<tr><td>Phase 0</td><td>重复实例虚拟化；完成/跳过只写 occurrence；task 表行数不随天数增长；重写后的 recurrence 全部单元测试通过；旧修复（含撤销/恢复）无回退</td></tr>
 <tr><td>Phase 1</td><td>分区（逾期/今天/未来/今日完成）可折叠可调序；筛选与分区混合切换；右滑 5 动作 + 左滑 Star；全部可撤销</td></tr>
 <tr><td>Phase 2</td><td>月历点与任务一致、点日期出列表；专注 Timer/Stopwatch、暂停、休息、记录、后台恢复准确</td></tr>
 <tr><td>Phase 3</td><td>习惯打卡与连续天数正确；统计范围切换一致；重复任务未来 7 天提醒真机准时；稍后提醒可用</td></tr>
