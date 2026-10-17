@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/task.dart';
+import '../../models/task_occurrence.dart';
 import '../../providers/task_provider.dart';
+import '../../providers/occurrence_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../services/app_usage_service.dart';
 import '../../statistics/statistics_calculator.dart';
@@ -37,6 +39,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final occurrencesAsync = ref.watch(occurrenceListProvider);
     final tasksAsync = ref.watch(taskListProvider);
     final tagsAsync = ref.watch(tagListProvider);
     final orientation = MediaQuery.of(context).orientation;
@@ -44,21 +47,50 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('统计')),
-      body: tasksAsync.when(
-        data: (tasks) {
-          final stats = StatisticsCalculator.calculate(tasks, appOpenCount: _appOpenCount);
-          final todayProgress = StatisticsCalculator.getTodayProgress(tasks);
+      body: occurrencesAsync.when(
+        data: (occurrences) {
+          // Expand virtual occurrences into per-day task views so each
+          // occurrence counts separately. Only count up to today so future
+          // recurring instances do not inflate the totals.
           final now = DateTime.now();
-          final todayCreated = tasks.where((t) {
+          final today = DateTime(now.year, now.month, now.day);
+          final tasks = occurrences
+              .where((o) => !o.isSkipped && !o.day.isAfter(today))
+              .map(
+                (o) => o.task.copyWith(
+                  status: o.isDone ? 'done' : 'pending',
+                  startDate: o.day.millisecondsSinceEpoch,
+                  startTime: o.day.millisecondsSinceEpoch,
+                ),
+              )
+              .toList();
+          final stats = StatisticsCalculator.calculate(
+            tasks,
+            appOpenCount: _appOpenCount,
+          );
+          final todayProgress = StatisticsCalculator.getTodayProgress(tasks);
+          final todayCreated = (tasksAsync.valueOrNull ?? []).where((t) {
             final d = DateTime.fromMillisecondsSinceEpoch(t.createdAt);
             return d.year == now.year && d.month == now.month && d.day == now.day;
           }).length;
           final tagCount = tagsAsync.value?.length ?? 0;
 
           if (isLandscape) {
-            return _buildLandscapeLayout(theme, stats, todayProgress, todayCreated, tagCount);
+            return _buildLandscapeLayout(
+              theme,
+              stats,
+              todayProgress,
+              todayCreated,
+              tagCount,
+            );
           }
-          return _buildPortraitLayout(theme, stats, todayProgress, todayCreated, tagCount);
+          return _buildPortraitLayout(
+            theme,
+            stats,
+            todayProgress,
+            todayCreated,
+            tagCount,
+          );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('加载失败: $e')),
