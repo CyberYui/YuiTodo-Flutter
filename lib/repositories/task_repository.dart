@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../models/task.dart';
 import '../models/recurrence_rule.dart';
+import '../models/focus_session.dart';
 import '../core/database/database.dart';
 import '../core/date/date_utils.dart';
 
@@ -417,6 +418,65 @@ class TaskRepository {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // Focus sessions
+  // ---------------------------------------------------------------------------
+
+  Future<int> createFocusSession(FocusSession session) async {
+    final db = await _db.database;
+    final data = session.toMap()..remove('id');
+    return db.insert('focus_session', data);
+  }
+
+  Future<void> updateFocusSession(FocusSession session) async {
+    final db = await _db.database;
+    await db.update(
+      'focus_session',
+      session.toMap(),
+      where: 'id = ?',
+      whereArgs: [session.id],
+    );
+  }
+
+  Future<List<FocusSession>> getFocusSessions({int limit = 50}) async {
+    final db = await _db.database;
+    final maps = await db.query(
+      'focus_session',
+      orderBy: 'start_time DESC',
+      limit: limit,
+    );
+    return maps.map(FocusSession.fromMap).toList();
+  }
+
+  Future<FocusSession?> getActiveFocusSession() async {
+    final db = await _db.database;
+    final maps = await db.query(
+      'focus_session',
+      where: 'status = ?',
+      whereArgs: [FocusStatus.focusing],
+      orderBy: 'start_time DESC',
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return FocusSession.fromMap(maps.first);
+  }
+
+  Future<void> addFocusRestSegment(
+    int sessionId,
+    int start,
+    int? end,
+    int duration,
+  ) async {
+    final db = await _db.database;
+    await db.insert('focus_rest_segment', {
+      'session_id': sessionId,
+      'start_time': start,
+      'end_time': end,
+      'duration': duration,
+    });
   }
 
 }

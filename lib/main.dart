@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_state.dart';
 import 'core/theme/theme_schemes.dart';
@@ -12,6 +14,7 @@ import 'ui/screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('zh_CN');
   final prefs = await AppPrefs.load();
   await NotificationService.instance.initialize();
   // Record app open
@@ -83,6 +86,13 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
     // ==================== 构建 MaterialApp ====================
     return MaterialApp(
       title: 'YuiTodo',
+      locale: const Locale('zh', 'CN'),
+      supportedLocales: const [Locale('zh', 'CN'), Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       debugShowCheckedModeBanner: false,
       // Resolve system brightness + timed auto-switch into a concrete mode.
       themeMode: themeState.isDarkMode ? ThemeMode.dark : ThemeMode.light,

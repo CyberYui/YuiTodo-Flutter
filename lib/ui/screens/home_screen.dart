@@ -16,6 +16,8 @@ import '../../repositories/task_repository.dart';
 import '../screens/task_editor_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/statistics_screen.dart';
+import '../screens/calendar_screen.dart';
+import '../screens/focus_screen.dart';
 import '../widgets/task_card.dart';
 import '../../core/utils/app_banner.dart';
 
@@ -266,6 +268,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               onPressed: () => ref.read(selectionProvider.notifier).clear(),
             ),
           ] else ...[
+            IconButton(
+              icon: const Icon(Icons.timer_outlined),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FocusScreen()),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.calendar_month),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CalendarScreen()),
+              ),
+            ),
             IconButton(
               icon: const Icon(Icons.bar_chart),
               onPressed: () => Navigator.push(
@@ -629,7 +645,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ),
       endActionPane: ActionPane(
         motion: const DrawerMotion(),
-        extentRatio: occ.isRecurring ? 0.85 : 0.65,
+        extentRatio: occ.isRecurring ? 0.95 : 0.8,
         children: [
           _slidableAction(
             context,
@@ -647,6 +663,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               color: const Color(0xFF64748B),
               onTap: () => _skipOccurrence(occ),
             ),
+          _slidableAction(
+            context,
+            icon: Icons.hourglass_bottom,
+            label: '专注',
+            color: const Color(0xFF0EA5E9),
+            onTap: () => _openFocus(task),
+          ),
           _slidableAction(
             context,
             icon: Icons.calendar_today,
@@ -729,6 +752,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ),
       ),
+    );
+  }
+
+  void _openFocus(Task task) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => FocusScreen(task: task)),
     );
   }
 
