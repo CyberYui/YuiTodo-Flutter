@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -88,11 +88,36 @@ class AppDatabase {
         days_of_week TEXT,
         day_of_month INTEGER,
         month_of_year INTEGER,
+        end_type TEXT DEFAULT 'none',
         end_date INTEGER,
+        end_count INTEGER,
+        month_mode TEXT DEFAULT 'day',
+        week_index INTEGER,
+        skip_weekends INTEGER DEFAULT 0,
+        workday_only INTEGER DEFAULT 0,
         is_paused INTEGER DEFAULT 0,
         created_at INTEGER NOT NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS task_occurrence (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id INTEGER NOT NULL,
+        occurrence_day INTEGER NOT NULL,
+        state TEXT NOT NULL,
+        completed_at INTEGER,
+        created_at INTEGER NOT NULL,
+        UNIQUE(task_id, occurrence_day),
+        FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_occ_task_day ON task_occurrence(task_id, occurrence_day)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_occ_day ON task_occurrence(occurrence_day)',
+    );
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS app_setting (
@@ -162,6 +187,96 @@ class AppDatabase {
       final columnNames = columns.map((c) => c['name'] as String).toList();
       if (!columnNames.contains('task_id')) {
         await db.execute('ALTER TABLE recurrence_rule ADD COLUMN task_id INTEGER');
+      }
+    }
+    if (oldVersion < 6) {
+      // 1) Add the richer recurrence-rule columns (idempotent).
+      final ruleColumns = await db.rawQuery('PRAGMA table_info(recurrence_rule)');
+      final ruleNames =
+          ruleColumns.map((c) => c['name'] as String).toSet();
+      Future<void> addRuleColumn(String name, String ddl) async {
+        if (!ruleNames.contains(name)) {
+          await db.execute('ALTER TABLE recurrence_rule ADD COLUMN $ddl');
+        }
+      }
+
+      await addRuleColumn('end_type', "end_type TEXT DEFAULT 'none'");
+      await addRuleColumn('end_count', 'end_count INTEGER');
+      await addRuleColumn('month_mode', "month_mode TEXT DEFAULT 'day'");
+      await addRuleColumn('week_index', 'week_index INTEGER');
+      await addRuleColumn('skip_weekends', 'skip_weekends INTEGER DEFAULT 0');
+      await addRuleColumn('workday_only', 'workday_only INTEGER DEFAULT 0');
+
+      // 2) Occurrence exception table.
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS task_occurrence (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          task_id INTEGER NOT NULL,
+          occurrence_day INTEGER NOT NULL,
+          state TEXT NOT NULL,
+          completed_at INTEGER,
+          created_at INTEGER NOT NULL,
+          UNIQUE(task_id, occurrence_day),
+          FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_occ_task_day ON task_occurrence(task_id, occurrence_day)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_occ_day ON task_occurrence(occurrence_day)',
+      );
+
+      // 3) Fold previously-materialized instances into task_occurrence, then
+      //    remove them so only templates remain.
+      final tplRows = await db.rawQuery(
+        'SELECT task_id FROM recurrence_rule WHERE task_id IS NOT NULL',
+      );
+      final templateIds =
+          tplRows.map((r) => r['task_id'] as int).toSet();
+
+      final instanceRows = await db.query(
+        'task',
+        columns: ['id', 'recurrence_id', 'status', 'start_date', 'updated_at'],
+        where: 'recurrence_id IS NOT NULL',
+      );
+      for (final row in instanceRows) {
+        final taskId = row['id'] as int;
+        if (templateIds.contains(taskId)) {
+          // Original task misused recurrence_id as the rule id; clear it.
+          await db.update(
+            'task',
+            {'recurrence_id': null},
+            where: 'id = ?',
+            whereArgs: [taskId],
+          );
+          continue;
+        }
+        final sourceId = row['recurrence_id'] as int;
+        if (!templateIds.contains(sourceId)) {
+          // Orphan instance (template gone) — drop it.
+          await db.delete('task', where: 'id = ?', whereArgs: [taskId]);
+          continue;
+        }
+        if (row['status'] == 'done') {
+          final startDate = row['start_date'] as int?;
+          if (startDate != null) {
+            final d = DateTime.fromMillisecondsSinceEpoch(startDate);
+            final day = d.year * 10000 + d.month * 100 + d.day;
+            await db.insert(
+              'task_occurrence',
+              {
+                'task_id': sourceId,
+                'occurrence_day': day,
+                'state': 'done',
+                'completed_at': row['updated_at'],
+                'created_at': DateTime.now().millisecondsSinceEpoch,
+              },
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+        }
+        await db.delete('task', where: 'id = ?', whereArgs: [taskId]);
       }
     }
   }
