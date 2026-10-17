@@ -586,6 +586,7 @@ orphan = query(status=0 &amp;&amp; start_time &lt; now - 1h)
 - 触觉：完成/删除/星标/跳过均有 <code>HapticFeedback</code>。
 - 分区折叠：标题箭头 <code>AnimatedRotation</code>。
 - 统计：新增「统计时排除习惯」开关（持久化，默认关闭）。
+- 真机窄屏适配：354dp 宽度下顶栏 6 图标会挤掉标题，已改为「搜索 / 筛选 / 更多」三图标，日历/专注/统计/设置收进更多菜单。
 </div>
 
 <div class="callout bad">
@@ -594,6 +595,8 @@ orphan = query(status=0 &amp;&amp; start_time &lt; now - 1h)
 - <b>清单缺接收器</b>：<code>ScheduledNotificationReceiver</code>/<code>BootReceiver</code> 未在应用 manifest 声明，闹钟触发但无人发通知；已补上（同时恢复开机重排）。
 - 精确闹钟检测改用 <code>canScheduleExactNotifications()</code>（系统真实能力）。
 - 真机验证：提醒在设定分钟成功弹出。
+- 通知样式增强：大文本（BigTextStyle）、任务颜色、`reminder` 分类、`PUBLIC` 可见性。
+- 与 Todoery 的差距：Todoery 使用自定义 RemoteViews（`contentView`+`bigContentView`）+ ONGOING + fullscreenIntent；当前插件不支持自定义 RemoteViews，若要完全一致需换通知库或走平台通道，暂不追求完全一致。
 - 使用建议：系统设置中允许「闹钟和提醒」并关闭电池优化，可获得更精确的触发时间。
 </div>
 

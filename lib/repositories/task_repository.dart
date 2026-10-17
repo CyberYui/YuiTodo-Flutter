@@ -503,6 +503,8 @@ class TaskRepository {
       columns: [
         'id',
         'title',
+        'note',
+        'color',
         'reminder_time',
         'start_date',
         'start_time',

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../core/utils/reminder_scheduler.dart';
@@ -112,6 +113,8 @@ class NotificationService {
     required String title,
     required String body,
     required DateTime scheduledTime,
+    Color? color,
+    String? bigText,
   }) async {
     await initialize();
 
@@ -121,7 +124,7 @@ class NotificationService {
       scheduledTime = now.add(const Duration(seconds: 10));
     }
 
-    final androidDetails = const AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       'task_reminders',
       'Task Reminders',
       channelDescription: 'Notifications for task reminders',
@@ -130,6 +133,15 @@ class NotificationService {
       enableVibration: true,
       playSound: true,
       autoCancel: true,
+      color: color,
+      category: AndroidNotificationCategory.reminder,
+      visibility: NotificationVisibility.public,
+      ticker: title,
+      styleInformation: BigTextStyleInformation(
+        bigText ?? body,
+        contentTitle: title,
+        summaryText: 'YuiTodo',
+      ),
     );
 
     const iosDetails = DarwinNotificationDetails();
@@ -194,6 +206,8 @@ class NotificationService {
     required String title,
     required String body,
     required List<DateTime> times,
+    Color? color,
+    String? bigText,
   }) async {
     await cancelTaskReminders(taskId);
     final base = _taskBaseId(taskId);
@@ -204,6 +218,8 @@ class NotificationService {
         title: title,
         body: body,
         scheduledTime: capped[i],
+        color: color,
+        bigText: bigText,
       );
     }
   }
@@ -221,6 +237,8 @@ class NotificationService {
       if (id == null || reminder == null) continue;
       final reminderDate = DateTime.fromMillisecondsSinceEpoch(reminder);
       final rule = rules[id];
+      final color = _colorOf(task);
+      final bigText = task.note.isNotEmpty ? task.note : '任务提醒';
       if (rule == null) {
         if (reminderDate.isAfter(now)) {
           await scheduleReminder(
@@ -228,6 +246,8 @@ class NotificationService {
             title: task.title,
             body: '任务提醒',
             scheduledTime: reminderDate,
+            color: color,
+            bigText: bigText,
           );
         }
         continue;
@@ -246,7 +266,17 @@ class NotificationService {
         title: task.title,
         body: '任务提醒',
         times: times,
+        color: color,
+        bigText: bigText,
       );
+    }
+  }
+
+  Color? _colorOf(Task task) {
+    try {
+      return Color(int.parse(task.color.replaceFirst('#', '0xFF')));
+    } catch (_) {
+      return null;
     }
   }
 
