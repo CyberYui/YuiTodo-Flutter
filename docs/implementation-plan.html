@@ -588,6 +588,15 @@ orphan = query(status=0 &amp;&amp; start_time &lt; now - 1h)
 - 统计：新增「统计时排除习惯」开关（持久化，默认关闭）。
 </div>
 
+<div class="callout bad">
+<b>Phase 4 通知修复（真机定位）</b>
+- <b>R8 混淆破坏 Gson</b>：release 包 <code>zonedSchedule</code> 抛 <code>Missing type parameter</code>，计划未排上；已新增 <code>proguard-rules.pro</code> 保留 Gson 与插件类。
+- <b>清单缺接收器</b>：<code>ScheduledNotificationReceiver</code>/<code>BootReceiver</code> 未在应用 manifest 声明，闹钟触发但无人发通知；已补上（同时恢复开机重排）。
+- 精确闹钟检测改用 <code>canScheduleExactNotifications()</code>（系统真实能力）。
+- 真机验证：提醒在设定分钟成功弹出。
+- 使用建议：系统设置中允许「闹钟和提醒」并关闭电池优化，可获得更精确的触发时间。
+</div>
+
 <div class="callout warn">
 <b>仍未完成（留到真机阶段/后续）</b>
 - 滑动阈值与动画曲线的手感微调（需真机体验）。
