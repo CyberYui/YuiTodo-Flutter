@@ -17,6 +17,15 @@ class TaskCard extends ConsumerWidget {
   final Function(Task, TaskStep)? onStepToggle;
   final int index;
 
+  /// Optional override for the "done" visual state. Used when the card
+  /// represents a virtual occurrence whose state lives in task_occurrence
+  /// rather than on [task.status].
+  final bool? isDone;
+
+  /// Local date of the virtual occurrence this card represents. When it
+  /// differs from the task's own start date, the card shows this day instead.
+  final DateTime? occurrenceDay;
+
   const TaskCard({
     super.key,
     required this.task,
@@ -25,12 +34,15 @@ class TaskCard extends ConsumerWidget {
     required this.onLongPress,
     this.onStepToggle,
     required this.index,
+    this.isDone,
+    this.occurrenceDay,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final taskColor = Color(int.parse(task.color.replaceFirst('#', '0xFF')));
+    final done = isDone ?? (task.status == 'done');
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
@@ -107,10 +119,10 @@ class TaskCard extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  decoration: task.status == 'done'
+                                  decoration: done
                                       ? TextDecoration.lineThrough
                                       : null,
-                                  color: task.status == 'done'
+                                  color: done
                                       ? theme.colorScheme.outline
                                       : null,
                                 ),
@@ -278,6 +290,29 @@ class TaskCard extends ConsumerWidget {
   /// 构建日期标签：显示开始日期；若结束日期是另一天则一并显示范围。
   Widget _buildDateLabel(ThemeData theme) {
     final startTs = task.startDate ?? task.startTime;
+
+    // If this card is a virtual occurrence on a different day than the task's
+    // own anchor date, show the occurrence day (e.g. today / tomorrow).
+    if (occurrenceDay != null) {
+      final occ = DateTime(
+        occurrenceDay!.year,
+        occurrenceDay!.month,
+        occurrenceDay!.day,
+      );
+      final startDate = startTs != null
+          ? DateTime.fromMillisecondsSinceEpoch(startTs)
+          : null;
+      final startDay = startDate != null
+          ? DateTime(startDate.year, startDate.month, startDate.day)
+          : null;
+      if (startDay == null || occ != startDay) {
+        return Text(
+          _formatDateFromDate(occ),
+          style: TextStyle(fontSize: 12, color: theme.colorScheme.outline),
+        );
+      }
+    }
+
     if (startTs == null) return const SizedBox.shrink();
     final startLabel = _formatDate(startTs);
     final endTs = task.endTime;
@@ -297,13 +332,17 @@ class TaskCard extends ConsumerWidget {
 
   /// 格式化日期显示
   String _formatDate(int timestamp) {
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    return _formatDateFromDate(DateTime.fromMillisecondsSinceEpoch(timestamp));
+  }
+
+  String _formatDateFromDate(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final taskDate = DateTime(date.year, date.month, date.day);
+    final d = DateTime(date.year, date.month, date.day);
 
-    if (taskDate == today) return '今天';
-    if (taskDate == today.add(const Duration(days: 1))) return '明天';
+    if (d == today) return '今天';
+    if (d == today.add(const Duration(days: 1))) return '明天';
+    if (d == today.subtract(const Duration(days: 1))) return '昨天';
     return '${date.month}/${date.day}';
   }
 }

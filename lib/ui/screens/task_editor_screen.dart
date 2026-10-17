@@ -66,7 +66,23 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       _steps = widget.task!.steps.toList();
       _selectedTags = widget.task!.tags.toList();
       _reminderTime = widget.task!.reminderTime;
+      _loadRecurrence();
     }
+  }
+
+  Future<void> _loadRecurrence() async {
+    final id = widget.task?.id;
+    if (id == null) return;
+    final rules = await ref.read(taskRepositoryProvider).getRecurrenceRuleMap();
+    final rule = rules[id];
+    if (!mounted || rule == null) return;
+    setState(() {
+      _recurrenceType = RecurrenceType.values.firstWhere(
+        (t) => t.name == rule.type,
+        orElse: () => RecurrenceType.none,
+      );
+      _recurrenceInterval = rule.interval;
+    });
   }
 
   @override
@@ -148,7 +164,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       startDate: _startDate.millisecondsSinceEpoch,
       color: _color,
       icon: _icon,
-      recurrenceId: widget.task?.recurrenceId,
+      recurrenceId: null,
       isStarred: widget.task?.isStarred ?? false,
       sortOrder: widget.task?.sortOrder ?? 0,
       createdAt: widget.task?.createdAt ?? now,
@@ -176,15 +192,15 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
             await repo.addTagToTask(taskId, tag.id!);
           }
         }
-        // Create recurrence rule if recurring
+        // Create recurrence rule if recurring. The rule lives in its own
+        // table; the task itself stays a single template row.
         if (_recurrenceType != RecurrenceType.none) {
-          final ruleId = await repo.createRecurrenceRule(RecurrenceRule(
+          await repo.createRecurrenceRule(RecurrenceRule(
             taskId: taskId,
             type: _recurrenceType.name,
             interval: _recurrenceInterval,
             createdAt: now,
           ));
-          await repo.updateTask(task.copyWith(recurrenceId: ruleId, id: taskId));
         }
         await ref.read(taskListProvider.notifier).loadTasks();
       } else {
@@ -220,6 +236,28 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
             await repo.addTagToTask(taskId, tag.id!);
           }
         }
+
+        // Sync the recurrence rule with the editor state.
+        final rules = await repo.getRecurrenceRuleMap();
+        final existingRule = rules[taskId];
+        if (_recurrenceType == RecurrenceType.none) {
+          if (existingRule != null) {
+            await repo.deleteRecurrenceRule(existingRule.id!);
+          }
+        } else if (existingRule == null) {
+          await repo.createRecurrenceRule(RecurrenceRule(
+            taskId: taskId,
+            type: _recurrenceType.name,
+            interval: _recurrenceInterval,
+            createdAt: DateTime.now().millisecondsSinceEpoch,
+          ));
+        } else {
+          await repo.updateRecurrenceRule(existingRule.copyWith(
+            type: _recurrenceType.name,
+            interval: _recurrenceInterval,
+          ));
+        }
+
         await ref.read(taskListProvider.notifier).loadTasks();
       }
       if (mounted) Navigator.pop(context);

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/task.dart';
+import '../../models/task_occurrence.dart';
 import '../../providers/task_provider.dart';
+import '../../providers/occurrence_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../providers/filter_provider.dart';
 import '../../providers/recycle_bin_provider.dart';
@@ -62,61 +64,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     });
   }
 
-  List<Task> _filterTasks(List<Task> tasks) {
+  List<TaskOccurrence> _filterOccurrences(List<TaskOccurrence> occurrences) {
     final smartFilter = ref.watch(smartFilterProvider);
     final tagFilter = ref.watch(tagFilterProvider);
     final searchQuery = _searchController.text.toLowerCase().trim();
 
-    // Treat both NULL and the legacy sentinel 0 as "not deleted".
-    var filtered = tasks
-        .where((t) => t.deletedAt == null || t.deletedAt == 0)
-        .toList();
-
     final now = DateTime.now();
-    final todayStamp =
-        DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
-    final tomorrowStamp =
-        todayStamp + const Duration(days: 1).inMilliseconds;
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
 
-    // Start-of-day timestamp for a task's start date.
-    int? dayStampOf(Task t) {
-      final ts = t.startDate ?? t.startTime;
-      if (ts == null) return null;
-      final d = DateTime.fromMillisecondsSinceEpoch(ts);
-      return DateTime(d.year, d.month, d.day).millisecondsSinceEpoch;
-    }
+    var filtered = occurrences.where((o) => !o.isSkipped).toList();
 
     switch (smartFilter) {
       case 'today':
-        filtered = filtered.where((t) => dayStampOf(t) == todayStamp).toList();
+        filtered = filtered.where((o) => o.day == today).toList();
         break;
       case 'tomorrow':
-        filtered =
-            filtered.where((t) => dayStampOf(t) == tomorrowStamp).toList();
+        filtered = filtered.where((o) => o.day == tomorrow).toList();
         break;
-      // "未来" includes tomorrow and everything after it.
+      // "未来" shows the next occurrence per task.
       case 'future':
-        filtered = filtered.where((t) {
-          final s = dayStampOf(t);
-          return s != null && s >= tomorrowStamp;
-        }).toList();
+        filtered = filtered.where((o) => o.day.isAfter(today)).toList();
+        filtered = _dedupeByTask(filtered, today);
         break;
       case 'completed':
-        filtered = filtered.where((t) => t.status == 'done').toList();
+        filtered = filtered.where((o) => o.isDone).toList();
+        filtered = _dedupeByTask(filtered, today, preferLatest: true);
+        break;
+      case 'all':
+      default:
+        // One card per task: pending first, then the occurrence closest to today.
+        filtered = _dedupeByTask(filtered, today);
         break;
     }
 
     if (tagFilter != null) {
       filtered = filtered
-          .where((t) => t.tags.any((tag) => tag.id == tagFilter))
+          .where((o) => o.task.tags.any((tag) => tag.id == tagFilter))
           .toList();
     }
 
     if (searchQuery.isNotEmpty) {
-      filtered = filtered.where((t) {
+      filtered = filtered.where((o) {
+        final t = o.task;
         if (t.title.toLowerCase().contains(searchQuery)) return true;
         if (t.note.toLowerCase().contains(searchQuery)) return true;
-        // Search in subtasks
         for (final step in t.steps) {
           if (step.title.toLowerCase().contains(searchQuery)) return true;
         }
@@ -127,11 +119,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return filtered;
   }
 
-  void _openTaskEditor(Task? task) {
-    Navigator.push(
+  /// Collapse multiple occurrences of the same task into a single card.
+  List<TaskOccurrence> _dedupeByTask(
+    List<TaskOccurrence> list,
+    DateTime today, {
+    bool preferLatest = false,
+  }) {
+    final map = <int, TaskOccurrence>{};
+    for (final o in list) {
+      final id = o.task.id;
+      if (id == null) continue;
+      final existing = map[id];
+      map[id] = existing == null
+          ? o
+          : _preferred(existing, o, today, preferLatest: preferLatest);
+    }
+    return map.values.toList();
+  }
+
+  TaskOccurrence _preferred(
+    TaskOccurrence a,
+    TaskOccurrence b,
+    DateTime today, {
+    bool preferLatest = false,
+  }) {
+    // Pending beats done/skipped.
+    if (a.isPending != b.isPending) return a.isPending ? a : b;
+    // For the completed view keep the latest completion.
+    if (preferLatest) return a.day.isAfter(b.day) ? a : b;
+    // Otherwise keep the occurrence closest to today.
+    final da = a.day.difference(today).inDays.abs();
+    final db = b.day.difference(today).inDays.abs();
+    if (da != db) return da < db ? a : b;
+    return a.day.isBefore(b.day) ? a : b;
+  }
+
+  Future<void> _openTaskEditor(Task? task) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => TaskEditorScreen(task: task)),
     );
+    if (!mounted) return;
+    await ref.read(occurrenceListProvider.notifier).load();
   }
 
   void _enterSelectionMode(int taskId) {
@@ -144,47 +173,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     ref.read(recycleBinProvider.notifier).addDeleted(
       task.copyWith(deletedAt: deletedAt),
     );
+    await ref.read(occurrenceListProvider.notifier).load();
     if (!mounted) return;
-    context.showTopBanner('任务已删除', actionLabel: '撤销', onAction: () {
-      ref.read(taskListProvider.notifier).restoreTask(task.id!);
-      ref.read(recycleBinProvider.notifier).restore(task);
+    context.showTopBanner('任务已删除', actionLabel: '撤销', onAction: () async {
+      await ref.read(taskListProvider.notifier).restoreTask(task.id!);
+      await ref.read(recycleBinProvider.notifier).restore(task);
+      await ref.read(occurrenceListProvider.notifier).load();
     });
   }
 
-  void _completeTaskWithUndo(Task task) {
-    ref.read(taskListProvider.notifier).toggleComplete(task);
-    final wasDone = task.status == 'done';
+  Future<void> _completeOccurrenceWithUndo(TaskOccurrence occ) async {
+    final wasDone = occ.isDone;
+    await ref.read(occurrenceListProvider.notifier).setDone(occ, !wasDone);
+    if (!mounted) return;
     context.showTopBanner(
       wasDone ? '已取消完成' : '已完成',
       actionLabel: '撤销',
-      onAction: () {
-        ref.read(taskListProvider.notifier).toggleComplete(task);
+      onAction: () async {
+        await ref.read(occurrenceListProvider.notifier).setDone(occ, wasDone);
       },
     );
-  }
-
-  void _onReorder(int oldIndex, int newIndex, List<Task> filteredTasks) {
-    if (oldIndex < newIndex) newIndex -= 1;
-
-    final movedTask = filteredTasks[oldIndex];
-    final targetTask = filteredTasks[newIndex];
-
-    // Calculate new sort order
-    int newSortOrder;
-    if (newIndex == 0) {
-      newSortOrder = filteredTasks.first.sortOrder - 1;
-    } else if (newIndex == filteredTasks.length - 1) {
-      newSortOrder = filteredTasks.last.sortOrder + 1;
-    } else {
-      final before = filteredTasks[newIndex - 1];
-      final after = filteredTasks[newIndex + (oldIndex < newIndex ? 0 : 1)];
-      newSortOrder = ((before.sortOrder + after.sortOrder) / 2).round();
-    }
-
-    ref
-        .read(taskRepositoryProvider)
-        .updateTaskSortOrder(movedTask.id!, newSortOrder);
-    ref.read(taskListProvider.notifier).loadTasks();
   }
 
   void _showBatchOperationsSheet(List<int> selectedIds) {
@@ -197,7 +205,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final tasksAsync = ref.watch(taskListProvider);
+    final occurrencesAsync = ref.watch(occurrenceListProvider);
     final tagsAsync = ref.watch(tagListProvider);
     final selection = ref.watch(selectionProvider);
     final isSelectionMode = selection.isNotEmpty;
@@ -334,11 +342,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
-                await ref.read(taskListProvider.notifier).loadTasks();
+                await ref.read(occurrenceListProvider.notifier).load();
               },
-              child: tasksAsync.when(
-                data: (tasks) {
-                  final filtered = _filterTasks(tasks);
+              child: occurrencesAsync.when(
+                data: (occurrences) {
+                  final filtered = _filterOccurrences(occurrences);
                   if (filtered.isEmpty) {
                     return ListView(
                       children: [
@@ -365,15 +373,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ],
                     );
                   }
-                  return ReorderableListView.builder(
+                  return ListView.builder(
                     padding: const EdgeInsets.only(bottom: 80),
                     itemCount: filtered.length,
-                    onReorder: (oldIndex, newIndex) =>
-                        _onReorder(oldIndex, newIndex, filtered),
                     itemBuilder: (context, index) {
-                      final task = filtered[index];
+                      final occ = filtered[index];
+                      final task = occ.task;
                       return Dismissible(
-                        key: Key('task-${task.id}'),
+                        key: Key('occ-${task.id}-${occ.dayKey}'),
                         background: Container(
                           color: theme.colorScheme.primary,
                           alignment: Alignment.centerLeft,
@@ -388,17 +395,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ),
                         confirmDismiss: (direction) async {
                           if (direction == DismissDirection.startToEnd) {
-                            _completeTaskWithUndo(task);
+                            await _completeOccurrenceWithUndo(occ);
                           } else {
                             await _deleteTaskWithUndo(task);
                           }
                           return false;
                         },
                         child: TaskCard(
-                          key: ValueKey(task.id),
+                          key: ValueKey('${task.id}-${occ.dayKey}'),
                           task: task,
                           isSelected: selection.contains(task.id),
                           index: index,
+                          isDone: occ.isDone,
+                          occurrenceDay: occ.day,
                           onTap: () {
                             if (isSelectionMode) {
                               ref
@@ -432,11 +441,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  void _toggleStep(Task task, TaskStep step) {
+  Future<void> _toggleStep(Task task, TaskStep step) async {
     if (step.id == null) return;
     final newStatus = step.status == 'completed' ? 'pending' : 'completed';
-    ref.read(taskRepositoryProvider).updateStepStatus(step.id!, newStatus);
-    ref.read(taskListProvider.notifier).loadTasks();
+    await ref.read(taskRepositoryProvider).updateStepStatus(step.id!, newStatus);
+    await ref.read(taskListProvider.notifier).loadTasks();
+    await ref.read(occurrenceListProvider.notifier).load();
   }
 
   Widget _filterChip(String id, String label, String currentFilter) {

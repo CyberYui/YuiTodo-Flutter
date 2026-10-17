@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../models/task.dart';
 import '../models/recurrence_rule.dart';
 import '../core/database/database.dart';
+import '../core/date/date_utils.dart';
 
 /// Task repository provider
 final taskRepositoryProvider = Provider<TaskRepository>((ref) {
@@ -280,79 +282,94 @@ class TaskRepository {
     await db.delete('recurrence_rule', where: 'id = ?', whereArgs: [ruleId]);
   }
 
-  // Duplicate a recurring task for a specific date
-  Future<int> duplicateTaskForDate(int originalTaskId, DateTime date) async {
-    final db = await _db.database;
-    final original = await db.query('task', where: 'id = ?', whereArgs: [originalTaskId]);
-    if (original.isEmpty) throw Exception('Task not found');
+  // ---------------------------------------------------------------------------
+  // Occurrence exceptions (virtual recurrence instances)
+  // ---------------------------------------------------------------------------
 
-    final taskMap = Map<String, dynamic>.from(original.first);
-    taskMap.remove('id');
-    taskMap['start_date'] = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
-    taskMap['start_time'] = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
-    taskMap['end_time'] = DateTime(date.year, date.month, date.day, 23, 59, 59).millisecondsSinceEpoch;
-    // Link the instance back to its original task so getTaskForDate can find it.
-    taskMap['recurrence_id'] = originalTaskId;
-    taskMap['status'] = 'pending';
-    taskMap['created_at'] = DateTime.now().millisecondsSinceEpoch;
-    taskMap['updated_at'] = DateTime.now().millisecondsSinceEpoch;
-
-    final newId = await db.insert('task', taskMap);
-
-    // Copy steps
-    final steps = await getStepsForTask(originalTaskId);
-    for (final step in steps) {
-      await createStep(TaskStep(
-        taskId: newId,
-        title: step.title,
-        sortOrder: step.sortOrder,
-        status: 'pending',
-      ));
-    }
-
-    // Copy tags
-    final tags = await getTagsForTask(originalTaskId);
-    for (final tag in tags) {
-      await addTagToTask(newId, tag.id!);
-    }
-
-    return newId;
+  /// Map of taskId -> rule for all recurring tasks.
+  Future<Map<int, RecurrenceRule>> getRecurrenceRuleMap() async {
+    final rules = await getRecurrenceRules();
+    return {for (final r in rules) r.taskId: r};
   }
 
-  // Check if a task instance already exists for a given recurrence rule and date
-  Future<Task?> getTaskForDate(int originalTaskId, DateTime date) async {
+  /// Map of taskId -> (yyyyMMdd -> state) for occurrences in `[from, to]`.
+  Future<Map<int, Map<int, String>>> getOccurrencesInRange(
+    DateTime from,
+    DateTime to,
+  ) async {
     final db = await _db.database;
-    final dayStart = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
-    final dayEnd = DateTime(date.year, date.month, date.day + 1).millisecondsSinceEpoch;
-
-    // 1. A generated instance for this date (instances point back to the
-    //    original task via recurrence_id).
     final maps = await db.query(
-      'task',
-      where: 'recurrence_id = ? AND start_date >= ? AND start_date < ? AND (deleted_at IS NULL OR deleted_at = 0)',
-      whereArgs: [originalTaskId, dayStart, dayEnd],
-      limit: 1,
+      'task_occurrence',
+      columns: ['task_id', 'occurrence_day', 'state'],
+      where: 'occurrence_day >= ? AND occurrence_day <= ?',
+      whereArgs: [ymdKey(from), ymdKey(to)],
     );
-    if (maps.isNotEmpty) return Task.fromMap(maps.first);
-
-    // 2. The original task itself may already be the instance for its own
-    //    start date (e.g. the day the recurring task was created).
-    final originals = await db.query(
-      'task',
-      where: 'id = ?',
-      whereArgs: [originalTaskId],
-      limit: 1,
-    );
-    if (originals.isNotEmpty) {
-      final original = Task.fromMap(originals.first);
-      final originalTs = original.startDate ?? original.startTime;
-      if (originalTs != null) {
-        final d = DateTime.fromMillisecondsSinceEpoch(originalTs);
-        if (d.year == date.year && d.month == date.month && d.day == date.day) {
-          return original;
-        }
-      }
+    final result = <int, Map<int, String>>{};
+    for (final m in maps) {
+      final taskId = m['task_id'] as int;
+      final day = m['occurrence_day'] as int;
+      final state = m['state'] as String;
+      (result[taskId] ??= {})[day] = state;
     }
-    return null;
+    return result;
+  }
+
+  Future<String?> getOccurrenceState(int taskId, DateTime day) async {
+    final db = await _db.database;
+    final maps = await db.query(
+      'task_occurrence',
+      columns: ['state'],
+      where: 'task_id = ? AND occurrence_day = ?',
+      whereArgs: [taskId, ymdKey(day)],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return maps.first['state'] as String;
+  }
+
+  Future<void> setOccurrenceState(
+    int taskId,
+    DateTime day,
+    String state, {
+    int? completedAt,
+  }) async {
+    final db = await _db.database;
+    await db.insert(
+      'task_occurrence',
+      {
+        'task_id': taskId,
+        'occurrence_day': ymdKey(day),
+        'state': state,
+        'completed_at': completedAt ??
+            (state == 'done'
+                ? DateTime.now().millisecondsSinceEpoch
+                : null),
+        'created_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> clearOccurrence(int taskId, DateTime day) async {
+    final db = await _db.database;
+    await db.delete(
+      'task_occurrence',
+      where: 'task_id = ? AND occurrence_day = ?',
+      whereArgs: [taskId, ymdKey(day)],
+    );
+  }
+
+  /// All occurrence states for one task (yyyyMMdd -> state).
+  Future<Map<int, String>> getOccurrencesForTask(int taskId) async {
+    final db = await _db.database;
+    final maps = await db.query(
+      'task_occurrence',
+      columns: ['occurrence_day', 'state'],
+      where: 'task_id = ?',
+      whereArgs: [taskId],
+    );
+    return {
+      for (final m in maps) m['occurrence_day'] as int: m['state'] as String,
+    };
   }
 }
