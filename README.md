@@ -5,7 +5,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-3.4.1.1-blue)
+![Version](https://img.shields.io/badge/Version-3.4.2.2-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
@@ -53,8 +53,11 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 | 🔄 循环任务 | 日/周/月/年/自定义间隔 |
 | ⏰ 提醒通知 | 本地通知，支持多时间点 |
 | 🗑️ 回收站 | 软删除，支持恢复和永久删除 |
-| 📊 统计面板 | 完成率、标签分布、星期分布、月度贡献热力图、连续打卡、应用打开次数 |
+| 📊 统计面板 | 完成率、标签分布、星期分布、月度贡献热力图、连续打卡、应用打开次数、今日新增 |
 | 💾 数据导入导出 | JSON 格式备份恢复 |
+| 🎨 主题持久化 | 主题模式、浅色/深色方案、定时切换自动保存，重启后恢复 |
+| 🔔 智能提醒 | 精确闹钟 + 自动回退机制，确保提醒准时送达 |
+| ♻️ 删除与恢复 | 软删除进回收站；顶部横幅「撤销」或回收站「恢复」均可即时还原 |
 
 ### 主题系统
 
@@ -87,6 +90,12 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 2. 下载最新版本的 `YuiTodo-vx.x.x-opensource.apk`
 3. 在 Android 设备上安装
 4. 允许"未知来源"安装权限
+
+> **两种版本说明**
+> - **开源版（opensource）**：不含自定义字体，使用系统默认字体，公开发布。
+> - **完整版（full）**：包含自定义字体切换（字体涉及版权，仅本地构建，不公开分发）。
+>
+> 两者功能完全一致，仅字体切换能力不同。
 
 ### 快速开始
 
@@ -138,6 +147,8 @@ YuiTodo-Flutter/
 │   ├── images/                      # README 截图展示
 │   └── workflows/                   # CI/CD 配置
 ├── test/                            # 单元测试和 Widget 测试
+├── docs/                            # 分析报告与实施计划
+├── tool/                            # 构建辅助脚本（字体剥离等）
 ├── pubspec.yaml                     # 依赖配置
 └── README.md                        # 项目文档
 ```
