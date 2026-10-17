@@ -25,9 +25,9 @@ class OccurrenceNotifier
   }
 
   static DateTime get windowStart =>
-      DateTime.now().subtract(const Duration(days: 90));
+      DateTime.now().subtract(const Duration(days: 365));
   static DateTime get windowEnd =>
-      DateTime.now().add(const Duration(days: 90));
+      DateTime.now().add(const Duration(days: 365));
 
   Future<void> load() async {
     state = const AsyncValue.loading();

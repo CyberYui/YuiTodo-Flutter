@@ -213,7 +213,7 @@ class StatisticsCalculator {
         final taskDate = DateTime.fromMillisecondsSinceEpoch(
           task.startDate ?? task.startTime ?? 0,
         );
-        if (taskDate.isAfter(dayStart) && taskDate.isBefore(dayEnd)) {
+        if (!taskDate.isBefore(dayStart) && taskDate.isBefore(dayEnd)) {
           total++;
           if (task.status == 'done') completed++;
         }
@@ -248,7 +248,7 @@ class StatisticsCalculator {
         final taskDate = DateTime.fromMillisecondsSinceEpoch(
           task.startDate ?? task.startTime ?? 0,
         );
-        if (taskDate.isAfter(weekStartDay) && taskDate.isBefore(weekEnd)) {
+        if (!taskDate.isBefore(weekStartDay) && taskDate.isBefore(weekEnd)) {
           total++;
           if (task.status == 'done') completed++;
         }
@@ -279,7 +279,7 @@ class StatisticsCalculator {
       for (final task in tasks) {
         if (task.status == 'done') {
           final taskDate = DateTime.fromMillisecondsSinceEpoch(task.updatedAt);
-          if (taskDate.isAfter(dayStart) && taskDate.isBefore(dayEnd)) {
+          if (!taskDate.isBefore(dayStart) && taskDate.isBefore(dayEnd)) {
             count++;
           }
         }
@@ -361,7 +361,7 @@ class StatisticsCalculator {
       final taskDate = DateTime.fromMillisecondsSinceEpoch(
         task.startDate ?? task.startTime ?? 0,
       );
-      if (taskDate.isAfter(today) && taskDate.isBefore(todayEnd)) {
+      if (!taskDate.isBefore(today) && taskDate.isBefore(todayEnd)) {
         total++;
         if (task.status == 'done') completed++;
       }
