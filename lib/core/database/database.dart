@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -117,6 +117,22 @@ class AppDatabase {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_occ_day ON task_occurrence(occurrence_day)',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS task_step_occurrence (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        step_id INTEGER NOT NULL,
+        task_id INTEGER NOT NULL,
+        occurrence_day INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        updated_at INTEGER NOT NULL,
+        UNIQUE(step_id, occurrence_day),
+        FOREIGN KEY (step_id) REFERENCES task_step(id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_step_occ_task_day ON task_step_occurrence(task_id, occurrence_day)',
     );
 
     await db.execute('''
@@ -278,6 +294,23 @@ class AppDatabase {
         }
         await db.delete('task', where: 'id = ?', whereArgs: [taskId]);
       }
+    }
+    if (oldVersion < 7) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS task_step_occurrence (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          step_id INTEGER NOT NULL,
+          task_id INTEGER NOT NULL,
+          occurrence_day INTEGER NOT NULL,
+          status TEXT NOT NULL,
+          updated_at INTEGER NOT NULL,
+          UNIQUE(step_id, occurrence_day),
+          FOREIGN KEY (step_id) REFERENCES task_step(id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_step_occ_task_day ON task_step_occurrence(task_id, occurrence_day)',
+      );
     }
   }
 

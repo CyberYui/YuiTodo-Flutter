@@ -399,12 +399,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Future<void> _toggleStep(Task task, TaskStep step) async {
+  Future<void> _toggleStep(
+    Task task,
+    TaskStep step,
+    TaskOccurrence occ,
+  ) async {
     if (step.id == null) return;
     final newStatus = step.status == 'completed' ? 'pending' : 'completed';
-    await ref.read(taskRepositoryProvider).updateStepStatus(step.id!, newStatus);
-    await ref.read(taskListProvider.notifier).loadTasks();
-    await ref.read(occurrenceListProvider.notifier).load();
+    if (occ.isRecurring) {
+      // Subtasks are per-occurrence for recurring tasks.
+      await ref.read(taskRepositoryProvider).setStepOccurrenceStatus(
+            step.id!,
+            occ.task.id!,
+            occ.day,
+            newStatus,
+          );
+      await ref.read(occurrenceListProvider.notifier).load();
+    } else {
+      await ref.read(taskRepositoryProvider).updateStepStatus(step.id!, newStatus);
+      await ref.read(taskListProvider.notifier).loadTasks();
+      await ref.read(occurrenceListProvider.notifier).load();
+    }
   }
 
   Widget _buildList(
@@ -593,14 +608,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       groupTag: 'tasks',
       startActionPane: ActionPane(
         motion: const DrawerMotion(),
-        extentRatio: 0.25,
+        extentRatio: 0.5,
         children: [
-          SlidableAction(
-            onPressed: (_) => _toggleStarOccurrence(occ),
-            backgroundColor: Colors.amber,
-            foregroundColor: Colors.white,
+          _slidableAction(
+            context,
+            icon: occ.isDone ? Icons.undo : Icons.check,
+            label: occ.isDone ? '取消完成' : '完成',
+            color: const Color(0xFF22C55E),
+            onTap: () => _completeOccurrenceWithUndo(occ),
+          ),
+          _slidableAction(
+            context,
             icon: task.isStarred ? Icons.star : Icons.star_border,
             label: '星标',
+            color: const Color(0xFFF59E0B),
+            onTap: () => _toggleStarOccurrence(occ),
+            fadeToSurfaceRight: true,
           ),
         ],
       ),
@@ -608,34 +631,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         motion: const DrawerMotion(),
         extentRatio: occ.isRecurring ? 0.85 : 0.65,
         children: [
-          SlidableAction(
-            onPressed: (_) => _toggleStarOccurrence(occ),
-            backgroundColor: Colors.amber,
-            foregroundColor: Colors.white,
+          _slidableAction(
+            context,
             icon: task.isStarred ? Icons.star : Icons.star_border,
             label: '星标',
+            color: const Color(0xFFF59E0B),
+            onTap: () => _toggleStarOccurrence(occ),
+            fadeFromSurfaceLeft: true,
           ),
           if (occ.isRecurring)
-            SlidableAction(
-              onPressed: (_) => _skipOccurrence(occ),
-              backgroundColor: Colors.blueGrey,
-              foregroundColor: Colors.white,
+            _slidableAction(
+              context,
               icon: Icons.skip_next,
               label: '跳过',
+              color: const Color(0xFF64748B),
+              onTap: () => _skipOccurrence(occ),
             ),
-          SlidableAction(
-            onPressed: (_) => _quickReschedule(occ),
-            backgroundColor: Colors.indigo,
-            foregroundColor: Colors.white,
+          _slidableAction(
+            context,
             icon: Icons.calendar_today,
             label: '改期',
+            color: const Color(0xFF4F46E5),
+            onTap: () => _quickReschedule(occ),
           ),
-          SlidableAction(
-            onPressed: (_) => _deleteTaskWithUndo(task),
-            backgroundColor: theme.colorScheme.error,
-            foregroundColor: Colors.white,
+          _slidableAction(
+            context,
             icon: Icons.delete,
             label: '删除',
+            color: const Color(0xFFEF4444),
+            onTap: () => _deleteTaskWithUndo(task),
           ),
         ],
       ),
@@ -645,6 +669,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         index: index,
         isDone: occ.isDone,
         occurrenceDay: occ.day,
+        onToggleComplete: () => _completeOccurrenceWithUndo(occ),
         onTap: () {
           if (isSelectionMode) {
             ref.read(selectionProvider.notifier).toggle(task.id!);
@@ -653,7 +678,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           }
         },
         onLongPress: () => _enterSelectionMode(task.id!),
-        onStepToggle: (t, s) => _toggleStep(t, s),
+        onStepToggle: (t, s) => _toggleStep(t, s, occ),
+      ),
+    );
+  }
+
+  Widget _slidableAction(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+    bool fadeFromSurfaceLeft = false,
+    bool fadeToSurfaceRight = false,
+  }) {
+    final theme = Theme.of(context);
+    final colors = fadeFromSurfaceLeft
+        ? [theme.colorScheme.surface, color]
+        : fadeToSurfaceRight
+            ? [color, theme.colorScheme.surface]
+            : [color, color];
+    return CustomSlidableAction(
+      onPressed: (_) => onTap(),
+      padding: EdgeInsets.zero,
+      child: SizedBox.expand(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: colors,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white, size: 22),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

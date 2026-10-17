@@ -22,6 +22,7 @@ class TaskStatistics {
   final Map<int, int> monthlyDistribution; // 1-12
   final int appOpenCount;
   final Map<String, int> colorDistribution;
+  final int starredTasks;
 
   TaskStatistics({
     required this.totalTasks,
@@ -42,6 +43,7 @@ class TaskStatistics {
     this.monthlyDistribution = const {},
     this.appOpenCount = 0,
     this.colorDistribution = const {},
+    this.starredTasks = 0,
   });
 }
 
@@ -106,6 +108,7 @@ class StatisticsCalculator {
     final weekdayDist = <int, int>{};
     final monthlyDist = <int, int>{};
     final colorDist = <String, int>{};
+    final starredIds = <int>{};
 
     for (final task in tasks) {
       if (task.status == 'done') {
@@ -154,6 +157,8 @@ class StatisticsCalculator {
 
       // Color distribution
       colorDist[task.color] = (colorDist[task.color] ?? 0) + 1;
+
+      if (task.isStarred && task.id != null) starredIds.add(task.id!);
     }
 
     final total = tasks.length;
@@ -191,6 +196,7 @@ class StatisticsCalculator {
       monthlyDistribution: monthlyDist,
       appOpenCount: appOpenCount,
       colorDistribution: colorDist,
+      starredTasks: starredIds.length,
     );
   }
 

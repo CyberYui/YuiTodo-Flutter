@@ -22,6 +22,9 @@ class TaskCard extends ConsumerWidget {
   /// rather than on [task.status].
   final bool? isDone;
 
+  /// Toggles completion for this card (tapping the leading icon).
+  final VoidCallback? onToggleComplete;
+
   /// Local date of the virtual occurrence this card represents. When it
   /// differs from the task's own start date, the card shows this day instead.
   final DateTime? occurrenceDay;
@@ -36,6 +39,7 @@ class TaskCard extends ConsumerWidget {
     required this.index,
     this.isDone,
     this.occurrenceDay,
+    this.onToggleComplete,
   });
 
   @override
@@ -79,29 +83,55 @@ class TaskCard extends ConsumerWidget {
                   ),
                   const SizedBox(width: 10),
 
-                  // --- 圆形图标 ---
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: taskColor.withOpacity(0.15),
-                      shape: BoxShape.circle,
+                  // --- 圆形图标（点击切换完成） ---
+                  GestureDetector(
+                    onTap: onToggleComplete,
+                    behavior: HitTestBehavior.opaque,
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: taskColor.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: task.icon != null
+                              ? AppIcons.isAvatar(task.icon!)
+                                    ? ClipOval(
+                                        child: Image.asset(
+                                          'assets/icons/${task.icon}.png',
+                                          width: 48,
+                                          height: 48,
+                                        ),
+                                      )
+                                    : Icon(
+                                        FlatIconMapper.getIcon(task.icon!),
+                                        size: 24,
+                                        color: taskColor,
+                                      )
+                              : Icon(Icons.task_alt, size: 24, color: taskColor),
+                        ),
+                        if (done)
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 18,
+                              height: 18,
+                              decoration: const BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check,
+                                size: 12,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    child: task.icon != null
-                        ? AppIcons.isAvatar(task.icon!)
-                              ? ClipOval(
-                                  child: Image.asset(
-                                    'assets/icons/${task.icon}.png',
-                                    width: 48,
-                                    height: 48,
-                                  ),
-                                )
-                              : Icon(
-                                  FlatIconMapper.getIcon(task.icon!),
-                                  size: 24,
-                                  color: taskColor,
-                                )
-                        : Icon(Icons.task_alt, size: 24, color: taskColor),
                   ),
                   const SizedBox(width: 12),
 
@@ -130,6 +160,14 @@ class TaskCard extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            if (task.isStarred) ...[
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.star,
+                                size: 14,
+                                color: Colors.amber,
+                              ),
+                            ],
                             _buildDateLabel(theme),
                           ],
                         ),

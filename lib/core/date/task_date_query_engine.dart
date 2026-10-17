@@ -26,6 +26,7 @@ class TaskDateQueryEngine {
     final tasks = await repo.getAllTasks();
     final rules = await repo.getRecurrenceRuleMap();
     final occMap = await repo.getOccurrencesInRange(fromDay, toDay);
+    final stepOcc = await repo.getStepOccurrencesInRange(fromDay, toDay);
 
     final out = <TaskOccurrence>[];
 
@@ -75,10 +76,11 @@ class TaskDateQueryEngine {
 
       final states = occMap[task.id!] ?? const <int, String>{};
       for (final day in days) {
+        final dayKey = ymdKey(day);
         out.add(TaskOccurrence(
-          task: task,
+          task: _withOccurrenceSteps(task, dayKey, stepOcc),
           day: day,
-          state: states[ymdKey(day)] ?? 'pending',
+          state: states[dayKey] ?? 'pending',
           isRecurring: true,
         ));
       }
@@ -119,6 +121,21 @@ class TaskDateQueryEngine {
 
   Future<void> clearOccurrence(TaskOccurrence occ) {
     return repo.clearOccurrence(occ.task.id!, occ.day);
+  }
+
+  Task _withOccurrenceSteps(
+    Task task,
+    int dayKey,
+    Map<int, Map<int, String>> stepOcc,
+  ) {
+    if (task.steps.isEmpty) return task;
+    final steps = task.steps.map((s) {
+      final id = s.id;
+      if (id == null) return s;
+      final status = stepOcc[id]?[dayKey];
+      return status == null ? s : s.copyWith(status: status);
+    }).toList();
+    return task.copyWith(steps: steps);
   }
 
   DateTime? _anchorOf(Task task) {
