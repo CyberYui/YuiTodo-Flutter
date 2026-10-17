@@ -273,25 +273,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
           ] else ...[
             IconButton(
-              icon: const Icon(Icons.timer_outlined),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const FocusScreen()),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.calendar_month),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CalendarScreen()),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.bar_chart),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const StatisticsScreen()),
-              ),
+              icon: const Icon(Icons.search),
+              onPressed: () => setState(() => _showSearch = !_showSearch),
             ),
             IconButton(
               icon: AnimatedIcon(
@@ -301,16 +284,71 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
               onPressed: _toggleFilters,
             ),
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () => setState(() => _showSearch = !_showSearch),
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              tooltip: '更多',
+              onSelected: (value) {
+                switch (value) {
+                  case 'calendar':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CalendarScreen()),
+                    );
+                    break;
+                  case 'focus':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const FocusScreen()),
+                    );
+                    break;
+                  case 'stats':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const StatisticsScreen()),
+                    );
+                    break;
+                  case 'settings':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    );
+                    break;
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'calendar',
+                  child: Row(children: [
+                    Icon(Icons.calendar_month),
+                    SizedBox(width: 12),
+                    Text('日历'),
+                  ]),
+                ),
+                PopupMenuItem(
+                  value: 'focus',
+                  child: Row(children: [
+                    Icon(Icons.timer_outlined),
+                    SizedBox(width: 12),
+                    Text('专注'),
+                  ]),
+                ),
+                PopupMenuItem(
+                  value: 'stats',
+                  child: Row(children: [
+                    Icon(Icons.bar_chart),
+                    SizedBox(width: 12),
+                    Text('统计'),
+                  ]),
+                ),
+                PopupMenuItem(
+                  value: 'settings',
+                  child: Row(children: [
+                    Icon(Icons.settings),
+                    SizedBox(width: 12),
+                    Text('设置'),
+                  ]),
+                ),
+              ],
             ),
           ],
         ],

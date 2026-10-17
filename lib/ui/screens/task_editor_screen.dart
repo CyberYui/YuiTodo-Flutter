@@ -302,6 +302,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         now: now,
       );
 
+      final color = Color(int.parse(task.color.replaceFirst('#', '0xFF')));
+      final bigText = task.note.isNotEmpty ? task.note : '任务提醒';
       if (rule == null) {
         if (reminderDate.isAfter(now)) {
           await NotificationService.instance.scheduleReminder(
@@ -309,6 +311,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
             title: task.title,
             body: '任务提醒',
             scheduledTime: reminderDate,
+            color: color,
+            bigText: bigText,
           );
         }
       } else {
@@ -317,6 +321,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
           title: task.title,
           body: '任务提醒',
           times: times,
+          color: color,
+          bigText: bigText,
         );
       }
     } catch (e) {
