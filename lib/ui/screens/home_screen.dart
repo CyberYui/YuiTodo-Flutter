@@ -693,11 +693,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     bool fadeToSurfaceRight = false,
   }) {
     final theme = Theme.of(context);
+    // Junction actions fade from/to the card surface; the rest use a
+    // same-hue gradient so the buttons feel softer without losing the
+    // smooth transition at the card edge.
     final colors = fadeFromSurfaceLeft
         ? [theme.colorScheme.surface, color]
         : fadeToSurfaceRight
             ? [color, theme.colorScheme.surface]
-            : [color, color];
+            : [
+                Color.lerp(color, Colors.black, 0.14)!,
+                Color.lerp(color, Colors.white, 0.10)!,
+              ];
     return CustomSlidableAction(
       onPressed: (_) => onTap(),
       padding: EdgeInsets.zero,
