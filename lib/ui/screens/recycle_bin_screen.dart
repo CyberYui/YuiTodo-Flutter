@@ -136,8 +136,14 @@ class RecycleBinScreen extends ConsumerWidget {
     );
   }
 
-  void _restoreTask(BuildContext context, WidgetRef ref, Task task) {
-    ref.read(recycleBinProvider.notifier).restore(task);
+  Future<void> _restoreTask(
+    BuildContext context,
+    WidgetRef ref,
+    Task task,
+  ) async {
+    await ref.read(recycleBinProvider.notifier).restore(task);
+    await ref.read(taskListProvider.notifier).loadTasks();
+    if (!context.mounted) return;
     context.showTopBanner('已恢复 "${task.title}"');
   }
 

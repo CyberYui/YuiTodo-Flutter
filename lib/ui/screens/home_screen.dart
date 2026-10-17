@@ -67,7 +67,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final tagFilter = ref.watch(tagFilterProvider);
     final searchQuery = _searchController.text.toLowerCase().trim();
 
-    var filtered = tasks.where((t) => t.deletedAt == null).toList();
+    // Treat both NULL and the legacy sentinel 0 as "not deleted".
+    var filtered = tasks
+        .where((t) => t.deletedAt == null || t.deletedAt == 0)
+        .toList();
 
     final now = DateTime.now();
     final todayStamp =
@@ -135,9 +138,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     ref.read(selectionProvider.notifier).toggle(taskId);
   }
 
-  void _deleteTaskWithUndo(Task task) {
-    ref.read(taskListProvider.notifier).softDeleteTask(task.id!);
-    ref.read(recycleBinProvider.notifier).addDeleted(task);
+  Future<void> _deleteTaskWithUndo(Task task) async {
+    final deletedAt = DateTime.now().millisecondsSinceEpoch;
+    await ref.read(taskListProvider.notifier).softDeleteTask(task.id!);
+    ref.read(recycleBinProvider.notifier).addDeleted(
+      task.copyWith(deletedAt: deletedAt),
+    );
+    if (!mounted) return;
     context.showTopBanner('任务已删除', actionLabel: '撤销', onAction: () {
       ref.read(taskListProvider.notifier).restoreTask(task.id!);
       ref.read(recycleBinProvider.notifier).restore(task);
@@ -383,7 +390,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           if (direction == DismissDirection.startToEnd) {
                             _completeTaskWithUndo(task);
                           } else {
-                            _deleteTaskWithUndo(task);
+                            await _deleteTaskWithUndo(task);
                           }
                           return false;
                         },
