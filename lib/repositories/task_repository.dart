@@ -479,4 +479,39 @@ class TaskRepository {
     });
   }
 
+
+  // ---------------------------------------------------------------------------
+  // Habits
+  // ---------------------------------------------------------------------------
+
+  Future<List<Task>> getHabitTasks() async {
+    final db = await _db.database;
+    final maps = await db.query(
+      'task',
+      where: 'is_habit = 1 AND (deleted_at IS NULL OR deleted_at = 0)',
+      orderBy: 'sort_order ASC',
+    );
+    return maps.map(Task.fromMap).toList();
+  }
+
+
+  /// Lightweight task list for reminder re-scheduling.
+  Future<List<Task>> getTasksForReminders() async {
+    final db = await _db.database;
+    final maps = await db.query(
+      'task',
+      columns: [
+        'id',
+        'title',
+        'reminder_time',
+        'start_date',
+        'start_time',
+        'created_at',
+        'updated_at',
+      ],
+      where: 'reminder_time IS NOT NULL AND (deleted_at IS NULL OR deleted_at = 0)',
+    );
+    return maps.map(Task.fromMap).toList();
+  }
+
 }

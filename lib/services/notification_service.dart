@@ -1,6 +1,10 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+import '../core/utils/reminder_scheduler.dart';
+import '../models/recurrence_rule.dart';
+import '../models/task.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
@@ -167,6 +171,79 @@ class NotificationService {
     } catch (e) {
       debugPrint('Failed to schedule notification: $e');
       rethrow;
+    }
+  }
+
+  int _taskBaseId(int taskId) => taskId * 1000;
+
+  /// Cancel a task's single reminder and its occurrence slots.
+  Future<void> cancelTaskReminders(int taskId, {int count = 7}) async {
+    await _plugin.cancel(taskId);
+    final base = _taskBaseId(taskId);
+    for (var i = 1; i <= count; i++) {
+      await _plugin.cancel(base + i);
+    }
+  }
+
+  /// Schedule up to 7 occurrence reminders for a recurring task.
+  Future<void> scheduleTaskOccurrences({
+    required int taskId,
+    required String title,
+    required String body,
+    required List<DateTime> times,
+  }) async {
+    await cancelTaskReminders(taskId);
+    final base = _taskBaseId(taskId);
+    final capped = times.take(7).toList();
+    for (var i = 0; i < capped.length; i++) {
+      await scheduleReminder(
+        id: base + i + 1,
+        title: title,
+        body: body,
+        scheduledTime: capped[i],
+      );
+    }
+  }
+
+  /// Re-schedule every reminder on app start (survives app restarts and
+  /// refreshes the rolling 7-day window for recurring tasks).
+  Future<void> rescheduleAll(
+    List<Task> tasks,
+    Map<int, RecurrenceRule> rules,
+  ) async {
+    final now = DateTime.now();
+    for (final task in tasks) {
+      final id = task.id;
+      final reminder = task.reminderTime;
+      if (id == null || reminder == null) continue;
+      final reminderDate = DateTime.fromMillisecondsSinceEpoch(reminder);
+      final rule = rules[id];
+      if (rule == null) {
+        if (reminderDate.isAfter(now)) {
+          await scheduleReminder(
+            id: id,
+            title: task.title,
+            body: '任务提醒',
+            scheduledTime: reminderDate,
+          );
+        }
+        continue;
+      }
+      final anchor = DateTime.fromMillisecondsSinceEpoch(
+        task.startDate ?? task.startTime ?? task.createdAt,
+      );
+      final times = ReminderScheduler.reminderTimes(
+        anchor: anchor,
+        reminderDate: reminderDate,
+        rule: rule,
+        now: now,
+      );
+      await scheduleTaskOccurrences(
+        taskId: id,
+        title: task.title,
+        body: '任务提醒',
+        times: times,
+      );
     }
   }
 

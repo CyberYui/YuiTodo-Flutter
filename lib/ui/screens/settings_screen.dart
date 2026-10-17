@@ -7,6 +7,7 @@ import '../../core/theme/font_pairs.dart';
 import '../../core/theme/font_state.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
+import '../screens/habit_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -91,6 +92,19 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
 
           // Data section
+          _SectionHeader(title: '功能'),
+          ListTile(
+            leading: const Icon(Icons.check_circle_outline),
+            title: const Text('习惯打卡'),
+            subtitle: const Text('每日习惯与连续记录'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HabitScreen()),
+            ),
+          ),
+
+          const Divider(),
           _SectionHeader(title: '数据管理'),
           ListTile(
             title: const Text('导出数据'),

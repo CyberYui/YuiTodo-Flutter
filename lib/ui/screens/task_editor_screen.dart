@@ -12,6 +12,7 @@ import '../../core/icons/app_icons.dart';
 import '../../core/icons/flat_icon_mapper.dart';
 import '../../core/theme/task_colors.dart';
 import '../../core/utils/recurrence.dart';
+import '../../core/utils/reminder_scheduler.dart';
 import '../widgets/recurrence_selector.dart';
 import '../widgets/reminder_selector.dart';
 import '../widgets/icon_picker.dart';
@@ -262,17 +263,12 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       }
       if (mounted) Navigator.pop(context);
 
-      // Schedule notification after pop (fire-and-forget)
-      if (_reminderTime != null && _reminderTime! > DateTime.now().millisecondsSinceEpoch + 5000) {
-        _scheduleNotification(
-          taskId,
-          _titleController.text.trim(),
-          _noteController.text.isNotEmpty ? _noteController.text.trim() : '任务提醒',
-          _reminderTime!,
-        );
-      } else if (_reminderTime != null) {
-        // Reminder time is too soon (within 5 seconds), skip scheduling
-        debugPrint('Reminder time too soon, skipping notification');
+      // Schedule notifications after pop (fire-and-forget). Recurring tasks
+      // get their next 7 occurrences pre-scheduled.
+      if (_reminderTime != null) {
+        final rulesMap =
+            await ref.read(taskRepositoryProvider).getRecurrenceRuleMap();
+        _scheduleNotification(taskId, task, rulesMap[taskId]);
       }
     } catch (e) {
       if (mounted) {
@@ -282,15 +278,45 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
     }
   }
 
-  Future<void> _scheduleNotification(int taskId, String title, String body, int reminderEpoch) async {
+  Future<void> _scheduleNotification(
+    int taskId,
+    Task task,
+    RecurrenceRule? rule,
+  ) async {
     try {
-      final hasPermission = await NotificationService.instance.requestPermission();
-      if (hasPermission) {
-        await NotificationService.instance.scheduleReminder(
-          id: taskId,
-          title: title,
-          body: body,
-          scheduledTime: DateTime.fromMillisecondsSinceEpoch(reminderEpoch),
+      final reminder = task.reminderTime;
+      if (reminder == null) return;
+      final hasPermission =
+          await NotificationService.instance.requestPermission();
+      if (!hasPermission) return;
+
+      final now = DateTime.now();
+      final reminderDate = DateTime.fromMillisecondsSinceEpoch(reminder);
+      final anchor = DateTime.fromMillisecondsSinceEpoch(
+        task.startDate ?? task.startTime ?? task.createdAt,
+      );
+      final times = ReminderScheduler.reminderTimes(
+        anchor: anchor,
+        reminderDate: reminderDate,
+        rule: rule,
+        now: now,
+      );
+
+      if (rule == null) {
+        if (reminderDate.isAfter(now)) {
+          await NotificationService.instance.scheduleReminder(
+            id: taskId,
+            title: task.title,
+            body: '任务提醒',
+            scheduledTime: reminderDate,
+          );
+        }
+      } else {
+        await NotificationService.instance.scheduleTaskOccurrences(
+          taskId: taskId,
+          title: task.title,
+          body: '任务提醒',
+          times: times,
         );
       }
     } catch (e) {

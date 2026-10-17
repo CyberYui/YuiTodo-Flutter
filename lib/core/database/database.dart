@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 8,
+      version: 9,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -45,7 +45,9 @@ class AppDatabase {
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
         deleted_at INTEGER,
-        reminder_time INTEGER
+        reminder_time INTEGER,
+        is_habit INTEGER DEFAULT 0,
+        habit_target_per_week INTEGER DEFAULT 7
       )
     ''');
 
@@ -165,6 +167,18 @@ class AppDatabase {
         end_time INTEGER,
         duration INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (session_id) REFERENCES focus_session(id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS task_reminder (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id INTEGER NOT NULL,
+        offset_minutes INTEGER,
+        absolute_time INTEGER,
+        is_enabled INTEGER DEFAULT 1,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE CASCADE
       )
     ''');
 
@@ -378,6 +392,28 @@ class AppDatabase {
         )
       ''');
     }
+    if (oldVersion < 9) {
+      final columns = await db.rawQuery('PRAGMA table_info(task)');
+      final names = columns.map((c) => c['name'] as String).toSet();
+      if (!names.contains('is_habit')) {
+        await db.execute('ALTER TABLE task ADD COLUMN is_habit INTEGER DEFAULT 0');
+      }
+      if (!names.contains('habit_target_per_week')) {
+        await db.execute('ALTER TABLE task ADD COLUMN habit_target_per_week INTEGER DEFAULT 7');
+      }
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS task_reminder (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          task_id INTEGER NOT NULL,
+          offset_minutes INTEGER,
+          absolute_time INTEGER,
+          is_enabled INTEGER DEFAULT 1,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE CASCADE
+        )
+      ''');
+    }
+
   }
 
   Future<void> close() async {
