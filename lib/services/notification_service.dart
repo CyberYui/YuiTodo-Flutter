@@ -143,12 +143,15 @@ class NotificationService {
     final location = _location ?? tz.getLocation('Asia/Shanghai');
     final tzScheduledTime = tz.TZDateTime.from(scheduledTime, location);
 
-    // Exact alarms require the SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM permission.
-    // Some OEMs (e.g. ColorOS) deny it, so fall back to inexact when not permitted.
+    // Prefer exact alarms. `canScheduleExactNotifications()` checks the real
+    // AlarmManager capability (USE_EXACT_ALARM or SCHEDULE_EXACT_ALARM), which
+    // is more accurate than permission_handler's SCHEDULE_EXACT_ALARM check.
     AndroidScheduleMode scheduleMode = AndroidScheduleMode.exactAllowWhileIdle;
     if (Platform.isAndroid) {
-      final exactAllowed = await Permission.scheduleExactAlarm.status;
-      if (!exactAllowed.isGranted) {
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      final canExact = await android?.canScheduleExactNotifications() ?? false;
+      if (!canExact) {
         scheduleMode = AndroidScheduleMode.inexactAllowWhileIdle;
         debugPrint('Exact alarms not permitted; scheduling inexact reminder');
       }
