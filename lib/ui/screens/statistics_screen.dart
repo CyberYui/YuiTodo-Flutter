@@ -122,6 +122,13 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           ),
           const SizedBox(height: 8),
           CompactStatCard(
+            label: '星标任务',
+            value: stats.starredTasks.toString(),
+            icon: Icons.star,
+            color: Colors.amber,
+          ),
+          const SizedBox(height: 8),
+          CompactStatCard(
             label: '应用打开次数',
             value: stats.appOpenCount.toString(),
             icon: Icons.touch_app,

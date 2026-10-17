@@ -168,6 +168,22 @@ class TaskStep {
       status: (map['status'] as String?) ?? 'pending',
     );
   }
+
+  TaskStep copyWith({
+    int? id,
+    int? taskId,
+    String? title,
+    int? sortOrder,
+    String? status,
+  }) {
+    return TaskStep(
+      id: id ?? this.id,
+      taskId: taskId ?? this.taskId,
+      title: title ?? this.title,
+      sortOrder: sortOrder ?? this.sortOrder,
+      status: status ?? this.status,
+    );
+  }
 }
 
 /// Tag model

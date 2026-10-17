@@ -372,4 +372,51 @@ class TaskRepository {
       for (final m in maps) m['occurrence_day'] as int: m['state'] as String,
     };
   }
+
+  // ---------------------------------------------------------------------------
+  // Per-occurrence subtask state
+  // ---------------------------------------------------------------------------
+
+  /// Map of stepId -> (yyyyMMdd -> status) for step occurrences in a range.
+  Future<Map<int, Map<int, String>>> getStepOccurrencesInRange(
+    DateTime from,
+    DateTime to,
+  ) async {
+    final db = await _db.database;
+    final maps = await db.query(
+      'task_step_occurrence',
+      columns: ['step_id', 'occurrence_day', 'status'],
+      where: 'occurrence_day >= ? AND occurrence_day <= ?',
+      whereArgs: [ymdKey(from), ymdKey(to)],
+    );
+    final result = <int, Map<int, String>>{};
+    for (final m in maps) {
+      final stepId = m['step_id'] as int;
+      final day = m['occurrence_day'] as int;
+      final status = m['status'] as String;
+      (result[stepId] ??= {})[day] = status;
+    }
+    return result;
+  }
+
+  Future<void> setStepOccurrenceStatus(
+    int stepId,
+    int taskId,
+    DateTime day,
+    String status,
+  ) async {
+    final db = await _db.database;
+    await db.insert(
+      'task_step_occurrence',
+      {
+        'step_id': stepId,
+        'task_id': taskId,
+        'occurrence_day': ymdKey(day),
+        'status': status,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
 }
