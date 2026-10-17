@@ -180,7 +180,7 @@
    │
 <span class="c">TaskRepository</span>（扩展 occurrence / focus / habit 查询）
    │
-<span class="c">AppDatabase (sqflite v7)</span> + AppPrefs</pre>
+<span class="c">AppDatabase (sqflite v8)</span> + AppPrefs</pre>
 <p class="small">读写分离：读走虚拟实例；写只落"定义 + 例外（occurrence）"。</p>
 </div>
 
@@ -194,7 +194,7 @@
 }</pre>
 
 <!-- ============ Schema ============ -->
-<h2 id="schema"><span class="num">02</span>数据模型变更（v5 → v7）</h2>
+<h2 id="schema"><span class="num">02</span>数据模型变更（v5 → v8）</h2>
 
 <div class="callout warn">
 <b>迁移策略</b>
@@ -447,17 +447,17 @@ tagFilter != null         → 在当前结果上再按标签过滤</pre>
 
 <!-- ============ Phase 2 ============ -->
 <div class="phase" id="phase2">
-<div class="ph-head"><h2><span class="num">05</span>Phase 2 · 月历 + 专注模式</h2><span class="tag t-warn">工作量较大</span></div>
+<div class="ph-head"><h2><span class="num">05</span>Phase 2 · 月历 + 专注模式</h2><span class="tag t-ok">已完成</span></div>
 <p class="goal">目标：月视图看整月任务分布；专注模式支持 Timer/Stopwatch、暂停、休息与记录。</p>
 
 <h3>5.1 月历（MONTH）</h3>
 <ul class="chk">
-  <li>新增 <code>calendar_screen.dart</code> + <code>calendar_provider.dart</code></li>
+  <li class="done">新增 <code>calendar_screen.dart</code> + <code>calendar_provider.dart</code></li>
   <li>月网格：当月首尾补齐、周起始日可配（跟系统或设置）</li>
-  <li>日期格显示任务指示：最多 3 个彩色点 + 超出显示 "+N"，或无任务时留空</li>
-  <li>点选某天 → 下方列出该天 occurrence（复用 TaskCard）</li>
-  <li>左右翻月；"今天"快捷定位</li>
-  <li>数据来自 <code>TaskDateQueryEngine.query(月首, 月末)</code>，不预生成</li>
+  <li class="done">日期格显示任务指示：最多 3 个彩色点 + 超出显示 "+N"，或无任务时留空</li>
+  <li class="done">点选某天 → 下方列出该天 occurrence（复用 TaskCard）</li>
+  <li class="done">左右翻月；"今天"快捷定位</li>
+  <li class="done">数据来自 <code>TaskDateQueryEngine.query(月首, 月末)</code>，不预生成</li>
 </ul>
 <div class="card">
 <h4>选型建议</h4>
@@ -471,13 +471,13 @@ calendarBuilders: CalendarBuilders(
 
 <h3>5.2 专注模式（Focus）</h3>
 <ul class="chk">
-  <li>新增 <code>focus_provider.dart</code> + <code>focus_screen.dart</code> + <code>focus_timer_ring.dart</code></li>
-  <li>两种模式：Timer（倒计时，5 分钟–4 小时）/ Stopwatch（正计时）</li>
-  <li>开始/暂停/继续/结束；结束可提前（ENDED_EARLY）</li>
+  <li class="done">新增 <code>focus_provider.dart</code> + <code>focus_screen.dart</code> + <code>focus_timer_ring.dart</code></li>
+  <li class="done">两种模式：Timer（倒计时，5 分钟–4 小时）/ Stopwatch（正计时）</li>
+  <li class="done">开始/暂停/继续/结束；结束可提前（ENDED_EARLY）</li>
   <li>到点后进入休息段（可延伸/跳过），记录 restCount/restDuration + segment</li>
-  <li>可关联任务，也可"无任务专注"</li>
-  <li>专注记录列表（按天分组，显示时长/模式/状态）</li>
-  <li>后台/锁屏恢复：以 <code>DateTime.now()</code> 计算真实经过时间，不依赖 tick</li>
+  <li class="done">可关联任务，也可"无任务专注"</li>
+  <li class="done">专注记录列表（按天分组，显示时长/模式/状态）</li>
+  <li class="done">后台/锁屏恢复：以 <code>DateTime.now()</code> 计算真实经过时间，不依赖 tick</li>
   <li>结束通知（复用 NotificationService）</li>
 </ul>
 <div class="card">
@@ -493,14 +493,23 @@ orphan = query(status=0 &amp;&amp; start_time &lt; now - 1h)
   → 标记 interrupted 或提示恢复</pre>
 </div>
 
+<div class="callout ok">
+<b>Phase 2 实现说明</b>
+- 月历使用 <code>table_calendar</code>，周一起始；"周起始日可配"暂未做成设置项。
+- 专注使用 <code>CircularProgressIndicator</code> 绘制进度环（未单独建 <code>focus_timer_ring.dart</code>）。
+- 休息为"手动开始/结束"，暂未做自动休息倒计时与延伸/跳过。
+- 专注结束通知尚未接入（留到 Phase 4）。
+- 日期选择器/日历已通过 <code>flutter_localizations</code> 中文化（<code>zh_CN</code>）。
+</div>
+
 <h3>验收标准</h3>
 <ul class="chk">
-  <li>月历中每格任务点与实际任务一致（跨月翻页正确）</li>
-  <li>点某天，下方列表只含该天任务</li>
-  <li>专注倒计时在后台 10 分钟后回到前台，剩余时间仍准确</li>
-  <li>暂停时长不计入专注时长</li>
-  <li>专注记录持久化，重启后可见</li>
-  <li>从任务右滑 Focus 可直接带入该任务</li>
+  <li class="done">月历中每格任务点与实际任务一致（跨月翻页正确）</li>
+  <li class="done">点某天，下方列表只含该天任务</li>
+  <li class="done">专注倒计时在后台 10 分钟后回到前台，剩余时间仍准确</li>
+  <li class="done">暂停时长不计入专注时长</li>
+  <li class="done">专注记录持久化，重启后可见</li>
+  <li class="done">从任务右滑 Focus 可直接带入该任务</li>
 </ul>
 </div>
 
