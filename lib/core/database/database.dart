@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -134,6 +134,39 @@ class AppDatabase {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_step_occ_task_day ON task_step_occurrence(task_id, occurrence_day)',
     );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS focus_session (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id INTEGER,
+        mode INTEGER NOT NULL,
+        status INTEGER NOT NULL,
+        start_time INTEGER NOT NULL,
+        end_time INTEGER,
+        target_duration INTEGER NOT NULL,
+        actual_duration INTEGER NOT NULL DEFAULT 0,
+        pause_count INTEGER NOT NULL DEFAULT 0,
+        rest_count INTEGER NOT NULL DEFAULT 0,
+        rest_duration INTEGER NOT NULL DEFAULT 0,
+        focus_name TEXT,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE SET NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_focus_start ON focus_session(start_time)',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS focus_rest_segment (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER NOT NULL,
+        start_time INTEGER NOT NULL,
+        end_time INTEGER,
+        duration INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (session_id) REFERENCES focus_session(id) ON DELETE CASCADE
+      )
+    ''');
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS app_setting (
@@ -311,6 +344,39 @@ class AppDatabase {
       await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_step_occ_task_day ON task_step_occurrence(task_id, occurrence_day)',
       );
+    }
+    if (oldVersion < 8) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS focus_session (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          task_id INTEGER,
+          mode INTEGER NOT NULL,
+          status INTEGER NOT NULL,
+          start_time INTEGER NOT NULL,
+          end_time INTEGER,
+          target_duration INTEGER NOT NULL,
+          actual_duration INTEGER NOT NULL DEFAULT 0,
+          pause_count INTEGER NOT NULL DEFAULT 0,
+          rest_count INTEGER NOT NULL DEFAULT 0,
+          rest_duration INTEGER NOT NULL DEFAULT 0,
+          focus_name TEXT,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE SET NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_focus_start ON focus_session(start_time)',
+      );
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS focus_rest_segment (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          session_id INTEGER NOT NULL,
+          start_time INTEGER NOT NULL,
+          end_time INTEGER,
+          duration INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (session_id) REFERENCES focus_session(id) ON DELETE CASCADE
+        )
+      ''');
     }
   }
 
