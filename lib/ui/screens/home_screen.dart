@@ -35,6 +35,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     with TickerProviderStateMixin {
   bool _showSearch = false;
   bool _showFilters = false;
+
+  /// Tasks fading out before the actual soft delete is applied.
+  final Set<int> _removingTaskIds = <int>{};
   final _searchController = TextEditingController();
   late AnimationController _filterAnimController;
   late Animation<double> _filterAnimation;
@@ -178,6 +181,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Future<void> _deleteTaskWithUndo(Task task) async {
+    final id = task.id!;
+    if (!_removingTaskIds.contains(id)) {
+      setState(() => _removingTaskIds.add(id));
+      await Future.delayed(const Duration(milliseconds: 160));
+    }
     HapticFeedback.mediumImpact();
     final deletedAt = DateTime.now().millisecondsSinceEpoch;
     await ref.read(taskListProvider.notifier).softDeleteTask(task.id!);
@@ -186,6 +194,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
     await ref.read(occurrenceListProvider.notifier).load();
     if (!mounted) return;
+    setState(() => _removingTaskIds.remove(id));
     context.showTopBanner('任务已删除', actionLabel: '撤销', onAction: () async {
       await ref.read(taskListProvider.notifier).restoreTask(task.id!);
       await ref.read(recycleBinProvider.notifier).restore(task);
@@ -763,22 +772,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ],
       ),
-      child: TaskCard(
-        task: task,
-        isSelected: selection.contains(task.id),
-        index: index,
-        isDone: occ.isDone,
-        occurrenceDay: occ.day,
-        onToggleComplete: () => _completeOccurrenceWithUndo(occ),
-        onTap: () {
-          if (isSelectionMode) {
-            ref.read(selectionProvider.notifier).toggle(task.id!);
-          } else {
-            _openTaskEditor(task);
-          }
-        },
-        onLongPress: () => _enterSelectionMode(task.id!),
-        onStepToggle: (t, s) => _toggleStep(t, s, occ),
+      child: AnimatedOpacity(
+        opacity: _removingTaskIds.contains(task.id) ? 0 : 1,
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        child: AnimatedScale(
+          scale: _removingTaskIds.contains(task.id) ? 0.96 : 1,
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOut,
+          child: TaskCard(
+            task: task,
+            isSelected: selection.contains(task.id),
+            index: index,
+            isDone: occ.isDone,
+            occurrenceDay: occ.day,
+            onToggleComplete: () => _completeOccurrenceWithUndo(occ),
+            onTap: () {
+              if (isSelectionMode) {
+                ref.read(selectionProvider.notifier).toggle(task.id!);
+              } else {
+                _openTaskEditor(task);
+              }
+            },
+            onLongPress: () => _enterSelectionMode(task.id!),
+            onStepToggle: (t, s) => _toggleStep(t, s, occ),
+          ),
+        ),
       ),
     );
   }
