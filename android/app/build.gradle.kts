@@ -21,13 +21,19 @@ android {
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
-        versionName = "3.4.8"
+        versionName = "3.4.11"
         multiDexEnabled = true
     }
 
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
+            // Keep Gson + flutter_local_notifications intact; without these
+            // rules zonedSchedule throws "Missing type parameter" in release.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
