@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../../models/task.dart';
 import '../../models/task_occurrence.dart';
@@ -9,6 +10,7 @@ import '../../providers/task_provider.dart';
 import '../../providers/occurrence_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../providers/filter_provider.dart';
+import '../../providers/section_provider.dart';
 import '../../providers/recycle_bin_provider.dart';
 import '../../repositories/task_repository.dart';
 import '../screens/task_editor_screen.dart';
@@ -64,39 +66,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     });
   }
 
-  List<TaskOccurrence> _filterOccurrences(List<TaskOccurrence> occurrences) {
-    final smartFilter = ref.watch(smartFilterProvider);
+  List<TaskOccurrence> _applyCommonFilters(List<TaskOccurrence> occurrences) {
     final tagFilter = ref.watch(tagFilterProvider);
     final searchQuery = _searchController.text.toLowerCase().trim();
 
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
-
     var filtered = occurrences.where((o) => !o.isSkipped).toList();
-
-    switch (smartFilter) {
-      case 'today':
-        filtered = filtered.where((o) => o.day == today).toList();
-        break;
-      case 'tomorrow':
-        filtered = filtered.where((o) => o.day == tomorrow).toList();
-        break;
-      // "未来" shows the next occurrence per task.
-      case 'future':
-        filtered = filtered.where((o) => o.day.isAfter(today)).toList();
-        filtered = _dedupeByTask(filtered, today);
-        break;
-      case 'completed':
-        filtered = filtered.where((o) => o.isDone).toList();
-        filtered = _dedupeByTask(filtered, today, preferLatest: true);
-        break;
-      case 'all':
-      default:
-        // One card per task: pending first, then the occurrence closest to today.
-        filtered = _dedupeByTask(filtered, today);
-        break;
-    }
 
     if (tagFilter != null) {
       filtered = filtered
@@ -119,7 +93,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return filtered;
   }
 
-  /// Collapse multiple occurrences of the same task into a single card.
+  List<TaskOccurrence> _filterOccurrences(List<TaskOccurrence> occurrences) {
+    final smartFilter = ref.watch(smartFilterProvider);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+
+    var filtered = _applyCommonFilters(occurrences);
+
+    switch (smartFilter) {
+      case 'today':
+        filtered = filtered.where((o) => o.day == today).toList();
+        break;
+      case 'tomorrow':
+        filtered = filtered.where((o) => o.day == tomorrow).toList();
+        break;
+      case 'future':
+        filtered = filtered.where((o) => o.day.isAfter(today)).toList();
+        filtered = _dedupeByTask(filtered, today);
+        break;
+      case 'completed':
+        filtered = filtered.where((o) => o.isDone).toList();
+        filtered = _dedupeByTask(filtered, today, preferLatest: true);
+        break;
+      case 'all':
+      default:
+        filtered = _dedupeByTask(filtered, today);
+        break;
+    }
+
+    return filtered;
+  }
+
   List<TaskOccurrence> _dedupeByTask(
     List<TaskOccurrence> list,
     DateTime today, {
@@ -370,88 +375,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 await ref.read(occurrenceListProvider.notifier).load();
               },
               child: occurrencesAsync.when(
-                data: (occurrences) {
-                  final filtered = _filterOccurrences(occurrences);
-                  if (filtered.isEmpty) {
-                    return ListView(
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.3,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.task_alt,
-                                  size: 64,
-                                  color: theme.colorScheme.outline,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  '暂无任务',
-                                  style: TextStyle(color: theme.colorScheme.outline),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  return ReorderableListView.builder(
-                    padding: const EdgeInsets.only(bottom: 80),
-                    itemCount: filtered.length,
-                    onReorder: (oldIndex, newIndex) =>
-                        _onReorder(oldIndex, newIndex, filtered),
-                    itemBuilder: (context, index) {
-                      final occ = filtered[index];
-                      final task = occ.task;
-                      return Dismissible(
-                        key: Key('occ-${task.id}-${occ.dayKey}'),
-                        background: Container(
-                          color: theme.colorScheme.primary,
-                          alignment: Alignment.centerLeft,
-                          padding: const EdgeInsets.only(left: 16),
-                          child: const Icon(Icons.check, color: Colors.white),
-                        ),
-                        secondaryBackground: Container(
-                          color: theme.colorScheme.error,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 16),
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        confirmDismiss: (direction) async {
-                          if (direction == DismissDirection.startToEnd) {
-                            await _completeOccurrenceWithUndo(occ);
-                          } else {
-                            await _deleteTaskWithUndo(task);
-                          }
-                          return false;
-                        },
-                        child: TaskCard(
-                          key: ValueKey('${task.id}-${occ.dayKey}'),
-                          task: task,
-                          isSelected: selection.contains(task.id),
-                          index: index,
-                          isDone: occ.isDone,
-                          occurrenceDay: occ.day,
-                          onTap: () {
-                            if (isSelectionMode) {
-                              ref
-                                  .read(selectionProvider.notifier)
-                                  .toggle(task.id!);
-                            } else {
-                              _openTaskEditor(task);
-                            }
-                          },
-                          onLongPress: () => _enterSelectionMode(task.id!),
-                          onStepToggle: (Task task, TaskStep step) =>
-                              _toggleStep(task, step),
-                        ),
-                      );
-                    },
-                  );
-                },
+                data: (occurrences) => _buildList(
+                  context,
+                  theme,
+                  occurrences,
+                  selection,
+                  isSelectionMode,
+                  smartFilter,
+                ),
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(child: Text('加载失败: $e')),
               ),
@@ -473,6 +404,320 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final newStatus = step.status == 'completed' ? 'pending' : 'completed';
     await ref.read(taskRepositoryProvider).updateStepStatus(step.id!, newStatus);
     await ref.read(taskListProvider.notifier).loadTasks();
+    await ref.read(occurrenceListProvider.notifier).load();
+  }
+
+  Widget _buildList(
+    BuildContext context,
+    ThemeData theme,
+    List<TaskOccurrence> occurrences,
+    List<int> selection,
+    bool isSelectionMode,
+    String smartFilter,
+  ) {
+    if (smartFilter == 'all') {
+      return _buildSectionedList(
+        context,
+        theme,
+        occurrences,
+        selection,
+        isSelectionMode,
+      );
+    }
+
+    final filtered = _filterOccurrences(occurrences);
+    if (filtered.isEmpty) return _emptyState(theme);
+
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.only(bottom: 80),
+      itemCount: filtered.length,
+      onReorder: (oldIndex, newIndex) =>
+          _onReorder(oldIndex, newIndex, filtered),
+      itemBuilder: (context, index) => _buildSlidableItem(
+        context,
+        theme,
+        filtered[index],
+        index,
+        selection,
+        isSelectionMode,
+      ),
+    );
+  }
+
+  Widget _buildSectionedList(
+    BuildContext context,
+    ThemeData theme,
+    List<TaskOccurrence> occurrences,
+    List<int> selection,
+    bool isSelectionMode,
+  ) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final order = ref.watch(sectionOrderProvider);
+    final collapsedMap = ref.watch(sectionCollapseProvider);
+    final base = _applyCommonFilters(occurrences);
+
+    final children = <Widget>[];
+    for (final section in order) {
+      final items = _itemsForSection(section, base, today);
+      final collapsed = collapsedMap[section] ?? false;
+      children.add(_sectionHeader(theme, section, items.length, collapsed));
+      if (!collapsed) {
+        for (var i = 0; i < items.length; i++) {
+          children.add(_buildSlidableItem(
+            context,
+            theme,
+            items[i],
+            i,
+            selection,
+            isSelectionMode,
+          ));
+        }
+      }
+    }
+
+    if (children.isEmpty) return _emptyState(theme);
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 80),
+      children: children,
+    );
+  }
+
+  List<TaskOccurrence> _itemsForSection(
+    HomeSection section,
+    List<TaskOccurrence> occurrences,
+    DateTime today,
+  ) {
+    switch (section) {
+      case HomeSection.previous:
+        final list = occurrences
+            .where((o) => o.isPending && o.day.isBefore(today))
+            .toList();
+        return _dedupeByTask(list, today, preferLatest: true);
+      case HomeSection.today:
+        return occurrences
+            .where((o) => o.isPending && o.day == today)
+            .toList();
+      case HomeSection.future:
+        final list = occurrences
+            .where((o) => o.isPending && o.day.isAfter(today))
+            .toList();
+        return _dedupeByTask(list, today);
+      case HomeSection.completedToday:
+        final list = occurrences
+            .where((o) => o.isDone && o.day == today)
+            .toList();
+        return _dedupeByTask(list, today, preferLatest: true);
+    }
+  }
+
+  Widget _sectionHeader(
+    ThemeData theme,
+    HomeSection section,
+    int count,
+    bool collapsed,
+  ) {
+    return InkWell(
+      onTap: () => ref.read(sectionCollapseProvider.notifier).toggle(section),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
+        child: Row(
+          children: [
+            Icon(
+              collapsed ? Icons.expand_more : Icons.expand_less,
+              size: 18,
+              color: theme.colorScheme.outline,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              section.label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(width: 6),
+            if (count > 0)
+              Text(
+                '($count)',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyState(ThemeData theme) {
+    return ListView(
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.3,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.task_alt,
+                  size: 64,
+                  color: theme.colorScheme.outline,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '暂无任务',
+                  style: TextStyle(color: theme.colorScheme.outline),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSlidableItem(
+    BuildContext context,
+    ThemeData theme,
+    TaskOccurrence occ,
+    int index,
+    List<int> selection,
+    bool isSelectionMode,
+  ) {
+    final task = occ.task;
+    return Slidable(
+      key: ValueKey('occ-${task.id}-${occ.dayKey}'),
+      groupTag: 'tasks',
+      startActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        extentRatio: 0.25,
+        children: [
+          SlidableAction(
+            onPressed: (_) => _toggleStarOccurrence(occ),
+            backgroundColor: Colors.amber,
+            foregroundColor: Colors.white,
+            icon: task.isStarred ? Icons.star : Icons.star_border,
+            label: '星标',
+          ),
+        ],
+      ),
+      endActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        extentRatio: occ.isRecurring ? 0.85 : 0.65,
+        children: [
+          SlidableAction(
+            onPressed: (_) => _toggleStarOccurrence(occ),
+            backgroundColor: Colors.amber,
+            foregroundColor: Colors.white,
+            icon: task.isStarred ? Icons.star : Icons.star_border,
+            label: '星标',
+          ),
+          if (occ.isRecurring)
+            SlidableAction(
+              onPressed: (_) => _skipOccurrence(occ),
+              backgroundColor: Colors.blueGrey,
+              foregroundColor: Colors.white,
+              icon: Icons.skip_next,
+              label: '跳过',
+            ),
+          SlidableAction(
+            onPressed: (_) => _quickReschedule(occ),
+            backgroundColor: Colors.indigo,
+            foregroundColor: Colors.white,
+            icon: Icons.calendar_today,
+            label: '改期',
+          ),
+          SlidableAction(
+            onPressed: (_) => _deleteTaskWithUndo(task),
+            backgroundColor: theme.colorScheme.error,
+            foregroundColor: Colors.white,
+            icon: Icons.delete,
+            label: '删除',
+          ),
+        ],
+      ),
+      child: TaskCard(
+        task: task,
+        isSelected: selection.contains(task.id),
+        index: index,
+        isDone: occ.isDone,
+        occurrenceDay: occ.day,
+        onTap: () {
+          if (isSelectionMode) {
+            ref.read(selectionProvider.notifier).toggle(task.id!);
+          } else {
+            _openTaskEditor(task);
+          }
+        },
+        onLongPress: () => _enterSelectionMode(task.id!),
+        onStepToggle: (t, s) => _toggleStep(t, s),
+      ),
+    );
+  }
+
+  Future<void> _toggleStarOccurrence(TaskOccurrence occ) async {
+    final task = occ.task;
+    final next = !task.isStarred;
+    await ref
+        .read(taskListProvider.notifier)
+        .updateTask(task.copyWith(isStarred: next));
+    await ref.read(occurrenceListProvider.notifier).load();
+    if (!mounted) return;
+    context.showTopBanner(
+      next ? '已加星标' : '已取消星标',
+      actionLabel: '撤销',
+      onAction: () async {
+        await ref
+            .read(taskListProvider.notifier)
+            .updateTask(task.copyWith(isStarred: !next));
+        await ref.read(occurrenceListProvider.notifier).load();
+      },
+    );
+  }
+
+  Future<void> _skipOccurrence(TaskOccurrence occ) async {
+    await ref.read(occurrenceListProvider.notifier).skip(occ);
+    if (!mounted) return;
+    context.showTopBanner('已跳过本次', actionLabel: '撤销', onAction: () async {
+      await ref.read(occurrenceListProvider.notifier).clear(occ);
+    });
+  }
+
+  Future<void> _quickReschedule(TaskOccurrence occ) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: occ.day,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null) return;
+
+    final task = occ.task;
+    final oldStart = DateTime.fromMillisecondsSinceEpoch(
+      task.startDate ?? task.startTime ?? task.createdAt,
+    );
+    final newStart = DateTime(
+      picked.year,
+      picked.month,
+      picked.day,
+      oldStart.hour,
+      oldStart.minute,
+    );
+    final delta = newStart.difference(oldStart);
+    final newEnd = task.endTime != null
+        ? DateTime.fromMillisecondsSinceEpoch(task.endTime!).add(delta)
+        : null;
+
+    await ref.read(taskListProvider.notifier).updateTask(
+          task.copyWith(
+            startDate: newStart.millisecondsSinceEpoch,
+            startTime: newStart.millisecondsSinceEpoch,
+            endTime: newEnd?.millisecondsSinceEpoch,
+          ),
+        );
     await ref.read(occurrenceListProvider.notifier).load();
   }
 

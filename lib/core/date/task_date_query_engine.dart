@@ -41,7 +41,11 @@ class TaskDateQueryEngine {
           continue;
         }
         final state = task.status == 'done' ? 'done' : 'pending';
-        out.add(TaskOccurrence(task: task, day: anchor, state: state));
+        out.add(TaskOccurrence(
+          task: task,
+          day: anchor,
+          state: state,
+        ));
         continue;
       }
 
@@ -75,6 +79,7 @@ class TaskDateQueryEngine {
           task: task,
           day: day,
           state: states[ymdKey(day)] ?? 'pending',
+          isRecurring: true,
         ));
       }
     }

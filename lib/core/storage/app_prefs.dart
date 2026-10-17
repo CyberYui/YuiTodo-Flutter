@@ -45,6 +45,18 @@ class AppPrefs {
     _prefs.setInt(_kDarkEnd, value);
   }
 
+  // ---- Home sections ----
+  bool getSectionCollapsed(String name) =>
+      _prefs.getBool('section_collapsed_$name') ?? false;
+  void setSectionCollapsed(String name, bool value) {
+    _prefs.setBool('section_collapsed_$name', value);
+  }
+
+  String get sectionOrder => _prefs.getString('section_order') ?? '';
+  set sectionOrder(String value) {
+    _prefs.setString('section_order', value);
+  }
+
   // ---- Font ----
   int get fontIndex => _prefs.getInt(_kFontIndex) ?? 0;
   set fontIndex(int value) {
