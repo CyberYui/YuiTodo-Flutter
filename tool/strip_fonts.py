@@ -104,8 +104,22 @@ def edit_main_dart():
       debugShowCheckedModeBanner: false,
       // Resolve system brightness + timed auto-switch into a concrete mode.
       themeMode: themeState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      theme: baseLightTheme,
-      darkTheme: baseDarkTheme,
+      theme: baseLightTheme.copyWith(
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
+      ),
+      darkTheme: baseDarkTheme.copyWith(
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
+      ),
       home: const HomeScreen(),
     );
   }

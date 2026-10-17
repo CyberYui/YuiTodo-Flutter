@@ -5,11 +5,16 @@ import '../../providers/task_provider.dart';
 import '../../providers/occurrence_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../services/app_usage_service.dart';
+import '../../core/storage/app_prefs.dart';
 import '../../statistics/statistics_calculator.dart';
 import '../../ui/widgets/stat_widgets.dart';
 import '../../ui/widgets/help_icon.dart';
 
 final statsRangeProvider = StateProvider<int>((ref) => 30);
+
+final statsExcludeHabitsProvider = StateProvider<bool>((ref) {
+  return ref.watch(appPrefsProvider).statsExcludeHabits;
+});
 
 class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
@@ -58,9 +63,11 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           final rangeStart = rangeDays == 0
               ? DateTime(2000)
               : today.subtract(Duration(days: rangeDays - 1));
+          final excludeHabits = ref.watch(statsExcludeHabitsProvider);
           final tasks = occurrences
               .where((o) => !o.isSkipped && !o.day.isAfter(today))
               .where((o) => !o.day.isBefore(rangeStart))
+              .where((o) => !excludeHabits || !o.task.isHabit)
               .map(
                 (o) => o.task.copyWith(
                   status: o.isDone ? 'done' : 'pending',
@@ -158,7 +165,17 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildRangeSelector(theme),
-          const SizedBox(height: 12),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            title: const Text('统计时排除习惯'),
+            value: ref.watch(statsExcludeHabitsProvider),
+            onChanged: (v) {
+              ref.read(statsExcludeHabitsProvider.notifier).state = v;
+              ref.read(appPrefsProvider).statsExcludeHabits = v;
+            },
+          ),
+          const SizedBox(height: 4),
           _buildEncouragement(theme, todayProgress),
           const SizedBox(height: 12),
           _buildTodayProgressCard(theme, todayProgress),
