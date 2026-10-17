@@ -8,6 +8,8 @@ import 'core/theme/theme_schemes.dart';
 import 'core/theme/font_pairs.dart';  // ← 导入字体配对系统
 import 'core/theme/font_state.dart';  // ← 字体索引（已持久化）
 import 'core/storage/app_prefs.dart';
+import 'core/database/database.dart';
+import 'repositories/task_repository.dart';
 import 'services/notification_service.dart';
 import 'services/app_usage_service.dart';
 import 'ui/screens/home_screen.dart';
@@ -17,6 +19,14 @@ void main() async {
   await initializeDateFormatting('zh_CN');
   final prefs = await AppPrefs.load();
   await NotificationService.instance.initialize();
+  try {
+    final repo = TaskRepository(AppDatabase.instance);
+    final reminderTasks = await repo.getTasksForReminders();
+    final rules = await repo.getRecurrenceRuleMap();
+    await NotificationService.instance.rescheduleAll(reminderTasks, rules);
+  } catch (e) {
+    // Reminder re-scheduling must never block startup.
+  }
   // Record app open
   await AppUsageService.instance.recordAppOpen();
   runApp(

@@ -9,6 +9,8 @@ import '../../statistics/statistics_calculator.dart';
 import '../../ui/widgets/stat_widgets.dart';
 import '../../ui/widgets/help_icon.dart';
 
+final statsRangeProvider = StateProvider<int>((ref) => 30);
+
 class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
 
@@ -52,8 +54,13 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           // recurring instances do not inflate the totals.
           final now = DateTime.now();
           final today = DateTime(now.year, now.month, now.day);
+          final rangeDays = ref.watch(statsRangeProvider);
+          final rangeStart = rangeDays == 0
+              ? DateTime(2000)
+              : today.subtract(Duration(days: rangeDays - 1));
           final tasks = occurrences
               .where((o) => !o.isSkipped && !o.day.isAfter(today))
+              .where((o) => !o.day.isBefore(rangeStart))
               .map(
                 (o) => o.task.copyWith(
                   status: o.isDone ? 'done' : 'pending',
@@ -96,12 +103,64 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     );
   }
 
+  Widget _buildRangeSelector(ThemeData theme) {
+    final range = ref.watch(statsRangeProvider);
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SegmentedButton<int>(
+        segments: const [
+          ButtonSegment(value: 7, label: Text('7天')),
+          ButtonSegment(value: 30, label: Text('30天')),
+          ButtonSegment(value: 90, label: Text('90天')),
+          ButtonSegment(value: 365, label: Text('1年')),
+          ButtonSegment(value: 0, label: Text('全部')),
+        ],
+        selected: {range},
+        onSelectionChanged: (s) {
+          ref.read(statsRangeProvider.notifier).state = s.first;
+        },
+      ),
+    );
+  }
+
+  Widget _buildEncouragement(ThemeData theme, double progress) {
+    final (text, icon) = progress >= 0.9
+        ? ('太棒了，今天几乎全部完成！', Icons.emoji_events)
+        : progress >= 0.7
+            ? ('进展不错，继续保持！', Icons.trending_up)
+            : progress >= 0.4
+                ? ('稳步推进中，加油。', Icons.directions_walk)
+                : progress > 0
+                    ? ('开始行动就是胜利。', Icons.play_arrow)
+                    : ('今天还没有完成任务，从一件小事开始吧。', Icons.lightbulb_outline);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: theme.colorScheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: theme.textTheme.bodyMedium),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPortraitLayout(ThemeData theme, TaskStatistics stats, double todayProgress, int todayCreated, int tagCount) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildRangeSelector(theme),
+          const SizedBox(height: 12),
+          _buildEncouragement(theme, todayProgress),
+          const SizedBox(height: 12),
           _buildTodayProgressCard(theme, todayProgress),
           const SizedBox(height: 16),
           _buildOverviewCards(theme, stats),

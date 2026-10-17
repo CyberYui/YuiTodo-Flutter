@@ -17,6 +17,8 @@ class Task {
   final int updatedAt;
   final int? deletedAt;
   final int? reminderTime; // 提醒时间（epoch ms）
+  final bool isHabit;
+  final int habitTargetPerWeek;
 
   // Relations (not stored in task table)
   final List<TaskStep> steps;
@@ -40,6 +42,8 @@ class Task {
     required this.updatedAt,
     this.deletedAt,
     this.reminderTime,
+    this.isHabit = false,
+    this.habitTargetPerWeek = 7,
     this.steps = const [],
     this.tags = const [],
   });
@@ -62,6 +66,8 @@ class Task {
     int? updatedAt,
     int? deletedAt,
     int? reminderTime,
+    bool? isHabit,
+    int? habitTargetPerWeek,
     List<TaskStep>? steps,
     List<Tag>? tags,
   }) {
@@ -83,6 +89,8 @@ class Task {
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       reminderTime: reminderTime ?? this.reminderTime,
+      isHabit: isHabit ?? this.isHabit,
+      habitTargetPerWeek: habitTargetPerWeek ?? this.habitTargetPerWeek,
       steps: steps ?? this.steps,
       tags: tags ?? this.tags,
     );
@@ -107,6 +115,8 @@ class Task {
       'updated_at': updatedAt,
       'deleted_at': deletedAt,
       'reminder_time': reminderTime,
+      'is_habit': isHabit ? 1 : 0,
+      'habit_target_per_week': habitTargetPerWeek,
     };
   }
 
@@ -129,6 +139,8 @@ class Task {
       updatedAt: map['updated_at'] as int,
       deletedAt: map['deleted_at'] as int?,
       reminderTime: map['reminder_time'] as int?,
+      isHabit: ((map['is_habit'] as int?) ?? 0) == 1,
+      habitTargetPerWeek: (map['habit_target_per_week'] as int?) ?? 7,
     );
   }
 }
