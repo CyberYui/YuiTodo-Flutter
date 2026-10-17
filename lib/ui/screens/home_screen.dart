@@ -195,6 +195,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
+  void _onReorder(
+    int oldIndex,
+    int newIndex,
+    List<TaskOccurrence> filtered,
+  ) {
+    if (oldIndex < newIndex) newIndex -= 1;
+    if (newIndex < 0 || newIndex >= filtered.length) return;
+
+    final moved = filtered[oldIndex].task;
+
+    int newSortOrder;
+    if (newIndex == 0) {
+      newSortOrder = filtered.first.task.sortOrder - 1;
+    } else if (newIndex == filtered.length - 1) {
+      newSortOrder = filtered.last.task.sortOrder + 1;
+    } else {
+      final before = filtered[newIndex - 1].task;
+      final after = filtered[newIndex + (oldIndex < newIndex ? 0 : 1)].task;
+      newSortOrder = ((before.sortOrder + after.sortOrder) / 2).round();
+    }
+
+    ref.read(taskRepositoryProvider).updateTaskSortOrder(moved.id!, newSortOrder);
+    ref.read(occurrenceListProvider.notifier).load();
+  }
+
   void _showBatchOperationsSheet(List<int> selectedIds) {
     showModalBottomSheet(
       context: context,
@@ -373,9 +398,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ],
                     );
                   }
-                  return ListView.builder(
+                  return ReorderableListView.builder(
                     padding: const EdgeInsets.only(bottom: 80),
                     itemCount: filtered.length,
+                    onReorder: (oldIndex, newIndex) =>
+                        _onReorder(oldIndex, newIndex, filtered),
                     itemBuilder: (context, index) {
                       final occ = filtered[index];
                       final task = occ.task;

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/task.dart';
-import '../../models/task_occurrence.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/occurrence_provider.dart';
 import '../../providers/tag_provider.dart';
