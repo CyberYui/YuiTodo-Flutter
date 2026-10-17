@@ -587,6 +587,7 @@ orphan = query(status=0 &amp;&amp; start_time &lt; now - 1h)
 - 分区折叠：标题箭头 <code>AnimatedRotation</code>。
 - 统计：新增「统计时排除习惯」开关（持久化，默认关闭）。
 - 真机窄屏适配：354dp 宽度下顶栏 6 图标会挤掉标题，已改为「搜索 / 筛选 / 更多」三图标，日历/专注/统计/设置收进更多菜单。
+- 列表与页面动画：任务卡片入场（淡入 + 上滑 + 轻微缩放，按序错峰）、分区折叠高度动画（AnimatedSize）、完成徽标弹入、日历按日切换淡入滑动、主题切换 280ms 交叉淡入（MaterialApp themeAnimationDuration）。
 </div>
 
 <div class="callout bad">

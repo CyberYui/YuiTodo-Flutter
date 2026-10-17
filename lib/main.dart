@@ -114,6 +114,9 @@ class _YuiTodoAppState extends ConsumerState<YuiTodoApp> {
       debugShowCheckedModeBanner: false,
       // Resolve system brightness + timed auto-switch into a concrete mode.
       themeMode: themeState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      // Smooth theme cross-fade instead of a hard flash on light/dark switch.
+      themeAnimationDuration: const Duration(milliseconds: 280),
+      themeAnimationCurve: Curves.easeInOutCubic,
       // 应用带字体的浅色主题
       theme: baseLightTheme.copyWith(
         textTheme: buildTextTheme(baseLightTheme.textTheme),

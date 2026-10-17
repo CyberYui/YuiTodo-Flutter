@@ -21,6 +21,7 @@ import '../screens/statistics_screen.dart';
 import '../screens/calendar_screen.dart';
 import '../screens/focus_screen.dart';
 import '../widgets/task_card.dart';
+import '../widgets/animated_entry.dart';
 import '../../core/utils/app_banner.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -506,14 +507,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       itemCount: filtered.length,
       onReorder: (oldIndex, newIndex) =>
           _onReorder(oldIndex, newIndex, filtered),
-      itemBuilder: (context, index) => _buildSlidableItem(
-        context,
-        theme,
-        filtered[index],
-        index,
-        selection,
-        isSelectionMode,
-      ),
+      itemBuilder: (context, index) {
+        final occ = filtered[index];
+        return AnimatedEntry(
+          key: ValueKey('f-${occ.task.id}-${occ.dayKey}'),
+          index: index,
+          child: _buildSlidableItem(
+            context,
+            theme,
+            occ,
+            index,
+            selection,
+            isSelectionMode,
+          ),
+        );
+      },
     );
   }
 
@@ -535,18 +543,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       final items = _itemsForSection(section, base, today);
       final collapsed = collapsedMap[section] ?? false;
       children.add(_sectionHeader(theme, section, items.length, collapsed));
-      if (!collapsed) {
-        for (var i = 0; i < items.length; i++) {
-          children.add(_buildSlidableItem(
-            context,
-            theme,
-            items[i],
-            i,
-            selection,
-            isSelectionMode,
-          ));
-        }
+
+      final itemWidgets = <Widget>[];
+      for (var i = 0; i < items.length; i++) {
+        final occ = items[i];
+        itemWidgets.add(
+          AnimatedEntry(
+            key: ValueKey('occ-${occ.task.id}-${occ.dayKey}'),
+            index: i,
+            child: _buildSlidableItem(
+              context,
+              theme,
+              occ,
+              i,
+              selection,
+              isSelectionMode,
+            ),
+          ),
+        );
       }
+
+      // Animate the section body height so collapse/expand feels physical.
+      children.add(
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOutCubic,
+          alignment: Alignment.topCenter,
+          child: collapsed
+              ? const SizedBox(width: double.infinity)
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: itemWidgets,
+                ),
+        ),
+      );
     }
 
     if (children.isEmpty) return _emptyState(theme);

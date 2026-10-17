@@ -119,31 +119,51 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ),
               const Divider(height: 1),
               Expanded(
-                child: selected.isEmpty
-                    ? Center(
-                        child: Text(
-                          '当天没有任务',
-                          style: TextStyle(color: theme.colorScheme.outline),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 80),
-                        itemCount: selected.length,
-                        itemBuilder: (context, index) {
-                          final occ = selected[index];
-                          return TaskCard(
-                            task: occ.task,
-                            isSelected: false,
-                            index: index,
-                            isDone: occ.isDone,
-                            occurrenceDay: occ.day,
-                            onToggleComplete: () => _toggleComplete(occ),
-                            onTap: () => _openEditor(occ.task),
-                            onLongPress: () {},
-                            onStepToggle: (t, s) => _toggleStep(t, s, occ),
-                          );
-                        },
-                      ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) {
+                    final offset = Tween<Offset>(
+                      begin: const Offset(0.03, 0),
+                      end: Offset.zero,
+                    ).animate(animation);
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(position: offset, child: child),
+                    );
+                  },
+                  child: KeyedSubtree(
+                    key: ValueKey(ymdKey(_selectedDay)),
+                    child: selected.isEmpty
+                        ? Center(
+                            child: Text(
+                              '当天没有任务',
+                              style:
+                                  TextStyle(color: theme.colorScheme.outline),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(bottom: 80),
+                            itemCount: selected.length,
+                            itemBuilder: (context, index) {
+                              final occ = selected[index];
+                              return TaskCard(
+                                task: occ.task,
+                                isSelected: false,
+                                index: index,
+                                isDone: occ.isDone,
+                                occurrenceDay: occ.day,
+                                onToggleComplete: () => _toggleComplete(occ),
+                                onTap: () => _openEditor(occ.task),
+                                onLongPress: () {},
+                                onStepToggle: (t, s) =>
+                                    _toggleStep(t, s, occ),
+                              );
+                            },
+                          ),
+                  ),
+                ),
               ),
             ],
           );
