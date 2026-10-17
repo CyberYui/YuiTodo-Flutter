@@ -165,7 +165,7 @@
 <tr><td>分支</td><td><code>full</code> · <code>main</code> · <code>release/v3.4.2-opensource</code>（旧的 <code>release/v3.4.1-opensource</code> 已删除）</td></tr>
 <tr><td>发布</td><td>GitHub Release <code>v3.4.2.2-opensource</code>（仅开源版 APK）</td></tr>
 </table>
-<p class="small">因此下文 Phase 0 的数据库迁移从 <b>v5 → v6</b> 开始（当前已是 v5）。</p>
+<p class="small">因此下文 Phase 0 的数据库迁移从 <b>v5 → v6</b> 开始，Phase 1.1 再升到 <b>v7</b>（子任务按次状态）。</p>
 </div>
 
 <!-- ============ 架构 ============ -->
@@ -180,7 +180,7 @@
    │
 <span class="c">TaskRepository</span>（扩展 occurrence / focus / habit 查询）
    │
-<span class="c">AppDatabase (sqflite v6)</span> + AppPrefs</pre>
+<span class="c">AppDatabase (sqflite v7)</span> + AppPrefs</pre>
 <p class="small">读写分离：读走虚拟实例；写只落"定义 + 例外（occurrence）"。</p>
 </div>
 
@@ -194,7 +194,7 @@
 }</pre>
 
 <!-- ============ Schema ============ -->
-<h2 id="schema"><span class="num">02</span>数据模型变更（v5 → v6）</h2>
+<h2 id="schema"><span class="num">02</span>数据模型变更（v5 → v7）</h2>
 
 <div class="callout warn">
 <b>迁移策略</b>
@@ -216,7 +216,19 @@
 <span class="k">CREATE INDEX</span> idx_occ_task_day <span class="k">ON</span> task_occurrence(task_id, occurrence_day);
 <span class="k">CREATE INDEX</span> idx_occ_day      <span class="k">ON</span> task_occurrence(occurrence_day);
 
-<span class="c">-- 专注会话</span>
+<span class="c">-- 子任务按 occurrence 的完成状态（v7）
+<span class="k">CREATE TABLE</span> task_step_occurrence (
+  id             <span class="k">INTEGER PRIMARY KEY AUTOINCREMENT</span>,
+  step_id        <span class="k">INTEGER NOT NULL</span>,
+  task_id        <span class="k">INTEGER NOT NULL</span>,
+  occurrence_day <span class="k">INTEGER NOT NULL</span>,
+  status         <span class="k">TEXT NOT NULL</span>,          <span class="c">-- completed | pending</span>
+  updated_at     <span class="k">INTEGER NOT NULL</span>,
+  <span class="k">UNIQUE</span>(step_id, occurrence_day),
+  <span class="k">FOREIGN KEY</span>(step_id) <span class="k">REFERENCES</span> task_step(id) <span class="k">ON DELETE CASCADE</span>
+);
+
+-- 专注会话</span>
 <span class="k">CREATE TABLE</span> focus_session (
   id              <span class="k">INTEGER PRIMARY KEY AUTOINCREMENT</span>,
   task_id         <span class="k">INTEGER</span>,
@@ -406,6 +418,30 @@ tagFilter != null         → 在当前结果上再按标签过滤</pre>
   <li>右滑 5 动作、左滑 Star 均可用</li>
   <li>Skip 后该天不再出现在 Today，其他天不受影响</li>
   <li>每个动作都能撤销</li>
+</ul>
+</div>
+
+<!-- ============ Phase 1.1 ============ -->
+<div class="phase" id="phase1_1">
+<div class="ph-head"><h2><span class="num">04.5</span>Phase 1.1 · 测试反馈修复</h2><span class="tag t-ok">已完成</span></div>
+<p class="goal">根据 Phase 1 测试反馈补充的修复，已在本地完成并通过模拟器验证。</p>
+
+<h3>任务清单</h3>
+<ul class="chk">
+  <li class="done">恢复任务完成入口：点击卡片左侧图标切换完成；右滑（start pane）增加「完成 / 取消完成」</li>
+  <li class="done">子任务按 occurrence 隔离：新增 <code>task_step_occurrence</code>（DB v7），完成今天不影响未来实例</li>
+  <li class="done">星标可见：卡片标题旁显示 ⭐；统计页新增「星标任务」</li>
+  <li class="done">备注输入框自适应高度（<code>minLines: 1</code> / <code>maxLines: null</code>）</li>
+  <li class="done">滑动操作配色柔和化，卡片交界处渐变；使用 <code>DrawerMotion</code></li>
+</ul>
+
+<h3>验收</h3>
+<ul class="chk">
+  <li class="done">主任务可完成/取消，完成态有绿色勾选标记</li>
+  <li class="done">重复任务今日子任务完成后，未来实例的子任务仍为未完成</li>
+  <li class="done">星标后卡片显示 ⭐，统计「星标任务」计数正确</li>
+  <li class="done">备注单行时不再只显示在上半部分</li>
+  <li class="done">右滑/左滑操作面板正常打开，交界处渐变过渡自然</li>
 </ul>
 </div>
 
