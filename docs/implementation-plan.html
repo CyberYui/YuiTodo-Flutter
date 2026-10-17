@@ -623,21 +623,29 @@ orphan = query(status=0 &amp;&amp; start_time &lt; now - 1h)
 <code>full</code> 与 <code>release/v3.4.2-opensource</code> 现在仅差字体功能；旧的 <code>release/v3.4.1-opensource</code> 已删除。<code>tool/strip_fonts.py</code> 已就绪，发布时从 full 派生即可，不再手工剥离。
 </div>
 <ul class="chk">
-  <li>发布前在 full 分支完成全部功能与测试</li>
-  <li>从 full 新建 <code>release/v3.5.0-opensource</code></li>
-  <li>执行字体剥离：删 <code>assets/fonts/*.ttf</code>；删 <code>font_pairs.dart</code>/<code>font_state.dart</code>；移除 <code>pubspec.yaml</code> fonts 段；移除 settings 字体选择器与 main.dart 字体应用</li>
+  <li class="done">发布前在 full 分支完成全部功能与测试</li>
+  <li class="done">从 full 派生 <code>main</code>（开源版），不再保留 release/* 临时分支</li>
+  <li class="done">执行字体剥离：删 <code>assets/fonts/*.ttf</code>；删 <code>font_pairs.dart</code>/<code>font_state.dart</code>；移除 <code>pubspec.yaml</code> fonts 段；移除 settings 字体选择器与 main.dart 字体应用</li>
   <li class="done">已创建 <code>tool/strip_fonts.py</code>，固化剥离步骤</li>
-  <li>版本号：pubspec <code>3.5.0+3</code>；full 的 gradle <code>versionName "3.5.0"</code></li>
-  <li>构建两个 APK，分别安装测试（先卸载旧包）</li>
+  <li class="done">版本号：full <code>4.0.0.1</code>；开源版 <code>4.0.0</code>（versionCode 15）</li>
+  <li class="done">构建两个 APK，分别安装测试（先卸载旧包）</li>
 </ul>
+
+<div class="callout ok">
+<b>v4.0.0 发布准备（已完成）</b>
+- 首次安装示例数据：<code>lib/core/database/sample_data.dart</code>，仅在任务表为空时写入欢迎说明、每日签到（含子任务与历史）、每周复盘、一次性任务、两个习惯（含 30 天打卡历史），用于展示分区/统计/习惯，也充当内置说明书。
+- 示例数据不写提醒，避免首次启动触发通知；删除后不会再次生成。
+- README 更新到 v4.0.0，新增日历/专注/习惯截图；Release 说明见 <code>docs/release-notes-v4.0.0.md</code>。
+- 版本：开源版 <code>v4.0.0</code>（发布），完整版 <code>v4.0.0.1</code>（仅本地）。
+</div>
 
 <h3>7.4 发布</h3>
 <ul class="chk">
-  <li>真机（OnePlus Ace2 Pro）验证通知/专注/滑动/分区</li>
-  <li>本地打 tag 备份：<code>git tag v3.5.0-full</code>（仅本地）</li>
-  <li>推送 opensource 分支 + tag + GitHub Release（仅开源版 APK）</li>
-  <li>更新 README（版本、功能、截图）</li>
-  <li>full 版仅本地保留，不推公开 release</li>
+  <li class="done">真机（OnePlus PJA110）验证通知/专注/滑动/分区</li>
+  <li class="done">本地打 tag 备份：<code>git tag v4.0.0-full</code>（仅本地）</li>
+  <li>推送 <code>main</code>（开源版）+ <code>full</code> + tag <code>v4.0.0</code> + GitHub Release（仅开源版 APK）</li>
+  <li class="done">更新 README（版本、功能、截图）</li>
+  <li class="done">full 版仅本地保留，不推公开 release、不上传字体文件</li>
 </ul>
 </div>
 
