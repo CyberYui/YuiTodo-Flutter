@@ -85,7 +85,10 @@ class TaskRepository {
     final db = await _db.database;
     await db.update(
       'task',
-      {'sort_order': newOrder},
+      {
+        'sort_order': newOrder,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
       where: 'id = ?',
       whereArgs: [taskId],
     );

@@ -24,6 +24,7 @@ import '../screens/focus_screen.dart';
 import '../widgets/task_card.dart';
 import '../widgets/animated_entry.dart';
 import '../../core/utils/app_banner.dart';
+import '../../core/utils/manual_order.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -245,30 +246,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   ) async {
     if (oldIndex < 0 || oldIndex >= filtered.length) return;
     if (oldIndex < newIndex) newIndex -= 1;
-    if (newIndex < 0) newIndex = 0;
-    if (newIndex >= filtered.length) newIndex = filtered.length - 1;
+    if (newIndex < 0 || newIndex >= filtered.length) return;
     if (newIndex == oldIndex) return;
 
-    final moved = filtered[oldIndex].task;
-    final remaining =
-        filtered.where((o) => o.task.id != moved.id).toList();
+    // Rebuild the visible order, then renumber the whole filtered list with
+    // spaced values. Renumbering avoids integer midpoint collisions when the
+    // old sortOrder values are adjacent (0, 1, 2 ...).
+    final reordered = [...filtered];
+    final moved = reordered.removeAt(oldIndex);
+    reordered.insert(newIndex, moved);
 
-    int newSortOrder;
-    if (remaining.isEmpty) {
-      newSortOrder = moved.sortOrder;
-    } else if (newIndex == 0) {
-      newSortOrder = remaining.first.task.sortOrder - 1;
-    } else if (newIndex >= remaining.length) {
-      newSortOrder = remaining.last.task.sortOrder + 1;
-    } else {
-      final before = remaining[newIndex - 1].task;
-      final after = remaining[newIndex].task;
-      newSortOrder = ((before.sortOrder + after.sortOrder) / 2).round();
+    final repo = ref.read(taskRepositoryProvider);
+    for (var i = 0; i < reordered.length; i++) {
+      await repo.updateTaskSortOrder(reordered[i].task.id!, i * 100);
     }
-
-    await ref
-        .read(taskRepositoryProvider)
-        .updateTaskSortOrder(moved.id!, newSortOrder);
     await ref.read(occurrenceListProvider.notifier).load();
   }
 
@@ -543,7 +534,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       );
     }
 
-    final filtered = _filterOccurrences(occurrences);
+    final filtered = sortForManualOrder(_filterOccurrences(occurrences));
     if (filtered.isEmpty) return _emptyState(theme);
 
     return ReorderableListView.builder(
@@ -585,7 +576,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     final children = <Widget>[];
     for (final section in order) {
-      final items = _itemsForSection(section, base, today);
+      final items =
+          sortForManualOrder(_itemsForSection(section, base, today));
       final collapsed = collapsedMap[section] ?? false;
       children.add(_sectionHeader(theme, section, items.length, collapsed));
 
