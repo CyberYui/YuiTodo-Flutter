@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../core/date/date_utils.dart';
+import '../../core/theme/calendar_background.dart';
 import '../../models/task.dart';
 import '../../models/task_occurrence.dart';
 import '../../providers/calendar_provider.dart';
@@ -66,8 +67,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           final selected =
               byDay[ymdKey(_selectedDay)] ?? const <TaskOccurrence>[];
 
-          return Container(
-            decoration: BoxDecoration(
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(child: CalendarBackground.layer()),
+              Container(
+                decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -229,7 +234,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ),
               ],
             ),
-          );
+          ),
+        ],
+      );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('加载失败: $e')),
@@ -242,7 +249,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Future<void> _reload() async {
-    await ref.read(calendarProvider.notifier).loadMonth(_focusedDay);
+    await ref
+        .read(calendarProvider.notifier)
+        .loadMonth(_focusedDay, showLoading: false);
     if (!mounted) return;
     await ref.read(occurrenceListProvider.notifier).load();
   }

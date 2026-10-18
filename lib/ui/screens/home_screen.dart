@@ -753,7 +753,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               context,
               icon: Icons.skip_next,
               label: '跳过',
-              color: theme.colorScheme.outline,
+              // A tinted neutral: still reads as "skip", but follows the
+              // theme instead of being a fixed dark grey.
+              color: Color.lerp(
+                theme.colorScheme.primary,
+                theme.colorScheme.outline,
+                0.55,
+              )!,
               onTap: () => _skipOccurrence(occ),
             ),
           _slidableAction(

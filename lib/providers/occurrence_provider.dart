@@ -30,7 +30,9 @@ class OccurrenceNotifier
       DateTime.now().add(const Duration(days: 365));
 
   Future<void> load() async {
-    state = const AsyncValue.loading();
+    if (!state.hasValue) {
+      state = const AsyncValue.loading();
+    }
     try {
       final list = await _engine.queryRange(windowStart, windowEnd);
       state = AsyncValue.data(list);

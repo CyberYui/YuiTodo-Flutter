@@ -18,8 +18,10 @@ class CalendarNotifier
 
   CalendarNotifier(this._engine) : super(const AsyncValue.loading());
 
-  Future<void> loadMonth(DateTime month) async {
-    state = const AsyncValue.loading();
+  Future<void> loadMonth(DateTime month, {bool showLoading = true}) async {
+    if (showLoading || !state.hasValue) {
+      state = const AsyncValue.loading();
+    }
     try {
       // Cover the previous month's trailing days and the next month's
       // leading days that can appear in the month grid.
