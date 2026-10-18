@@ -211,7 +211,6 @@ YuiTodo-Flutter/
 │   ├── images/                      # README 截图展示
 │   └── workflows/                   # CI/CD 配置
 ├── test/                            # 单元测试和 Widget 测试
-├── docs/                            # 分析报告与实施计划
 ├── tool/                            # 构建辅助脚本（字体剥离等）
 ├── pubspec.yaml                     # 依赖配置
 └── README.md                        # 项目文档

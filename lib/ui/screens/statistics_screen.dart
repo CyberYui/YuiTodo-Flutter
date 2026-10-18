@@ -115,6 +115,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SegmentedButton<int>(
+        showSelectedIcon: false,
         segments: const [
           ButtonSegment(value: 7, label: Text('7天')),
           ButtonSegment(value: 30, label: Text('30天')),

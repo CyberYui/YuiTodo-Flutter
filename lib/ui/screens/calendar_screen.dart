@@ -9,7 +9,7 @@ import '../../providers/calendar_provider.dart';
 import '../../providers/occurrence_provider.dart';
 import '../../repositories/task_repository.dart';
 import '../screens/task_editor_screen.dart';
-import '../widgets/task_card.dart';
+import '../widgets/animated_entry.dart';
 
 /// Month calendar with per-day task indicators and a day task list.
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -66,106 +66,169 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           final selected =
               byDay[ymdKey(_selectedDay)] ?? const <TaskOccurrence>[];
 
-          return Column(
-            children: [
-              TableCalendar<TaskOccurrence>(
-                firstDay: DateTime(2000),
-                lastDay: DateTime(2100),
-                focusedDay: _focusedDay,
-                selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
-                eventLoader: (day) => byDay[ymdKey(day)] ?? const [],
-                calendarFormat: CalendarFormat.month,
-                availableCalendarFormats: const {CalendarFormat.month: '月'},
-                startingDayOfWeek: StartingDayOfWeek.monday,
-                locale: 'zh_CN',
-                headerStyle: const HeaderStyle(
-                  formatButtonVisible: false,
-                  titleCentered: true,
-                ),
-                onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    _selectedDay = selectedDay;
-                    _focusedDay = focusedDay;
-                  });
-                },
-                onPageChanged: (focusedDay) {
-                  _focusedDay = focusedDay;
-                  ref.read(calendarProvider.notifier).loadMonth(focusedDay);
-                },
-                calendarBuilders: CalendarBuilders(
-                  markerBuilder: (context, day, events) {
-                    if (events.isEmpty) return null;
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: events.take(3).map((o) {
-                        final color = Color(
-                          int.parse(
-                            o.task.color.replaceFirst('#', '0xFF'),
-                          ),
-                        );
-                        return Container(
-                          width: 5,
-                          height: 5,
-                          margin: const EdgeInsets.symmetric(horizontal: 1),
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                          ),
-                        );
-                      }).toList(),
-                    );
-                  },
-                ),
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  theme.colorScheme.primary.withOpacity(0.16),
+                  theme.colorScheme.surface,
+                ],
+                stops: const [0, 0.52],
               ),
-              const Divider(height: 1),
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  transitionBuilder: (child, animation) {
-                    final offset = Tween<Offset>(
-                      begin: const Offset(0.03, 0),
-                      end: Offset.zero,
-                    ).animate(animation);
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(position: offset, child: child),
-                    );
-                  },
-                  child: KeyedSubtree(
-                    key: ValueKey(ymdKey(_selectedDay)),
-                    child: selected.isEmpty
-                        ? Center(
-                            child: Text(
-                              '当天没有任务',
-                              style:
-                                  TextStyle(color: theme.colorScheme.outline),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.only(bottom: 80),
-                            itemCount: selected.length,
-                            itemBuilder: (context, index) {
-                              final occ = selected[index];
-                              return TaskCard(
-                                task: occ.task,
-                                isSelected: false,
-                                index: index,
-                                isDone: occ.isDone,
-                                occurrenceDay: occ.day,
-                                onToggleComplete: () => _toggleComplete(occ),
-                                onTap: () => _openEditor(occ.task),
-                                onLongPress: () {},
-                                onStepToggle: (t, s) =>
-                                    _toggleStep(t, s, occ),
-                              );
-                            },
-                          ),
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 4, 6, 0),
+                  child: TableCalendar<TaskOccurrence>(
+                    firstDay: DateTime(2000),
+                    lastDay: DateTime(2100),
+                    focusedDay: _focusedDay,
+                    selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
+                    eventLoader: (day) => byDay[ymdKey(day)] ?? const [],
+                    calendarFormat: CalendarFormat.month,
+                    availableCalendarFormats: const {CalendarFormat.month: '月'},
+                    startingDayOfWeek: StartingDayOfWeek.monday,
+                    locale: 'zh_CN',
+                    headerStyle: HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: true,
+                      titleTextStyle: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface,
+                          ) ??
+                          const TextStyle(fontSize: 16),
+                      leftChevronIcon: Icon(
+                        Icons.chevron_left,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      rightChevronIcon: Icon(
+                        Icons.chevron_right,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    daysOfWeekStyle: DaysOfWeekStyle(
+                      weekdayStyle: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      weekendStyle: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    calendarStyle: CalendarStyle(
+                      outsideDaysVisible: true,
+                      defaultTextStyle: TextStyle(
+                        fontSize: 14,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      weekendTextStyle: TextStyle(
+                        fontSize: 14,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      outsideTextStyle: TextStyle(
+                        fontSize: 14,
+                        color: theme.colorScheme.onSurfaceVariant
+                            .withOpacity(0.35),
+                      ),
+                      todayDecoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withOpacity(0.16),
+                        shape: BoxShape.circle,
+                      ),
+                      todayTextStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.primary,
+                      ),
+                      selectedDecoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      selectedTextStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                      markersMaxCount: 3,
+                      markerSize: 5,
+                      markerMargin: const EdgeInsets.symmetric(horizontal: 1),
+                    ),
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setState(() {
+                        _selectedDay = selectedDay;
+                        _focusedDay = focusedDay;
+                      });
+                    },
+                    onPageChanged: (focusedDay) {
+                      _focusedDay = focusedDay;
+                      ref.read(calendarProvider.notifier).loadMonth(focusedDay);
+                    },
+                    calendarBuilders: CalendarBuilders(
+                      markerBuilder: (context, day, events) {
+                        if (events.isEmpty) return null;
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: events.take(3).map((o) {
+                            final color = Color(
+                              int.parse(
+                                o.task.color.replaceFirst('#', '0xFF'),
+                              ),
+                            );
+                            return Container(
+                              width: 5,
+                              height: 5,
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 1),
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, animation) {
+                      final offset = Tween<Offset>(
+                        begin: const Offset(0.03, 0),
+                        end: Offset.zero,
+                      ).animate(animation);
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(position: offset, child: child),
+                      );
+                    },
+                    child: KeyedSubtree(
+                      key: ValueKey(ymdKey(_selectedDay)),
+                      child: selected.isEmpty
+                          ? _buildEmptyDay(theme)
+                          : ListView.builder(
+                              padding: const EdgeInsets.only(
+                                top: 10,
+                                bottom: 96,
+                              ),
+                              itemCount: selected.length,
+                              itemBuilder: (context, index) => _buildCompactTask(
+                                theme,
+                                selected[index],
+                                index,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -223,5 +286,138 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
     if (!mounted) return;
     await _reload();
+  }
+
+  Widget _buildCompactTask(
+    ThemeData theme,
+    TaskOccurrence occ,
+    int index,
+  ) {
+    final task = occ.task;
+    final color = Color(int.parse(task.color.replaceFirst('#', '0xFF')));
+    final done = occ.isDone;
+    final subtitle = _subtitleOf(task);
+
+    return AnimatedEntry(
+      key: ValueKey('cal-${task.id}-${occ.dayKey}'),
+      index: index,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Material(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _openEditor(task),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _toggleComplete(occ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        done
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                        size: 20,
+                        color: done ? color : theme.colorScheme.outline,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          task.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            decoration:
+                                done ? TextDecoration.lineThrough : null,
+                            color: done
+                                ? theme.colorScheme.outline
+                                : theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        if (subtitle.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (task.isStarred) ...[
+                    const SizedBox(width: 6),
+                    const Icon(Icons.star, size: 14, color: Colors.amber),
+                  ],
+                  if (occ.isRecurring) ...[
+                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.repeat,
+                      size: 14,
+                      color: theme.colorScheme.outline,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _subtitleOf(Task task) {
+    if (task.steps.isNotEmpty) {
+      final done = task.steps.where((s) => s.status == 'completed').length;
+      return '子任务 $done/${task.steps.length}';
+    }
+    if (task.tags.isNotEmpty) return task.tags.first.name;
+    return task.note;
+  }
+
+  Widget _buildEmptyDay(ThemeData theme) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.event_available,
+            size: 40,
+            color: theme.colorScheme.outline.withOpacity(0.6),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '当天没有任务',
+            style: TextStyle(color: theme.colorScheme.outline),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -13,6 +13,7 @@ import '../../providers/occurrence_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../providers/filter_provider.dart';
 import '../../providers/section_provider.dart';
+import '../../providers/habit_provider.dart';
 import '../../providers/recycle_bin_provider.dart';
 import '../../repositories/task_repository.dart';
 import '../screens/task_editor_screen.dart';
@@ -206,12 +207,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     HapticFeedback.lightImpact();
     final wasDone = occ.isDone;
     await ref.read(occurrenceListProvider.notifier).setDone(occ, !wasDone);
+    if (occ.task.isHabit) {
+      ref.invalidate(habitProvider);
+    }
     if (!mounted) return;
     context.showTopBanner(
       wasDone ? '已取消完成' : '已完成',
       actionLabel: '撤销',
       onAction: () async {
         await ref.read(occurrenceListProvider.notifier).setDone(occ, wasDone);
+        if (occ.task.isHabit) {
+          ref.invalidate(habitProvider);
+        }
       },
     );
   }
@@ -716,14 +723,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             context,
             icon: occ.isDone ? Icons.undo : Icons.check,
             label: occ.isDone ? '取消完成' : '完成',
-            color: const Color(0xFF22C55E),
+            color: theme.colorScheme.primary,
             onTap: () => _completeOccurrenceWithUndo(occ),
           ),
           _slidableAction(
             context,
             icon: task.isStarred ? Icons.star : Icons.star_border,
             label: '星标',
-            color: const Color(0xFFF59E0B),
+            color: theme.colorScheme.tertiary,
             onTap: () => _toggleStarOccurrence(occ),
             fadeToSurfaceRight: true,
           ),
@@ -737,7 +744,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             context,
             icon: task.isStarred ? Icons.star : Icons.star_border,
             label: '星标',
-            color: const Color(0xFFF59E0B),
+            color: theme.colorScheme.tertiary,
             onTap: () => _toggleStarOccurrence(occ),
             fadeFromSurfaceLeft: true,
           ),
@@ -746,28 +753,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               context,
               icon: Icons.skip_next,
               label: '跳过',
-              color: const Color(0xFF64748B),
+              color: theme.colorScheme.outline,
               onTap: () => _skipOccurrence(occ),
             ),
           _slidableAction(
             context,
             icon: Icons.hourglass_bottom,
             label: '专注',
-            color: const Color(0xFF0EA5E9),
+            color: theme.colorScheme.secondary,
             onTap: () => _openFocus(task),
           ),
           _slidableAction(
             context,
             icon: Icons.calendar_today,
             label: '改期',
-            color: const Color(0xFF4F46E5),
+            color: theme.colorScheme.primary,
             onTap: () => _quickReschedule(occ),
           ),
           _slidableAction(
             context,
             icon: Icons.delete,
             label: '删除',
-            color: const Color(0xFFEF4444),
+            color: theme.colorScheme.error,
             onTap: () => _deleteTaskWithUndo(task),
           ),
         ],

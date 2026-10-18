@@ -18,11 +18,16 @@ extension AppBanner on BuildContext {
     Duration duration = const Duration(seconds: 4),
   }) {
     final messenger = ScaffoldMessenger.of(this);
+    final theme = Theme.of(this);
     _appBannerTimer?.cancel();
     messenger.hideCurrentMaterialBanner();
 
     messenger.showMaterialBanner(
       MaterialBanner(
+        dividerColor: Colors.transparent,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         content: Text(message),
         leading: const Icon(Icons.info_outline),
         actions: [
