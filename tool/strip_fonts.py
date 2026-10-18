@@ -35,11 +35,18 @@ def die(msg):
 
 def remove_font_assets():
     path = os.path.join(ROOT, "assets", "fonts")
-    if os.path.isdir(path):
-        shutil.rmtree(path)
-        log("deleted assets/fonts/")
-    else:
+    if not os.path.isdir(path):
         log("assets/fonts/ already absent")
+        return
+    # Keep assets/fonts/open/ (the OFL fonts that both versions ship);
+    # only the proprietary root font files are removed.
+    removed = 0
+    for entry in os.listdir(path):
+        full = os.path.join(path, entry)
+        if os.path.isfile(full):
+            os.remove(full)
+            removed += 1
+    log(f"deleted {removed} proprietary root fonts (kept assets/fonts/open/)")
 
 
 def remove_font_code():
@@ -56,11 +63,19 @@ def edit_pubspec():
     path = os.path.join(ROOT, "pubspec.yaml")
     with open(path, encoding="utf-8") as f:
         s = f.read()
+    open_fonts = """  fonts:
+    - family: SourceHanSansSC
+      fonts:
+        - asset: assets/fonts/open/SourceHanSansSC-Regular.otf
+    - family: SmileySans
+      fonts:
+        - asset: assets/fonts/open/SmileySans-Oblique.ttf
+"""
     if "\n  fonts:" in s:
-        s = s[: s.index("\n  fonts:")].rstrip() + "\n"
+        s = s[: s.index("\n  fonts:")].rstrip() + "\n" + open_fonts
         with open(path, "w", encoding="utf-8") as f:
             f.write(s)
-        log("removed fonts block from pubspec.yaml")
+        log("pubspec.yaml fonts -> opensource OFL fonts only")
     else:
         log("pubspec.yaml has no fonts block")
 
@@ -92,12 +107,19 @@ def edit_main_dart():
     final lightScheme = themeSchemes[themeState.lightScheme];
     final darkScheme = themeSchemes[themeState.darkScheme];
 
-    final baseLightTheme = lightScheme != null
+    final rawLightTheme = lightScheme != null
         ? lightThemeForScheme(lightScheme)
         : lightTheme;
-    final baseDarkTheme = darkScheme != null
+    final rawDarkTheme = darkScheme != null
         ? darkThemeForScheme(darkScheme)
         : darkTheme;
+    // Opensource build: Source Han Sans SC is the default UI font.
+    final baseLightTheme = rawLightTheme.copyWith(
+      textTheme: rawLightTheme.textTheme.apply(fontFamily: 'SourceHanSansSC'),
+    );
+    final baseDarkTheme = rawDarkTheme.copyWith(
+      textTheme: rawDarkTheme.textTheme.apply(fontFamily: 'SourceHanSansSC'),
+    );
 
     return MaterialApp(
       title: 'YuiTodo',
@@ -174,13 +196,13 @@ def edit_gitignore():
     path = os.path.join(ROOT, ".gitignore")
     with open(path, encoding="utf-8") as f:
         s = f.read()
-    if "assets/fonts/" not in s:
-        s = s.rstrip() + "\n\nassets/fonts/\n"
+    if "assets/fonts/*.ttf" not in s:
+        s = s.rstrip() + "\n\nassets/fonts/*.ttf\n"
         with open(path, "w", encoding="utf-8") as f:
             f.write(s)
-        log("added assets/fonts/ to .gitignore")
+        log("added assets/fonts/*.ttf to .gitignore (keeps open/)")
     else:
-        log(".gitignore already ignores assets/fonts/")
+        log(".gitignore already ignores proprietary root fonts")
 
 
 def main():

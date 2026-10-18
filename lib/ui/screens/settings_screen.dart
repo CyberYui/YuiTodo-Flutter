@@ -88,6 +88,15 @@ class SettingsScreen extends ConsumerWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showFontPicker(context, ref),  // 打开字体选择器
           ),
+
+          // 开源字体许可（两个版本都保留）
+          ListTile(
+            leading: const Icon(Icons.verified_outlined),
+            title: const Text('开源字体'),
+            subtitle: const Text('思源黑体 / 得意黑 · SIL OFL 1.1'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showOpenFontCredits(context),
+          ),
           
           const Divider(),
 
@@ -292,6 +301,33 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  void _showOpenFontCredits(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('开源字体许可'),
+        content: const SingleChildScrollView(
+          child: Text(
+            '思源黑体 Source Han Sans SC\n'
+            '作者：Adobe\n'
+            '许可：SIL Open Font License 1.1\n\n'
+            '得意黑 Smiley Sans\n'
+            '作者：atelier-anchor\n'
+            '许可：SIL Open Font License 1.1\n\n'
+            '字体文件仅用于界面显示，遵循 OFL 1.1 许可；'
+            '完整许可文本见 assets/fonts/open/ 目录。',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 字体选择器弹窗
   /// 显示所有可用的字体配对方案
   /// 用户选择后更新 fontIndexProvider，触发整个应用的字体刷新
@@ -309,8 +345,24 @@ class SettingsScreen extends ConsumerWidget {
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text('选择字体', style: Theme.of(context).textTheme.titleLarge),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '选择字体',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          ref.read(fontIndexProvider.notifier).setIndex(0);
+                          Navigator.pop(context);
+                        },
+                        child: const Text('恢复默认'),
+                      ),
+                    ],
+                  ),
                 ),
                 Expanded(
                   child: ListView.builder(
@@ -322,8 +374,22 @@ class SettingsScreen extends ConsumerWidget {
                       return ListTile(
                         // 字体名称（使用对应字体显示预览）
                         title: Text(font.name, style: TextStyle(fontFamily: font.chineseFontFamily)),
-                        // 字体风格描述
-                        subtitle: Text(font.description),
+                        // 字体风格描述 + 中英数字预览
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(font.description),
+                            const SizedBox(height: 2),
+                            Text(
+                              '任务 今天 08:00 · 123 ABC',
+                              style: TextStyle(
+                                fontFamily: font.chineseFontFamily,
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                          ],
+                        ),
                         // 选中标记
                         trailing: currentIndex == index
                             ? const Icon(Icons.check)

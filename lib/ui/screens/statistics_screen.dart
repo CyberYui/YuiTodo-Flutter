@@ -152,7 +152,12 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           Icon(icon, color: theme.colorScheme.primary),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(text, style: theme.textTheme.bodyMedium),
+            child: Text(
+              text,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontFamily: 'SmileySans',
+              ),
+            ),
           ),
         ],
       ),

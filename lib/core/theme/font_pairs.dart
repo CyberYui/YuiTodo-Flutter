@@ -88,6 +88,18 @@ class AppFontPairs {
       englishFontFamily: 'ArkPixel',
       description: '像素字体，复古游戏风',
     ),
+    FontPair(
+      name: '思源黑体',
+      chineseFontFamily: 'SourceHanSansSC',
+      englishFontFamily: 'SourceHanSansSC',
+      description: '开源黑体，干净通用（SIL OFL 1.1）',
+    ),
+    FontPair(
+      name: '得意黑',
+      chineseFontFamily: 'SmileySans',
+      englishFontFamily: 'SmileySans',
+      description: '开源展示黑体，适合标题/鼓励语（SIL OFL 1.1）',
+    ),
   ];
   
   /// 根据索引获取字体配对

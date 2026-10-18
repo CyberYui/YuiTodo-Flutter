@@ -29,6 +29,14 @@ class TaskCard extends ConsumerWidget {
   /// differs from the task's own start date, the card shows this day instead.
   final DateTime? occurrenceDay;
 
+  /// Whether the drag handle should start a reorder. In the sectioned
+  /// "全部" view sorting is disabled, so long-pressing the handle shows a hint
+  /// instead of attempting a drag.
+  final bool sortEnabled;
+
+  /// Called when the handle is long-pressed while [sortEnabled] is false.
+  final VoidCallback? onSortDisabled;
+
   const TaskCard({
     super.key,
     required this.task,
@@ -40,6 +48,8 @@ class TaskCard extends ConsumerWidget {
     this.isDone,
     this.occurrenceDay,
     this.onToggleComplete,
+    this.sortEnabled = true,
+    this.onSortDisabled,
   });
 
   @override
@@ -48,18 +58,34 @@ class TaskCard extends ConsumerWidget {
     final taskColor = Color(int.parse(task.color.replaceFirst('#', '0xFF')));
     final done = isDone ?? (task.status == 'done');
 
+    final handle = sortEnabled
+        ? ReorderableDelayedDragStartListener(
+            index: index,
+            child: _dragHandle(theme),
+          )
+        : GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onLongPress: onSortDisabled,
+            child: _dragHandle(theme),
+          );
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-      decoration: BoxDecoration(
-        color: isSelected
-            ? theme.colorScheme.primary.withOpacity(0.15)
-            : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: isSelected
-            ? Border.all(color: theme.colorScheme.primary.withOpacity(0.4))
-            : null,
-      ),
-      child: InkWell(
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? theme.colorScheme.primary.withOpacity(0.15)
+                  : theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: isSelected
+                  ? Border.all(
+                      color: theme.colorScheme.primary.withOpacity(0.4),
+                    )
+                  : null,
+            ),
+            child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(8),
@@ -183,6 +209,7 @@ class TaskCard extends ConsumerWidget {
                               ),
                             ],
                             _buildDateLabel(theme),
+                            const SizedBox(width: 36),
                           ],
                         ),
 
@@ -235,18 +262,6 @@ class TaskCard extends ConsumerWidget {
                     ),
                   ),
 
-                  // --- 拖拽手柄（右侧） ---
-                  ReorderableDelayedDragStartListener(
-                    index: index,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8, top: 4),
-                      child: Icon(
-                        Icons.drag_indicator,
-                        size: 16,
-                        color: theme.colorScheme.outline.withOpacity(0.4),
-                      ),
-                    ),
-                  ),
                 ],
               ),
 
@@ -266,6 +281,24 @@ class TaskCard extends ConsumerWidget {
               ],
             ],
           ),
+        ),
+      ),
+          ),
+          Positioned(top: 6, right: 6, child: handle),
+        ],
+      ),
+    );
+  }
+
+  Widget _dragHandle(ThemeData theme) {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: Center(
+        child: Icon(
+          Icons.drag_indicator,
+          size: 16,
+          color: theme.colorScheme.outline.withOpacity(0.4),
         ),
       ),
     );

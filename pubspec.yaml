@@ -1,7 +1,7 @@
 name: yuitodo
 description: "YuiTodo - A beautiful task management app"
 publish_to: 'none'
-version: 4.0.2+16
+version: 4.0.3+17
 
 environment:
   sdk: ^3.13.2
@@ -38,6 +38,12 @@ flutter:
     - assets/icons/
     - assets/images/
   fonts:
+    - family: SourceHanSansSC
+      fonts:
+        - asset: assets/fonts/open/SourceHanSansSC-Regular.otf
+    - family: SmileySans
+      fonts:
+        - asset: assets/fonts/open/SmileySans-Oblique.ttf
     - family: 华康少女文字W5
       fonts:
         - asset: assets/fonts/华康少女文字W5.ttf

@@ -223,29 +223,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  void _onReorder(
+  void _showSortDisabledPrompt() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: const Text('排序功能仅支持筛选后的标签列表'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onReorder(
     int oldIndex,
     int newIndex,
     List<TaskOccurrence> filtered,
-  ) {
+  ) async {
+    if (oldIndex < 0 || oldIndex >= filtered.length) return;
     if (oldIndex < newIndex) newIndex -= 1;
-    if (newIndex < 0 || newIndex >= filtered.length) return;
+    if (newIndex < 0) newIndex = 0;
+    if (newIndex >= filtered.length) newIndex = filtered.length - 1;
+    if (newIndex == oldIndex) return;
 
     final moved = filtered[oldIndex].task;
+    final remaining =
+        filtered.where((o) => o.task.id != moved.id).toList();
 
     int newSortOrder;
-    if (newIndex == 0) {
-      newSortOrder = filtered.first.task.sortOrder - 1;
-    } else if (newIndex == filtered.length - 1) {
-      newSortOrder = filtered.last.task.sortOrder + 1;
+    if (remaining.isEmpty) {
+      newSortOrder = moved.sortOrder;
+    } else if (newIndex == 0) {
+      newSortOrder = remaining.first.task.sortOrder - 1;
+    } else if (newIndex >= remaining.length) {
+      newSortOrder = remaining.last.task.sortOrder + 1;
     } else {
-      final before = filtered[newIndex - 1].task;
-      final after = filtered[newIndex + (oldIndex < newIndex ? 0 : 1)].task;
+      final before = remaining[newIndex - 1].task;
+      final after = remaining[newIndex].task;
       newSortOrder = ((before.sortOrder + after.sortOrder) / 2).round();
     }
 
-    ref.read(taskRepositoryProvider).updateTaskSortOrder(moved.id!, newSortOrder);
-    ref.read(occurrenceListProvider.notifier).load();
+    await ref
+        .read(taskRepositoryProvider)
+        .updateTaskSortOrder(moved.id!, newSortOrder);
+    await ref.read(occurrenceListProvider.notifier).load();
   }
 
   void _showBatchOperationsSheet(List<int> selectedIds) {
@@ -277,7 +301,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
                 onChanged: (_) => setState(() {}),
               )
-            : const Text('YuiTodo'),
+            : const Text(
+                'YuiTodo',
+                style: TextStyle(fontFamily: 'SmileySans'),
+              ),
         actions: [
           if (isSelectionMode) ...[
             TextButton(
@@ -505,7 +532,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     bool isSelectionMode,
     String smartFilter,
   ) {
-    if (smartFilter == 'all') {
+    final tagFilter = ref.watch(tagFilterProvider);
+    if (smartFilter == 'all' && tagFilter == null) {
       return _buildSectionedList(
         context,
         theme,
@@ -535,6 +563,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             index,
             selection,
             isSelectionMode,
+            sortEnabled: true,
           ),
         );
       },
@@ -574,6 +603,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               i,
               selection,
               isSelectionMode,
+              sortEnabled: false,
             ),
           ),
         );
@@ -692,7 +722,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 const SizedBox(height: 16),
                 Text(
                   '暂无任务',
-                  style: TextStyle(color: theme.colorScheme.outline),
+                  style: TextStyle(
+                    fontFamily: 'SmileySans',
+                    fontSize: 18,
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
               ],
             ),
@@ -708,8 +742,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     TaskOccurrence occ,
     int index,
     List<int> selection,
-    bool isSelectionMode,
-  ) {
+    bool isSelectionMode, {
+    bool sortEnabled = true,
+  }) {
     final task = occ.task;
     return Slidable(
       key: ValueKey('occ-${task.id}-${occ.dayKey}'),
@@ -809,6 +844,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             },
             onLongPress: () => _enterSelectionMode(task.id!),
             onStepToggle: (t, s) => _toggleStep(t, s, occ),
+            sortEnabled: sortEnabled,
+            onSortDisabled: _showSortDisabledPrompt,
           ),
         ),
       ),
