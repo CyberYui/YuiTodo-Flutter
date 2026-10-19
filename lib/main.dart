@@ -31,7 +31,12 @@ void main() async {
     final repo = TaskRepository(AppDatabase.instance);
     final reminderTasks = await repo.getTasksForReminders();
     final rules = await repo.getRecurrenceRuleMap();
-    await NotificationService.instance.rescheduleAll(reminderTasks, rules);
+    final reminders = await repo.getEnabledRemindersByTask();
+    await NotificationService.instance.rescheduleAll(
+      reminderTasks,
+      rules,
+      reminders,
+    );
   } catch (e) {
     // Reminder re-scheduling must never block startup.
   }

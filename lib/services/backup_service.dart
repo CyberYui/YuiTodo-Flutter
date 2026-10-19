@@ -36,14 +36,18 @@ class BackupService {
     // Get all recurrence rules
     final recurrenceMaps = await db.query('recurrence_rule');
 
+    // Get all extra reminders
+    final reminderMaps = await db.query('task_reminder');
+
     final data = {
-      'version': '4.0.0',
+      'version': '4.4.0',
       'exportTime': DateTime.now().toIso8601String(),
       'tasks': taskMaps,
       'tags': tagMaps,
       'taskTags': taskTagMaps,
       'steps': stepMaps,
       'recurrenceRules': recurrenceMaps,
+      'taskReminders': reminderMaps,
     };
 
     final json = const JsonEncoder.withIndent('  ').convert(data);
@@ -59,6 +63,7 @@ class BackupService {
     // Clear existing data
     await db.delete('task_tag');
     await db.delete('task_step');
+    await db.delete('task_reminder');
     await db.delete('task');
     await db.delete('tag');
     await db.delete('recurrence_rule');
@@ -91,6 +96,12 @@ class BackupService {
     final steps = (data['steps'] as List?) ?? [];
     for (final step in steps) {
       await db.insert('task_step', step as Map<String, dynamic>);
+    }
+
+    // Import extra reminders (older backups simply have none)
+    final reminders = (data['taskReminders'] as List?) ?? [];
+    for (final reminder in reminders) {
+      await db.insert('task_reminder', reminder as Map<String, dynamic>);
     }
 
     return tasks.length;

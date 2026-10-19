@@ -5,7 +5,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-4.3.0-blue)
+![Version](https://img.shields.io/badge/Version-4.4.0-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
@@ -39,6 +39,15 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 - **操作流畅**：手势优先，减少点击层级
 - **功能完备**：覆盖任务管理的核心场景，无冗余功能
 - **隐私优先**：纯本地存储，零网络请求，无账号、无云同步
+
+---
+
+## 🆕 v4.4.0 新变化
+
+- **多提醒时间点**：除定时提醒外，可添加最多 5 个「提前 X 分钟 / 小时 / 天」提醒。提前提醒相对**定时提醒**计算，重复任务按每次发生生效。
+- **统一的提醒排程**：主提醒与提前提醒使用独立通知 ID 区间；编辑、删除、完成一次性任务时一并取消，撤销时自动重排。
+- **数据库 v12**：启用 `task_reminder` 表并补充索引；永久删除任务会清理提醒行，升级时清理历史孤立数据。
+- **界面**：提醒区块显示每个提前提醒的实际时间；重复任务标注「每次发生」。
 
 ---
 
@@ -155,6 +164,7 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 ### 提醒与通知
 
 - 重复任务自动预排未来 7 天提醒，应用启动时自动重排。
+- 每个任务可额外添加最多 5 个「提前 X」提醒，相对定时提醒计算；重复任务按每次发生生效。
 - 修复 Release 包通知不触发问题：R8/Gson 保留规则、补全 `ScheduledNotificationReceiver` / `BootReceiver`、改用 `canScheduleExactNotifications()` 检测精确闹钟权限。
 - 通知样式增强：大文本、任务颜色、`reminder` 分类、`PUBLIC` 可见性。
 
@@ -180,7 +190,7 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 | 🎨 颜色标记 | 16 色调色板 + 自定义 RGB 取色器 |
 | 📌 图标标记 | 200+ 图标库，支持二次元头像 |
 | 🔄 循环任务 | 日/周/月/年/自定义间隔，虚拟实例渲染 |
-| ⏰ 提醒通知 | 本地通知，重复任务自动预排未来 7 天 |
+| ⏰ 提醒通知 | 本地通知；定时提醒 + 最多 5 个提前提醒；重复任务自动预排未来 7 天 |
 | 📆 日历视图 | 月历打点、按日查看任务、直接完成子任务；支持周起始日（周一/周日）与自定义背景图（1240×1600） |
 | 🍅 专注模式 | 番茄钟 / 正计时、暂停、休息、专注记录 |
 | 🔥 习惯追踪 | 打卡、连续天数、本周进度、7/30/90 天网格 |
@@ -226,8 +236,8 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 4. 允许"未知来源"安装权限
 
 > **两个版本说明**
-> - **开源版（opensource）**：内置思源黑体/得意黑/霞鹜文楷/IBM Plex（SIL OFL 1.1），设置中可切换，不使用版权字体；当前版本 **v4.3.0**。
-> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.3.0.1**。
+> - **开源版（opensource）**：内置思源黑体/得意黑/霞鹜文楷/IBM Plex（SIL OFL 1.1），设置中可切换，不使用版权字体；当前版本 **v4.4.0**。
+> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.4.0.1**。
 >
 > 两者功能完全一致，仅字体切换能力不同。
 

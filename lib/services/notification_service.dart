@@ -123,6 +123,7 @@ class NotificationService {
     required DateTime scheduledTime,
     Color? color,
     String? bigText,
+    int slot = 0,
   }) async {
     await initialize();
 
@@ -170,6 +171,7 @@ class NotificationService {
     final payload = jsonEncode({
       'id': id,
       'taskId': taskId,
+      'slot': slot,
       'title': title,
       'body': body,
       'big': bigText ?? body,
@@ -216,37 +218,74 @@ class NotificationService {
 
   int _taskBaseId(int taskId) => taskId * 1000;
 
-  /// Cancel a task's single reminder and its occurrence slots.
-  Future<void> cancelTaskReminders(int taskId, {int count = 7}) async {
-    await _plugin.cancel(taskId);
+  /// Highest notification id offset reserved for one task. Primary
+  /// occurrences use base+1..base+7; extra reminders use base+100..base+149.
+  static const int _idRange = 200;
+  static const int _maxOccurrences = 7;
+  static const int _maxExtraReminders = 5;
+
+  /// Cancel a task's primary reminder and every extra reminder slot.
+  Future<void> cancelTaskReminders(int taskId) async {
+    await initialize();
     final base = _taskBaseId(taskId);
-    for (var i = 1; i <= count; i++) {
-      await _plugin.cancel(base + i);
+    final pending = await _plugin.pendingNotificationRequests();
+    final ids = <int>{taskId};
+    for (final notification in pending) {
+      if (notification.id > base && notification.id <= base + _idRange) {
+        ids.add(notification.id);
+      }
+    }
+    for (final id in ids) {
+      await _plugin.cancel(id);
     }
   }
 
-  /// Schedule up to 7 occurrence reminders for a recurring task.
-  Future<void> scheduleTaskOccurrences({
+  /// Schedule a task's primary reminder and extra offset reminders.
+  ///
+  /// Callers pass already-computed timestamps (max 7 per reminder). Extra
+  /// reminder index `r` keeps a stable notification id range so a later
+  /// reschedule can cancel and replace it.
+  Future<void> scheduleTaskReminders({
     required int taskId,
     required String title,
     required String body,
-    required List<DateTime> times,
+    required List<DateTime> primaryTimes,
+    required List<List<DateTime>> extraTimes,
+    required bool recurring,
     Color? color,
     String? bigText,
   }) async {
     await cancelTaskReminders(taskId);
     final base = _taskBaseId(taskId);
-    final capped = times.take(7).toList();
-    for (var i = 0; i < capped.length; i++) {
+
+    final primary = primaryTimes.take(_maxOccurrences).toList();
+    for (var i = 0; i < primary.length; i++) {
       await scheduleReminder(
-        id: base + i + 1,
+        id: recurring ? base + i + 1 : taskId,
         taskId: taskId,
         title: title,
         body: body,
-        scheduledTime: capped[i],
+        scheduledTime: primary[i],
         color: color,
         bigText: bigText,
       );
+    }
+
+    final extras = extraTimes.take(_maxExtraReminders).toList();
+    for (var r = 0; r < extras.length; r++) {
+      final times = extras[r].take(_maxOccurrences).toList();
+      for (var i = 0; i < times.length; i++) {
+        await scheduleReminder(
+          id: base + 100 + r * 10 + i,
+          taskId: taskId,
+          title: title,
+          body: body,
+          scheduledTime: times[i],
+          color: color,
+          bigText: bigText,
+          slot: r + 1,
+        );
+      }
     }
   }
 
@@ -255,46 +294,60 @@ class NotificationService {
   Future<void> rescheduleAll(
     List<Task> tasks,
     Map<int, RecurrenceRule> rules,
+    Map<int, List<TaskReminder>> extraReminders,
   ) async {
     final now = DateTime.now();
     for (final task in tasks) {
       final id = task.id;
+      if (id == null) continue;
+
+      final extras = (extraReminders[id] ?? const <TaskReminder>[])
+          .where((r) => r.isEnabled && r.offsetMinutes != null)
+          .toList();
       final reminder = task.reminderTime;
-      if (id == null || reminder == null) continue;
-      final reminderDate = DateTime.fromMillisecondsSinceEpoch(reminder);
+      // Extra reminders are offsets from the primary reminder, so without one
+      // there is nothing to anchor them to.
+      if (reminder == null) continue;
+
       final rule = rules[id];
-      final color = _colorOf(task);
-      final bigText = task.note.isNotEmpty ? task.note : '任务提醒';
-      if (rule == null) {
-        if (reminderDate.isAfter(now)) {
-          await scheduleReminder(
-            id: id,
-            taskId: id,
-            title: task.title,
-            body: '任务提醒',
-            scheduledTime: reminderDate,
-            color: color,
-            bigText: bigText,
-          );
-        }
-        continue;
-      }
       final anchor = DateTime.fromMillisecondsSinceEpoch(
         task.startDate ?? task.startTime ?? task.createdAt,
       );
-      final times = ReminderScheduler.reminderTimes(
+
+      final reminderDate = DateTime.fromMillisecondsSinceEpoch(reminder);
+      final primaryTimes = ReminderScheduler.reminderTimes(
         anchor: anchor,
         reminderDate: reminderDate,
         rule: rule,
         now: now,
       );
-      await scheduleTaskOccurrences(
+
+      final extraTimes = <List<DateTime>>[];
+      for (final extra in extras) {
+        extraTimes.add(
+          ReminderScheduler.offsetReminderTimes(
+            anchor: anchor,
+            reminderDate: reminderDate,
+            offsetMinutes: extra.offsetMinutes!,
+            rule: rule,
+            now: now,
+          ),
+        );
+      }
+
+      if (primaryTimes.isEmpty && extraTimes.every((times) => times.isEmpty)) {
+        continue;
+      }
+
+      await scheduleTaskReminders(
         taskId: id,
         title: task.title,
         body: '任务提醒',
-        times: times,
-        color: color,
-        bigText: bigText,
+        primaryTimes: primaryTimes,
+        extraTimes: extraTimes,
+        recurring: rule != null,
+        color: _colorOf(task),
+        bigText: task.note.isNotEmpty ? task.note : '任务提醒',
       );
     }
   }
@@ -305,10 +358,6 @@ class NotificationService {
     } catch (_) {
       return null;
     }
-  }
-
-  Future<void> cancelReminder(int id) async {
-    await _plugin.cancel(id);
   }
 
   Future<void> cancelAll() async {
@@ -418,8 +467,9 @@ Future<void> notificationTapBackground(NotificationResponse response) async {
       payload: response.payload,
     );
   }
+  final slot = (data['slot'] as num?)?.toInt() ?? 0;
   final taskId = (data['taskId'] as num?)?.toInt();
-  if (taskId != null) {
+  if (taskId != null && slot == 0) {
     try {
       final dir = await getApplicationDocumentsDirectory();
       // Use a separate connection: closing the app's shared sqflite instance

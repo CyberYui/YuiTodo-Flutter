@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 10,
+      version: 12,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -206,6 +206,9 @@ class AppDatabase {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_task_deleted_at ON task(deleted_at)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_reminder_task_id ON task_reminder(task_id)',
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_step_task_id ON task_step(task_id)',
@@ -437,6 +440,22 @@ class AppDatabase {
       );
     }
 
+    if (oldVersion < 11) {
+      // The table itself has existed since v9; add the lookup index used when
+      // loading extra reminders for the editor and the scheduler.
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_task_reminder_task_id ON task_reminder(task_id)',
+      );
+    }
+
+    if (oldVersion < 12) {
+      // Older hard deletes did not remove child reminder rows (foreign keys
+      // are not enforced by default). Drop any orphans left behind.
+      await db.execute(
+        'DELETE FROM task_reminder '
+        'WHERE task_id NOT IN (SELECT id FROM task)',
+      );
+    }
   }
 
   Future<void> close() async {

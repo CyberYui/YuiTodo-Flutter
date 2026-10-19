@@ -135,7 +135,16 @@ class TaskRepository {
 
   Future<void> deleteTask(int taskId) async {
     final db = await _db.database;
-    await db.delete('task', where: 'id = ?', whereArgs: [taskId]);
+    // Hard delete: remove child reminder rows too (SQLite foreign keys are
+    // not enforced by default, so ON DELETE CASCADE does not fire).
+    await db.transaction((txn) async {
+      await txn.delete(
+        'task_reminder',
+        where: 'task_id = ?',
+        whereArgs: [taskId],
+      );
+      await txn.delete('task', where: 'id = ?', whereArgs: [taskId]);
+    });
   }
 
   /// Load one base task (not an occurrence) with its steps and tags.
@@ -525,9 +534,60 @@ class TaskRepository {
         'created_at',
         'updated_at',
       ],
-      where: 'reminder_time IS NOT NULL AND (deleted_at IS NULL OR deleted_at = 0)',
+      where:
+          '(reminder_time IS NOT NULL OR EXISTS (SELECT 1 FROM task_reminder r WHERE r.task_id = task.id AND r.is_enabled = 1))'
+          ' AND (deleted_at IS NULL OR deleted_at = 0)',
     );
     return maps.map(Task.fromMap).toList();
+  }
+
+  /// Extra reminders for one task, ordered by offset.
+  Future<List<TaskReminder>> getRemindersForTask(int taskId) async {
+    final db = await _db.database;
+    final maps = await db.query(
+      'task_reminder',
+      where: 'task_id = ? AND is_enabled = 1',
+      whereArgs: [taskId],
+      orderBy: 'offset_minutes ASC, id ASC',
+    );
+    return maps.map(TaskReminder.fromMap).toList();
+  }
+
+  /// Enabled extra reminders grouped by task, for app-start rescheduling.
+  Future<Map<int, List<TaskReminder>>> getEnabledRemindersByTask() async {
+    final db = await _db.database;
+    final maps = await db.query(
+      'task_reminder',
+      where: 'is_enabled = 1',
+      orderBy: 'task_id ASC, offset_minutes ASC, id ASC',
+    );
+    final grouped = <int, List<TaskReminder>>{};
+    for (final map in maps) {
+      final reminder = TaskReminder.fromMap(map);
+      grouped.putIfAbsent(reminder.taskId, () => []).add(reminder);
+    }
+    return grouped;
+  }
+
+  /// Replace all extra reminders for a task in one transaction.
+  Future<void> replaceTaskReminders(
+    int taskId,
+    List<TaskReminder> reminders,
+  ) async {
+    final db = await _db.database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await db.transaction((txn) async {
+      await txn.delete(
+        'task_reminder',
+        where: 'task_id = ?',
+        whereArgs: [taskId],
+      );
+      for (final reminder in reminders) {
+        final data = reminder.copyWith(taskId: taskId, createdAt: now).toMap()
+          ..remove('id');
+        await txn.insert('task_reminder', data);
+      }
+    });
   }
 
 }

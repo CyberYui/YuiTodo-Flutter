@@ -3,9 +3,10 @@ import 'recurrence.dart';
 
 /// Builds the concrete reminder timestamps for a task.
 ///
-/// - Non-recurring: a single timestamp at the task's reminder time.
-/// - Recurring: the next [maxOccurrences] occurrences, each at the reminder
-///   time's time-of-day, within a 60-day lookahead.
+/// - [reminderTimes] handles the primary absolute reminder.
+/// - [offsetReminderTimes] handles "N minutes before the task starts" extras.
+/// - Recurring tasks expand to the next [maxOccurrences] occurrences within a
+///   60-day lookahead.
 class ReminderScheduler {
   static List<DateTime> reminderTimes({
     required DateTime anchor,
@@ -14,13 +15,65 @@ class ReminderScheduler {
     required DateTime now,
     int maxOccurrences = 7,
   }) {
-    final today = DateTime(now.year, now.month, now.day);
-
     if (rule == null) {
       return reminderDate.isAfter(now) ? [reminderDate] : const [];
     }
 
-    final days = RecurrenceCalculator.occurrencesBetween(
+    final times = <DateTime>[];
+    for (final day in _occurrenceDays(anchor: anchor, rule: rule, now: now)) {
+      final t = DateTime(
+        day.year,
+        day.month,
+        day.day,
+        reminderDate.hour,
+        reminderDate.minute,
+      );
+      if (t.isAfter(now)) times.add(t);
+      if (times.length >= maxOccurrences) break;
+    }
+    return times;
+  }
+
+  /// Reminder timestamps for an offset reminder (minutes before the primary
+  /// reminder). Offsets of hours or days land before the occurrence day
+  /// instead of being pinned to the occurrence day's time-of-day.
+  static List<DateTime> offsetReminderTimes({
+    required DateTime anchor,
+    required DateTime reminderDate,
+    required int offsetMinutes,
+    RecurrenceRule? rule,
+    required DateTime now,
+    int maxOccurrences = 7,
+  }) {
+    final offset = Duration(minutes: offsetMinutes);
+    if (rule == null) {
+      final t = reminderDate.subtract(offset);
+      return t.isAfter(now) ? [t] : const [];
+    }
+
+    final times = <DateTime>[];
+    for (final day in _occurrenceDays(anchor: anchor, rule: rule, now: now)) {
+      final occurrenceReminder = DateTime(
+        day.year,
+        day.month,
+        day.day,
+        reminderDate.hour,
+        reminderDate.minute,
+      );
+      final t = occurrenceReminder.subtract(offset);
+      if (t.isAfter(now)) times.add(t);
+      if (times.length >= maxOccurrences) break;
+    }
+    return times;
+  }
+
+  static List<DateTime> _occurrenceDays({
+    required DateTime anchor,
+    required RecurrenceRule rule,
+    required DateTime now,
+  }) {
+    final today = DateTime(now.year, now.month, now.day);
+    return RecurrenceCalculator.occurrencesBetween(
       type: _typeOf(rule),
       anchor: anchor,
       from: today,
@@ -39,20 +92,6 @@ class ReminderScheduler {
       skipWeekends: rule.skipWeekends == 1,
       workdayOnly: rule.workdayOnly == 1,
     );
-
-    final times = <DateTime>[];
-    for (final day in days) {
-      final t = DateTime(
-        day.year,
-        day.month,
-        day.day,
-        reminderDate.hour,
-        reminderDate.minute,
-      );
-      if (t.isAfter(now)) times.add(t);
-      if (times.length >= maxOccurrences) break;
-    }
-    return times;
   }
 
   static RecurrenceType _typeOf(RecurrenceRule rule) {

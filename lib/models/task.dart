@@ -198,6 +198,68 @@ class TaskStep {
   }
 }
 
+/// Extra reminder attached to a task, in addition to [Task.reminderTime].
+///
+/// A reminder is stored either as an offset before the task start
+/// ([offsetMinutes]) or as an absolute timestamp ([absoluteTime]).
+class TaskReminder {
+  final int? id;
+  final int taskId;
+  final int? offsetMinutes;
+  final int? absoluteTime;
+  final bool isEnabled;
+  final int createdAt;
+
+  const TaskReminder({
+    this.id,
+    required this.taskId,
+    this.offsetMinutes,
+    this.absoluteTime,
+    this.isEnabled = true,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'task_id': taskId,
+      'offset_minutes': offsetMinutes,
+      'absolute_time': absoluteTime,
+      'is_enabled': isEnabled ? 1 : 0,
+      'created_at': createdAt,
+    };
+  }
+
+  factory TaskReminder.fromMap(Map<String, dynamic> map) {
+    return TaskReminder(
+      id: map['id'] as int?,
+      taskId: map['task_id'] as int,
+      offsetMinutes: map['offset_minutes'] as int?,
+      absoluteTime: map['absolute_time'] as int?,
+      isEnabled: ((map['is_enabled'] as int?) ?? 1) == 1,
+      createdAt: map['created_at'] as int,
+    );
+  }
+
+  TaskReminder copyWith({
+    int? id,
+    int? taskId,
+    int? offsetMinutes,
+    int? absoluteTime,
+    bool? isEnabled,
+    int? createdAt,
+  }) {
+    return TaskReminder(
+      id: id ?? this.id,
+      taskId: taskId ?? this.taskId,
+      offsetMinutes: offsetMinutes ?? this.offsetMinutes,
+      absoluteTime: absoluteTime ?? this.absoluteTime,
+      isEnabled: isEnabled ?? this.isEnabled,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+}
+
 /// Tag model
 class Tag {
   final int? id;

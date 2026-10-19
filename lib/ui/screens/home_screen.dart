@@ -227,7 +227,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final repo = ref.read(taskRepositoryProvider);
     final tasks = await repo.getAllTasks();
     final rules = await repo.getRecurrenceRuleMap();
-    await NotificationService.instance.rescheduleAll(tasks, rules);
+    final reminders = await repo.getEnabledRemindersByTask();
+    await NotificationService.instance.rescheduleAll(tasks, rules, reminders);
   }
 
   Future<void> _completeOccurrenceWithUndo(TaskOccurrence occ) async {
@@ -240,7 +241,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // A completed one-off task should not keep its reminder.
     if (!occ.isRecurring) {
       if (!wasDone) {
-        await NotificationService.instance.cancelReminder(occ.task.id!);
+        await NotificationService.instance.cancelTaskReminders(occ.task.id!);
       } else {
         await _rescheduleNotifications();
       }

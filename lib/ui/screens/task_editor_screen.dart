@@ -42,6 +42,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   RecurrenceType _recurrenceType = RecurrenceType.none;
   int _recurrenceInterval = 1;
   int? _reminderTime;
+  List<TaskReminder> _reminders = [];
+  bool _extrasLoaded = false;
   bool _showCustomPaletteIcon = false;
 
   @override
@@ -66,22 +68,28 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       _steps = widget.task!.steps.toList();
       _selectedTags = widget.task!.tags.toList();
       _reminderTime = widget.task!.reminderTime;
-      _loadRecurrence();
+      _loadExtras();
     }
   }
 
-  Future<void> _loadRecurrence() async {
+  Future<void> _loadExtras() async {
     final id = widget.task?.id;
     if (id == null) return;
-    final rules = await ref.read(taskRepositoryProvider).getRecurrenceRuleMap();
+    final repo = ref.read(taskRepositoryProvider);
+    final rules = await repo.getRecurrenceRuleMap();
+    final reminders = await repo.getRemindersForTask(id);
+    if (!mounted) return;
     final rule = rules[id];
-    if (!mounted || rule == null) return;
     setState(() {
-      _recurrenceType = RecurrenceType.values.firstWhere(
-        (t) => t.name == rule.type,
-        orElse: () => RecurrenceType.none,
-      );
-      _recurrenceInterval = rule.interval;
+      if (rule != null) {
+        _recurrenceType = RecurrenceType.values.firstWhere(
+          (t) => t.name == rule.type,
+          orElse: () => RecurrenceType.none,
+        );
+        _recurrenceInterval = rule.interval;
+      }
+      _reminders = reminders;
+      _extrasLoaded = true;
     });
   }
 
@@ -151,6 +159,12 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('请输入任务标题')));
       return;
+    }
+
+    // Never wipe stored extras when the editor is saved before the async load
+    // finishes (the load is fast, but this closes the race).
+    if (widget.task != null && !_extrasLoaded) {
+      await _loadExtras();
     }
 
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -272,14 +286,17 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
 
         await ref.read(taskListProvider.notifier).loadTasks();
       }
+      await ref
+          .read(taskRepositoryProvider)
+          .replaceTaskReminders(taskId, _reminders);
       if (mounted) Navigator.pop(context);
 
       // Schedule notifications after pop (fire-and-forget). Recurring tasks
       // get their next 7 occurrences pre-scheduled.
-      if (_reminderTime != null) {
+      if (_reminderTime != null || _reminders.isNotEmpty) {
         final rulesMap =
             await ref.read(taskRepositoryProvider).getRecurrenceRuleMap();
-        _scheduleNotification(taskId, task, rulesMap[taskId]);
+        _scheduleNotification(taskId, task, rulesMap[taskId], _reminders);
       } else {
         await NotificationService.instance.cancelTaskReminders(taskId);
       }
@@ -295,50 +312,66 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
     int taskId,
     Task task,
     RecurrenceRule? rule,
+    List<TaskReminder> extras,
   ) async {
     try {
-      final reminder = task.reminderTime;
-      if (reminder == null) return;
       final hasPermission =
           await NotificationService.instance.requestPermission();
       if (!hasPermission) return;
 
       final now = DateTime.now();
-      final reminderDate = DateTime.fromMillisecondsSinceEpoch(reminder);
       final anchor = DateTime.fromMillisecondsSinceEpoch(
         task.startDate ?? task.startTime ?? task.createdAt,
       );
-      final times = ReminderScheduler.reminderTimes(
-        anchor: anchor,
-        reminderDate: reminderDate,
-        rule: rule,
-        now: now,
-      );
+
+      final primaryTimes = <DateTime>[];
+      final reminder = task.reminderTime;
+      final reminderDate = reminder == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(reminder);
+      if (reminderDate != null) {
+        primaryTimes.addAll(
+          ReminderScheduler.reminderTimes(
+            anchor: anchor,
+            reminderDate: reminderDate,
+            rule: rule,
+            now: now,
+          ),
+        );
+      }
+
+      final extraTimes = <List<DateTime>>[];
+      for (final extra in extras) {
+        final offset = extra.offsetMinutes;
+        if (offset == null || reminderDate == null) continue;
+        extraTimes.add(
+          ReminderScheduler.offsetReminderTimes(
+            anchor: anchor,
+            reminderDate: reminderDate,
+            offsetMinutes: offset,
+            rule: rule,
+            now: now,
+          ),
+        );
+      }
+
+      if (primaryTimes.isEmpty && extraTimes.every((times) => times.isEmpty)) {
+        await NotificationService.instance.cancelTaskReminders(taskId);
+        return;
+      }
 
       final color = Color(int.parse(task.color.replaceFirst('#', '0xFF')));
       final bigText = task.note.isNotEmpty ? task.note : '任务提醒';
-      if (rule == null) {
-        if (reminderDate.isAfter(now)) {
-          await NotificationService.instance.scheduleReminder(
-            id: taskId,
-            taskId: taskId,
-            title: task.title,
-            body: '任务提醒',
-            scheduledTime: reminderDate,
-            color: color,
-            bigText: bigText,
-          );
-        }
-      } else {
-        await NotificationService.instance.scheduleTaskOccurrences(
-          taskId: taskId,
-          title: task.title,
-          body: '任务提醒',
-          times: times,
-          color: color,
-          bigText: bigText,
-        );
-      }
+      await NotificationService.instance.scheduleTaskReminders(
+        taskId: taskId,
+        title: task.title,
+        body: '任务提醒',
+        primaryTimes: primaryTimes,
+        extraTimes: extraTimes,
+        recurring: rule != null,
+        color: color,
+        bigText: bigText,
+      );
     } catch (e) {
       debugPrint('Failed to schedule notification: $e');
     }
@@ -717,14 +750,22 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                 const Text('提醒'),
                 const SizedBox(width: 4),
                 HelpIcon(
-                  text: '设置任务提醒时间。\n\n需要开启通知权限才能正常收到提醒。',
+                  text: '设置任务提醒时间。\n\n'
+                      '可添加多个「提前 X 分钟」提醒，按任务开始时间计算；'
+                      '重复任务按每次发生计算。\n\n'
+                      '需要开启通知权限才能正常收到提醒。',
                   size: 14,
                 ),
               ],
             ),
             child: ReminderSelector(
               reminderTime: _reminderTime,
-              onChanged: (time) => setState(() => _reminderTime = time),
+              reminders: _reminders,
+              isRecurring: _recurrenceType != RecurrenceType.none,
+              onReminderTimeChanged: (time) =>
+                  setState(() => _reminderTime = time),
+              onRemindersChanged: (list) =>
+                  setState(() => _reminders = list),
             ),
           ),
           const SizedBox(height: 16),
