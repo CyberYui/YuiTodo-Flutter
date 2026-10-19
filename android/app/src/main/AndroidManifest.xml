@@ -16,7 +16,7 @@
          相关资源与生成脚本见 tool/gen_app_icon.py 的说明。
          注意：替换图标后必须 `adb uninstall` 再 `install`，否则启动器会缓存旧图标。 -->
     <application
-        android:label="yuitodo"
+        android:label="YuiTodo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round">

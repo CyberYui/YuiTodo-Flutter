@@ -529,6 +529,7 @@ class TaskRepository {
         'note',
         'color',
         'reminder_time',
+        'reminder_sound',
         'start_date',
         'start_time',
         'created_at',

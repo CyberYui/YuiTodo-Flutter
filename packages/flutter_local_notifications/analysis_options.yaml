@@ -1,0 +1,8 @@
+# Vendored flutter_local_notifications (upstream 17.2.4) with a small YuiTodo
+# patch adding the `useCustomLayout` RemoteViews option. Upstream files predate
+# Flutter's Color API migration; keep those historical infos quiet so the app's
+# own analysis stays at zero issues.
+analyzer:
+  errors:
+    deprecated_member_use: ignore
+    library_private_types_in_public_api: ignore

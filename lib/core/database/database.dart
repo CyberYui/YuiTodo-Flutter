@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 12,
+      version: 13,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -46,6 +46,7 @@ class AppDatabase {
         updated_at INTEGER NOT NULL,
         deleted_at INTEGER,
         reminder_time INTEGER,
+        reminder_sound TEXT,
         is_habit INTEGER DEFAULT 0,
         habit_target_per_week INTEGER DEFAULT 7
       )
@@ -455,6 +456,14 @@ class AppDatabase {
         'DELETE FROM task_reminder '
         'WHERE task_id NOT IN (SELECT id FROM task)',
       );
+    }
+
+    if (oldVersion < 13) {
+      final columns = await db.rawQuery('PRAGMA table_info(task)');
+      final names = columns.map((c) => c['name'] as String).toSet();
+      if (!names.contains('reminder_sound')) {
+        await db.execute('ALTER TABLE task ADD COLUMN reminder_sound TEXT');
+      }
     }
   }
 

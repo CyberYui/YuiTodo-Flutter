@@ -9,6 +9,7 @@ import '../../providers/task_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../core/icons/app_icons.dart';
 import '../../core/icons/flat_icon_mapper.dart';
+import '../../core/notifications/reminder_sounds.dart';
 import '../../core/theme/task_colors.dart';
 import '../../core/utils/recurrence.dart';
 import '../../core/utils/reminder_scheduler.dart';
@@ -42,6 +43,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   RecurrenceType _recurrenceType = RecurrenceType.none;
   int _recurrenceInterval = 1;
   int? _reminderTime;
+  String? _reminderSound;
   List<TaskReminder> _reminders = [];
   bool _extrasLoaded = false;
   bool _showCustomPaletteIcon = false;
@@ -68,6 +70,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       _steps = widget.task!.steps.toList();
       _selectedTags = widget.task!.tags.toList();
       _reminderTime = widget.task!.reminderTime;
+      _reminderSound = widget.task!.reminderSound;
       _loadExtras();
     }
   }
@@ -154,6 +157,58 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
     }
   }
 
+  Future<void> _showReminderSoundPicker(BuildContext context) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  '提醒铃声',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+              ),
+              for (final option in reminderSounds)
+                ListTile(
+                  title: Text(option.label),
+                  subtitle:
+                      option.key == null ? const Text('使用系统默认通知音') : null,
+                  trailing: _reminderSound == option.key
+                      ? const Icon(Icons.check)
+                      : null,
+                  onTap: () => Navigator.pop(
+                    context,
+                    option.key ?? '__system__',
+                  ),
+                ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '铃声仅对本任务生效；修改后需重新保存任务。',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF7B746A)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted || selected == null) return;
+    setState(() {
+      _reminderSound = selected == '__system__' ? null : selected;
+    });
+  }
+
   Future<void> _saveTask() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context)
@@ -184,6 +239,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       createdAt: widget.task?.createdAt ?? now,
       updatedAt: now,
       reminderTime: _reminderTime,
+      reminderSound: _reminderSound,
     );
 
     try {
@@ -369,6 +425,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         primaryTimes: primaryTimes,
         extraTimes: extraTimes,
         recurring: rule != null,
+        soundKey: _reminderSound,
         color: color,
         bigText: bigText,
       );
@@ -758,14 +815,27 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                 ),
               ],
             ),
-            child: ReminderSelector(
-              reminderTime: _reminderTime,
-              reminders: _reminders,
-              isRecurring: _recurrenceType != RecurrenceType.none,
-              onReminderTimeChanged: (time) =>
-                  setState(() => _reminderTime = time),
-              onRemindersChanged: (list) =>
-                  setState(() => _reminders = list),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ReminderSelector(
+                  reminderTime: _reminderTime,
+                  reminders: _reminders,
+                  isRecurring: _recurrenceType != RecurrenceType.none,
+                  onReminderTimeChanged: (time) =>
+                      setState(() => _reminderTime = time),
+                  onRemindersChanged: (list) =>
+                      setState(() => _reminders = list),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.music_note_outlined),
+                  title: const Text('提醒铃声'),
+                  subtitle: Text(reminderSoundFor(_reminderSound).label),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showReminderSoundPicker(context),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),

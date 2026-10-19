@@ -17,6 +17,7 @@ class Task {
   final int updatedAt;
   final int? deletedAt;
   final int? reminderTime; // 提醒时间（epoch ms）
+  final String? reminderSound; // 提醒铃声 key（null = 跟随系统）
   final bool isHabit;
   final int habitTargetPerWeek;
 
@@ -42,6 +43,7 @@ class Task {
     required this.updatedAt,
     this.deletedAt,
     this.reminderTime,
+    this.reminderSound,
     this.isHabit = false,
     this.habitTargetPerWeek = 7,
     this.steps = const [],
@@ -66,6 +68,7 @@ class Task {
     int? updatedAt,
     int? deletedAt,
     int? reminderTime,
+    String? reminderSound,
     bool? isHabit,
     int? habitTargetPerWeek,
     List<TaskStep>? steps,
@@ -89,6 +92,7 @@ class Task {
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       reminderTime: reminderTime ?? this.reminderTime,
+      reminderSound: reminderSound ?? this.reminderSound,
       isHabit: isHabit ?? this.isHabit,
       habitTargetPerWeek: habitTargetPerWeek ?? this.habitTargetPerWeek,
       steps: steps ?? this.steps,
@@ -115,6 +119,7 @@ class Task {
       'updated_at': updatedAt,
       'deleted_at': deletedAt,
       'reminder_time': reminderTime,
+      'reminder_sound': reminderSound,
       'is_habit': isHabit ? 1 : 0,
       'habit_target_per_week': habitTargetPerWeek,
     };
@@ -139,6 +144,7 @@ class Task {
       updatedAt: map['updated_at'] as int,
       deletedAt: map['deleted_at'] as int?,
       reminderTime: map['reminder_time'] as int?,
+      reminderSound: map['reminder_sound'] as String?,
       isHabit: ((map['is_habit'] as int?) ?? 0) == 1,
       habitTargetPerWeek: (map['habit_target_per_week'] as int?) ?? 7,
     );

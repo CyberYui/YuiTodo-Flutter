@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../core/notifications/reminder_sounds.dart';
 import '../core/utils/reminder_scheduler.dart';
 import '../models/recurrence_rule.dart';
 import '../models/task.dart';
@@ -64,16 +65,9 @@ class NotificationService {
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
       if (android != null) {
-        await android.createNotificationChannel(
-          const AndroidNotificationChannel(
-            'task_reminders',
-            'Task Reminders',
-            description: 'Notifications for task reminders',
-            importance: Importance.max,
-            enableVibration: true,
-            playSound: true,
-          ),
-        );
+        for (final option in reminderSounds) {
+          await android.createNotificationChannel(option.channel);
+        }
       }
     }
 
@@ -123,6 +117,8 @@ class NotificationService {
     required DateTime scheduledTime,
     Color? color,
     String? bigText,
+    String? subText,
+    String? soundKey,
     int slot = 0,
   }) async {
     await initialize();
@@ -133,19 +129,23 @@ class NotificationService {
       scheduledTime = now.add(const Duration(seconds: 10));
     }
 
+    final soundOption = reminderSoundFor(soundKey);
     final androidDetails = AndroidNotificationDetails(
-      'task_reminders',
-      'Task Reminders',
-      channelDescription: 'Notifications for task reminders',
+      soundOption.channelId,
+      soundOption.channelName,
+      channelDescription: '任务提醒',
       importance: Importance.max,
       priority: Priority.max,
       enableVibration: true,
       playSound: true,
+      sound: soundOption.sound,
       autoCancel: true,
       color: color,
       category: AndroidNotificationCategory.reminder,
       visibility: NotificationVisibility.public,
       ticker: title,
+      subText: subText,
+      useCustomLayout: true,
       styleInformation: BigTextStyleInformation(
         bigText ?? body,
         contentTitle: title,
@@ -172,6 +172,7 @@ class NotificationService {
       'id': id,
       'taskId': taskId,
       'slot': slot,
+      'soundKey': soundKey,
       'title': title,
       'body': body,
       'big': bigText ?? body,
@@ -252,6 +253,7 @@ class NotificationService {
     required List<DateTime> primaryTimes,
     required List<List<DateTime>> extraTimes,
     required bool recurring,
+    String? soundKey,
     Color? color,
     String? bigText,
   }) async {
@@ -266,6 +268,8 @@ class NotificationService {
         title: title,
         body: body,
         scheduledTime: primary[i],
+        subText: formatNotificationTime(primary[i]),
+        soundKey: soundKey,
         color: color,
         bigText: bigText,
       );
@@ -281,6 +285,8 @@ class NotificationService {
           title: title,
           body: body,
           scheduledTime: times[i],
+          subText: '提前提醒 · ${formatNotificationTime(times[i])}',
+          soundKey: soundKey,
           color: color,
           bigText: bigText,
           slot: r + 1,
@@ -346,6 +352,7 @@ class NotificationService {
         primaryTimes: primaryTimes,
         extraTimes: extraTimes,
         recurring: rule != null,
+        soundKey: task.reminderSound,
         color: _colorOf(task),
         bigText: task.note.isNotEmpty ? task.note : '任务提醒',
       );
@@ -402,6 +409,7 @@ Future<void> notificationTapBackground(NotificationResponse response) async {
   final title = data['title'] as String? ?? '任务提醒';
   final body = data['body'] as String? ?? '任务提醒';
   final big = data['big'] as String? ?? body;
+  final soundOption = reminderSoundFor(data['soundKey'] as String?);
 
   WidgetsFlutterBinding.ensureInitialized();
   ui.DartPluginRegistrant.ensureInitialized();
@@ -412,19 +420,27 @@ Future<void> notificationTapBackground(NotificationResponse response) async {
   const android = AndroidInitializationSettings('@mipmap/ic_launcher');
   await plugin.initialize(const InitializationSettings(android: android));
 
+  // Channels usually already exist; recreating is a no-op unless missing.
+  final androidPlugin = plugin.resolvePlatformSpecificImplementation<
+      AndroidFlutterLocalNotificationsPlugin>();
+  await androidPlugin?.createNotificationChannel(soundOption.channel);
+
   final when = tz.TZDateTime.now(location).add(const Duration(minutes: 10));
   final details = AndroidNotificationDetails(
-    'task_reminders',
-    'Task Reminders',
-    channelDescription: 'Notifications for task reminders',
+    soundOption.channelId,
+    soundOption.channelName,
+    channelDescription: '任务提醒',
     importance: Importance.max,
     priority: Priority.max,
     enableVibration: true,
     playSound: true,
+    sound: soundOption.sound,
     autoCancel: true,
     category: AndroidNotificationCategory.reminder,
     visibility: NotificationVisibility.public,
     ticker: title,
+    subText: formatNotificationTime(when),
+    useCustomLayout: true,
     styleInformation: BigTextStyleInformation(
       big,
       contentTitle: title,
@@ -494,4 +510,18 @@ Future<void> notificationTapBackground(NotificationResponse response) async {
     }
   }
   debugPrint('Snoozed notification $id to $when');
+}
+
+/// Human-readable label used by the custom notification layout.
+String formatNotificationTime(DateTime dt) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final day = DateTime(dt.year, dt.month, dt.day);
+  final diff = day.difference(today).inDays;
+  final time =
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  if (diff == 0) return '今天 $time';
+  if (diff == 1) return '明天 $time';
+  if (diff == 2) return '后天 $time';
+  return '${dt.month}月${dt.day}日 $time';
 }
