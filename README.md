@@ -5,7 +5,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-4.0.3-blue)
+![Version](https://img.shields.io/badge/Version-4.0.4-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
@@ -39,6 +39,14 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 - **操作流畅**：手势优先，减少点击层级
 - **功能完备**：覆盖任务管理的核心场景，无冗余功能
 - **隐私优先**：纯本地存储，零网络请求，无账号、无云同步
+
+---
+
+## 🆕 v4.0.4 新变化
+
+- **子任务按天隔离修复**：任务编辑器不再把今天的子任务状态写回模板；保存时保留子任务 id，历史按天记录不再被删；重复任务的模板完成开关改为只读并提示按天勾选；DB v10 把已有模板完成状态迁移到今天，未来实例从 pending 开始。
+- **排序频闪优化**：拖放瞬间乐观写入新顺序并去掉扁平列表入场动画，松手后不再出现卡片互换的频闪。
+- **原生动态图标**：设置页「主题模式」新增太阳 ↔ 月亮形变；专注页播放 ↔ 暂停使用 Flutter 内置 `AnimatedIcons.play_pause`。无需 Rive。
 
 ---
 
@@ -172,8 +180,8 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 4. 允许"未知来源"安装权限
 
 > **两个版本说明**
-> - **开源版（opensource）**：内置思源黑体/得意黑（SIL OFL 1.1），不使用版权字体，公开发布；当前版本 **v4.0.3**。
-> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.0.3.1**。
+> - **开源版（opensource）**：内置思源黑体/得意黑（SIL OFL 1.1），不使用版权字体，公开发布；当前版本 **v4.0.4**。
+> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.0.4.1**。
 >
 > 两者功能完全一致，仅字体切换能力不同。
 
