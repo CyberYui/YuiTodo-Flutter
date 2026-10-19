@@ -22,6 +22,7 @@ import '../screens/settings_screen.dart';
 import '../screens/statistics_screen.dart';
 import '../screens/calendar_screen.dart';
 import '../screens/focus_screen.dart';
+import '../screens/global_search_screen.dart';
 import '../widgets/task_card.dart';
 import '../widgets/animated_entry.dart';
 import '../../core/utils/app_banner.dart';
@@ -356,9 +357,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
+                textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
-                  hintText: '搜索任务...',
+                  hintText: '筛选当前列表…',
                   border: InputBorder.none,
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.travel_explore, size: 20),
+                    tooltip: '搜索全部任务',
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => GlobalSearchScreen(
+                          initialQuery: _searchController.text,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
                 onChanged: (_) => setState(() {}),
               )
@@ -414,6 +428,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               tooltip: '更多',
               onSelected: (value) {
                 switch (value) {
+                  case 'search':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const GlobalSearchScreen(),
+                      ),
+                    );
+                    break;
                   case 'calendar':
                     Navigator.push(
                       context,
@@ -441,6 +463,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 }
               },
               itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'search',
+                  child: Row(children: [
+                    Icon(Icons.travel_explore),
+                    SizedBox(width: 12),
+                    Text('搜索全部任务'),
+                  ]),
+                ),
                 PopupMenuItem(
                   value: 'calendar',
                   child: Row(children: [
@@ -872,7 +902,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return InkWell(
       onTap: () => ref.read(sectionCollapseProvider.notifier).toggle(section),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 3),
         child: Row(
           children: [
             AnimatedRotation(

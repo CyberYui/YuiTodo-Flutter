@@ -1,7 +1,7 @@
 name: yuitodo
 description: "YuiTodo - A beautiful task management app"
 publish_to: 'none'
-version: 4.8.0+30
+version: 4.9.0+31
 
 environment:
   sdk: ^3.13.2

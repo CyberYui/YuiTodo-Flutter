@@ -437,7 +437,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                   ),
                   style: const TextStyle(fontSize: 18),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 TextField(
                   controller: _noteController,
                   decoration: const InputDecoration(
@@ -454,7 +454,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
           // Date section - disabled when recurrence is active
           _buildSection(
@@ -473,7 +473,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               children: [
                 Expanded(
                   child: ListTile(
-                    leading: const Icon(Icons.calendar_today),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    dense: true,
                     title: const Text('开始日期'),
                     subtitle: Text(
                       '${_startDate.year}-${_startDate.month}-${_startDate.day}',
@@ -494,7 +495,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                 ),
                 Expanded(
                   child: ListTile(
-                    leading: const Icon(Icons.event),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    dense: true,
                     title: const Text('结束日期'),
                     subtitle: Text(
                       '${_endDate.year}-${_endDate.month}-${_endDate.day}',
@@ -516,7 +518,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
           // ==================== 颜色选择区块 ====================
           _buildSection(
@@ -555,7 +557,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 // 颜色调色盘：显示所有可选颜色（16色 + 1自定义槽位）
                 Wrap(
                   spacing: 8,
@@ -651,7 +653,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
           // Icon section
           _buildSection(
@@ -699,7 +701,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
           // Tags section
           _buildSection(
@@ -735,7 +737,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               },
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
           // Recurrence section
           _buildSection(
@@ -766,7 +768,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               onIntervalChanged: (i) => setState(() => _recurrenceInterval = i),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
           // Reminder section
           _buildSection(
@@ -807,7 +809,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
           // Steps section
           _buildSection(
@@ -930,7 +932,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
             child: titleWidget ?? Text(
               title,
               style: TextStyle(
@@ -941,7 +943,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: child,
           ),
         ],

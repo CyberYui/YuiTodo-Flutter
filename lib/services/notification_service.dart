@@ -161,12 +161,21 @@ class NotificationService {
             '完成',
             showsUserInterface: false,
             cancelNotification: true,
+            icon: DrawableResourceAndroidBitmap('ic_notification_check'),
           ),
         const AndroidNotificationAction(
           'snooze',
           '稍后 10 分钟',
           showsUserInterface: false,
           cancelNotification: true,
+          icon: DrawableResourceAndroidBitmap('ic_notification_snooze'),
+        ),
+        const AndroidNotificationAction(
+          'snooze_60',
+          '稍后 1 小时',
+          showsUserInterface: false,
+          cancelNotification: true,
+          icon: DrawableResourceAndroidBitmap('ic_notification_snooze'),
         ),
       ],
     );
@@ -437,7 +446,10 @@ Future<void> notificationTapBackground(NotificationResponse response) async {
       await _handleComplete(data);
       break;
     case 'snooze':
-      await _handleSnooze(data, response.payload!);
+      await _handleSnooze(data, response.payload!, 10);
+      break;
+    case 'snooze_60':
+      await _handleSnooze(data, response.payload!, 60);
       break;
   }
 }
@@ -513,6 +525,7 @@ Future<void> _handleComplete(Map<String, dynamic> data) async {
 Future<void> _handleSnooze(
   Map<String, dynamic> data,
   String payload,
+  int minutes,
 ) async {
   final id = (data['id'] as num?)?.toInt() ??
       DateTime.now().millisecondsSinceEpoch.remainder(100000);
@@ -536,7 +549,7 @@ Future<void> _handleSnooze(
       AndroidFlutterLocalNotificationsPlugin>();
   await androidPlugin?.createNotificationChannel(soundOption.channel);
 
-  final when = tz.TZDateTime.now(location).add(const Duration(minutes: 10));
+  final when = tz.TZDateTime.now(location).add(Duration(minutes: minutes));
   final details = AndroidNotificationDetails(
     soundOption.channelId,
     soundOption.channelName,
@@ -564,12 +577,21 @@ Future<void> _handleSnooze(
           '完成',
           showsUserInterface: false,
           cancelNotification: true,
+          icon: DrawableResourceAndroidBitmap('ic_notification_check'),
         ),
       const AndroidNotificationAction(
         'snooze',
         '稍后 10 分钟',
         showsUserInterface: false,
         cancelNotification: true,
+        icon: DrawableResourceAndroidBitmap('ic_notification_snooze'),
+      ),
+      const AndroidNotificationAction(
+        'snooze_60',
+        '稍后 1 小时',
+        showsUserInterface: false,
+        cancelNotification: true,
+        icon: DrawableResourceAndroidBitmap('ic_notification_snooze'),
       ),
     ],
   );

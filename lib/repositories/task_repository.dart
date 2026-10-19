@@ -581,6 +581,111 @@ class TaskRepository {
   }
 
 
+  /// Full-text-ish search across title, note, subtask titles and tag names.
+  /// Includes completed tasks, excludes the recycle bin.
+  Future<List<Task>> searchTasks(String query, {int limit = 200}) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return const [];
+    final db = await _db.database;
+    final escaped = trimmed
+        .replaceAll('!', '!!')
+        .replaceAll('%', '!%')
+        .replaceAll('_', '!_');
+    final like = '%$escaped%';
+    final maps = await db.rawQuery(
+      '''
+      SELECT DISTINCT t.*
+      FROM task t
+      LEFT JOIN task_step s ON s.task_id = t.id
+      LEFT JOIN task_tag tt ON tt.task_id = t.id
+      LEFT JOIN tag g ON g.id = tt.tag_id
+      WHERE (t.deleted_at IS NULL OR t.deleted_at = 0)
+        AND (
+          t.title LIKE ? ESCAPE '!'
+          OR t.note LIKE ? ESCAPE '!'
+          OR s.title LIKE ? ESCAPE '!'
+          OR g.name LIKE ? ESCAPE '!'
+        )
+      ORDER BY t.updated_at DESC
+      LIMIT ?
+      ''',
+      [like, like, like, like, limit],
+    );
+    return maps.map(Task.fromMap).toList();
+  }
+
+  /// Task ids referenced by children but missing from the task table. These
+  /// are leftovers from hard deletes that predate child cleanup.
+  Future<List<int>> findOrphanedTaskIds() async {
+    final db = await _db.database;
+    final rows = await db.rawQuery('''
+      SELECT DISTINCT task_id FROM (
+        SELECT task_id FROM task_step
+        UNION SELECT task_id FROM task_tag
+        UNION SELECT task_id FROM task_occurrence
+        UNION SELECT task_id FROM task_step_occurrence
+        UNION SELECT task_id FROM recurrence_rule
+      )
+      WHERE task_id NOT IN (SELECT id FROM task)
+      ORDER BY task_id
+    ''');
+    return rows.map((row) => row['task_id'] as int).toList();
+  }
+
+  /// Earliest day that has any recorded occurrence/step history for [taskId].
+  Future<DateTime?> earliestRecordedDay(int taskId) async {
+    final db = await _db.database;
+    final rows = await db.rawQuery(
+      '''
+      SELECT MIN(d) AS day FROM (
+        SELECT MIN(occurrence_day) AS d FROM task_occurrence WHERE task_id = ?
+        UNION ALL
+        SELECT MIN(occurrence_day) AS d FROM task_step_occurrence WHERE task_id = ?
+      )
+      WHERE d IS NOT NULL
+      ''',
+      [taskId, taskId],
+    );
+    final value = rows.isEmpty ? null : rows.first['day'] as int?;
+    if (value == null) return null;
+    final year = value ~/ 10000;
+    final month = (value ~/ 100) % 100;
+    final day = value % 100;
+    if (year < 1970 || month < 1 || month > 12 || day < 1 || day > 31) {
+      return null;
+    }
+    return DateTime(year, month, day);
+  }
+
+  /// Recreate a missing task row while keeping its orphaned children
+  /// (steps/tags/rule/history) linked by the same id.
+  Future<void> restoreOrphanedTask({
+    required int taskId,
+    required String title,
+    String note = '',
+    String color = '#3B82F6',
+    String? icon,
+  }) async {
+    final db = await _db.database;
+    final anchor = await earliestRecordedDay(taskId) ?? DateTime.now();
+    final start = DateTime(anchor.year, anchor.month, anchor.day);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final task = Task(
+      id: taskId,
+      title: title,
+      note: note,
+      status: 'pending',
+      startTime: start.millisecondsSinceEpoch,
+      startDate: start.millisecondsSinceEpoch,
+      endTime: start.add(const Duration(days: 1)).millisecondsSinceEpoch,
+      color: color,
+      icon: icon,
+      createdAt: now,
+      updatedAt: now,
+    );
+    await db.insert('task', task.toMap());
+  }
+
   /// Lightweight task list for reminder re-scheduling.
   Future<List<Task>> getTasksForReminders() async {
     final db = await _db.database;

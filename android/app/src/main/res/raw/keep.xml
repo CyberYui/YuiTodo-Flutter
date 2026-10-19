@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The reminder sounds are resolved by name at runtime, so release resource
-     shrinking would otherwise strip them. -->
+<!-- Sounds and action icons are resolved by name at runtime, so release
+     resource shrinking would otherwise strip them. -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@raw/yuitodo_*" />
+    tools:keep="@raw/yuitodo_*,@drawable/ic_notification_*" />

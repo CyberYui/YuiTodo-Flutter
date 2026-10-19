@@ -5,7 +5,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-4.8.0-blue)
+![Version](https://img.shields.io/badge/Version-4.9.0-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
@@ -39,6 +39,16 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 - **操作流畅**：手势优先，减少点击层级
 - **功能完备**：覆盖任务管理的核心场景，无冗余功能
 - **隐私优先**：纯本地存储，零网络请求，无账号、无云同步
+
+---
+
+## 🆕 v4.9.0 新变化
+
+- **日历背景图**：内置 1240×1600 云层背景（顶部显示、向下渐隐到任务列表），与日历配色融合。
+- **更紧凑的 UI**：首页分区标题、任务卡、设置项、编辑器再次收紧；日期选择去掉图标，日期文字获得更多空间。
+- **全局搜索**：首页菜单 →「搜索全部任务」，或搜索框右侧入口；支持标题/备注/子任务/标签，包含已完成任务。
+- **通知体验**：完成/稍后动作增加图标，新增「稍后 1 小时」；动作图标与铃声加入 release 资源保留规则。
+- **数据修复**：设置 → 数据管理 →「修复孤立数据」，可从误删遗留的子任务/历史恢复任务。
 
 ---
 
@@ -284,8 +294,8 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 4. 允许"未知来源"安装权限
 
 > **两个版本说明**
-> - **开源版（opensource）**：内置思源黑体/得意黑/霞鹜文楷/IBM Plex（SIL OFL 1.1），设置中可切换，不使用版权字体；当前版本 **v4.8.0**。
-> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.8.0.1**。
+> - **开源版（opensource）**：内置思源黑体/得意黑/霞鹜文楷/IBM Plex（SIL OFL 1.1），设置中可切换，不使用版权字体；当前版本 **v4.9.0**。
+> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.9.0.1**。
 >
 > 两者功能完全一致，仅字体切换能力不同。
 

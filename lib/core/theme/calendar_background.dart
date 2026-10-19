@@ -17,7 +17,7 @@ import 'package:flutter/material.dart';
 class CalendarBackground {
   const CalendarBackground._();
 
-  static const String assetPath = 'assets/images/calendar_bg.png';
+  static const String assetPath = 'assets/images/calendar_bg.jpg';
   static const double recommendedWidth = 1240;
   static const double recommendedHeight = 1600;
 

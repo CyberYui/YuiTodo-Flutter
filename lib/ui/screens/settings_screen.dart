@@ -199,6 +199,12 @@ class SettingsScreen extends ConsumerWidget {
               MaterialPageRoute(builder: (_) => const RecycleBinScreen()),
             ),
           ),
+          ListTile(
+            title: const Text('修复孤立数据'),
+            subtitle: const Text('恢复被误删任务的历史与子任务'),
+            trailing: const Icon(Icons.healing_outlined),
+            onTap: () => _repairOrphanedData(context, ref),
+          ),
           
           const Divider(),
 
@@ -609,6 +615,79 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _repairOrphanedData(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    try {
+      final repo = ref.read(taskRepositoryProvider);
+      final ids = await repo.findOrphanedTaskIds();
+      if (!context.mounted) return;
+      if (ids.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('没有发现孤立数据')),
+        );
+        return;
+      }
+
+      final id = ids.first;
+      final steps = await repo.getStepsForTask(id);
+      final tags = await repo.getTagsForTask(id);
+      final stepTitles = steps.map((step) => step.title).join('、');
+      final tagNames = tags.map((tag) => tag.name).join('、');
+      final dailyCheckin =
+          steps.any((step) => step.title.contains('小米签到')) &&
+              steps.any((step) => step.title.contains('国家电网'));
+
+      if (!context.mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('发现孤立任务数据'),
+          content: Text(
+            '任务 #$id\n'
+            '${stepTitles.isNotEmpty ? '子任务：$stepTitles\n' : ''}'
+            '${tagNames.isNotEmpty ? '标签：$tagNames\n' : ''}'
+            '\n可恢复为一个任务，并保留子任务与历史。'
+            '标题/备注/图标可能需要重新调整。'
+            '${ids.length > 1 ? '\n\n共有 ${ids.length} 组孤立数据，本次恢复第一组。' : ''}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('恢复'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+
+      await repo.restoreOrphanedTask(
+        taskId: id,
+        title: dailyCheckin ? '每日签到任务' : '恢复的任务 #$id',
+        note: dailyCheckin ? '每日签到表' : '从孤立数据恢复',
+        color: dailyCheckin ? '#EF4444' : '#3B82F6',
+      );
+      await ref.read(taskListProvider.notifier).loadTasks();
+      await ref.read(occurrenceListProvider.notifier).load();
+      await ref.read(recycleBinProvider.notifier).loadDeletedTasks();
+      ref.invalidate(habitProvider);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已恢复任务 #$id，请在首页确认')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('恢复失败：$e')),
+      );
+    }
+  }
+
   Future<void> _rescheduleNotifications(WidgetRef ref) async {
     final repo = ref.read(taskRepositoryProvider);
     final tasks = await repo.getAllTasks();
@@ -660,7 +739,7 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
       child: Text(
         title,
         style: TextStyle(
