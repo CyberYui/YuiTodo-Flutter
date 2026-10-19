@@ -69,55 +69,6 @@ class AppFontPairs {
       description: '等宽西文/数字，中文自动回退（SIL OFL 1.1）',
     ),
 
-    // ---- Proprietary fonts (full build only) ----
-    FontPair(
-      name: '华康少女',
-      chineseFontFamily: '华康少女文字W5',
-      englishFontFamily: '华康少女文字W5',
-      description: '可爱少女风，圆润甜美',
-    ),
-    FontPair(
-      name: '恋星圆体',
-      chineseFontFamily: '恋星圆体',
-      englishFontFamily: '恋星圆体',
-      description: '圆润可爱，星星般闪耀',
-    ),
-    FontPair(
-      name: 'LOGO圆体',
-      chineseFontFamily: 'LOGO圆体',
-      englishFontFamily: 'LOGO圆体',
-      description: '标题圆体，设计感强',
-    ),
-    FontPair(
-      name: '萌神手写',
-      chineseFontFamily: '萌神手写体',
-      englishFontFamily: '萌神手写体',
-      description: '手写涂鸦，萌趣十足',
-    ),
-    FontPair(
-      name: 'AI造字福楷',
-      chineseFontFamily: '字体家AI造字福楷',
-      englishFontFamily: '字体家AI造字福楷',
-      description: 'AI生成楷书，传统与现代融合',
-    ),
-    FontPair(
-      name: 'MapleMono',
-      chineseFontFamily: 'MapleMono',
-      englishFontFamily: 'MapleMono',
-      description: '等宽代码字体，适合技术阅读',
-    ),
-    FontPair(
-      name: 'FiraCode',
-      chineseFontFamily: 'FiraCodeNerdFontMono',
-      englishFontFamily: 'FiraCodeNerdFontMono',
-      description: 'Nerd Font，支持编程图标',
-    ),
-    FontPair(
-      name: 'ArkPixel',
-      chineseFontFamily: 'ArkPixel',
-      englishFontFamily: 'ArkPixel',
-      description: '像素字体，复古游戏风',
-    ),
   ];
 
   /// Get a font pair by index, falling back to the system default.
