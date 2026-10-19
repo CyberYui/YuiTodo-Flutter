@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -49,7 +51,10 @@ class NotificationService {
       iOS: iosSettings,
     );
 
-    await _plugin.initialize(settings);
+    await _plugin.initialize(
+      settings,
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
+    );
 
     // Create notification channel for Android
     if (Platform.isAndroid) {
@@ -142,6 +147,14 @@ class NotificationService {
         contentTitle: title,
         summaryText: 'YuiTodo',
       ),
+      actions: const <AndroidNotificationAction>[
+        AndroidNotificationAction(
+          'snooze',
+          '稍后 10 分钟',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+      ],
     );
 
     const iosDetails = DarwinNotificationDetails();
@@ -150,6 +163,13 @@ class NotificationService {
       android: androidDetails,
       iOS: iosDetails,
     );
+
+    final payload = jsonEncode({
+      'id': id,
+      'title': title,
+      'body': body,
+      'big': bigText ?? body,
+    });
 
     // Convert DateTime to TZDateTime using local timezone
     final location = _location ?? tz.getLocation('Asia/Shanghai');
@@ -181,6 +201,7 @@ class NotificationService {
         androidScheduleMode: scheduleMode,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
+        payload: payload,
       );
       debugPrint('Notification scheduled successfully');
     } catch (e) {
@@ -306,4 +327,90 @@ class NotificationService {
       ),
     );
   }
+}
+
+/// Runs in a background isolate when the user taps the "稍后 10 分钟" action.
+/// It schedules the same notification 10 minutes later without opening the app.
+@pragma('vm:entry-point')
+Future<void> notificationTapBackground(NotificationResponse response) async {
+  if (response.actionId != 'snooze' || response.payload == null) return;
+
+  final Map<String, dynamic> data;
+  try {
+    data = jsonDecode(response.payload!) as Map<String, dynamic>;
+  } catch (_) {
+    return;
+  }
+
+  final id = (data['id'] as num?)?.toInt() ??
+      DateTime.now().millisecondsSinceEpoch.remainder(100000);
+  final title = data['title'] as String? ?? '任务提醒';
+  final body = data['body'] as String? ?? '任务提醒';
+  final big = data['big'] as String? ?? body;
+
+  WidgetsFlutterBinding.ensureInitialized();
+  ui.DartPluginRegistrant.ensureInitialized();
+  tz_data.initializeTimeZones();
+  final location = tz.getLocation('Asia/Shanghai');
+
+  final plugin = FlutterLocalNotificationsPlugin();
+  const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+  await plugin.initialize(const InitializationSettings(android: android));
+
+  final when = tz.TZDateTime.now(location).add(const Duration(minutes: 10));
+  final details = AndroidNotificationDetails(
+    'task_reminders',
+    'Task Reminders',
+    channelDescription: 'Notifications for task reminders',
+    importance: Importance.max,
+    priority: Priority.max,
+    enableVibration: true,
+    playSound: true,
+    autoCancel: true,
+    category: AndroidNotificationCategory.reminder,
+    visibility: NotificationVisibility.public,
+    ticker: title,
+    styleInformation: BigTextStyleInformation(
+      big,
+      contentTitle: title,
+      summaryText: 'YuiTodo',
+    ),
+    actions: const <AndroidNotificationAction>[
+      AndroidNotificationAction(
+        'snooze',
+        '稍后 10 分钟',
+        showsUserInterface: false,
+        cancelNotification: true,
+      ),
+    ],
+  );
+  final notificationDetails = NotificationDetails(android: details);
+
+  try {
+    await plugin.zonedSchedule(
+      id,
+      title,
+      body,
+      when,
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: response.payload,
+    );
+  } catch (e) {
+    debugPrint('Snooze exact schedule failed ($e); retrying inexact');
+    await plugin.zonedSchedule(
+      id,
+      title,
+      body,
+      when,
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: response.payload,
+    );
+  }
+  debugPrint('Snoozed notification $id to $when');
 }

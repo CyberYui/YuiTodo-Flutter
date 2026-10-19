@@ -281,6 +281,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         final rulesMap =
             await ref.read(taskRepositoryProvider).getRecurrenceRuleMap();
         _scheduleNotification(taskId, task, rulesMap[taskId]);
+      } else {
+        await NotificationService.instance.cancelTaskReminders(taskId);
       }
     } catch (e) {
       if (mounted) {

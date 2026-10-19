@@ -16,6 +16,7 @@ import '../../providers/section_provider.dart';
 import '../../providers/habit_provider.dart';
 import '../../providers/recycle_bin_provider.dart';
 import '../../repositories/task_repository.dart';
+import '../../services/notification_service.dart';
 import '../screens/task_editor_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/statistics_screen.dart';
@@ -206,6 +207,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     HapticFeedback.mediumImpact();
     final deletedAt = DateTime.now().millisecondsSinceEpoch;
     await ref.read(taskListProvider.notifier).softDeleteTask(task.id!);
+    await NotificationService.instance.cancelTaskReminders(task.id!);
     ref.read(recycleBinProvider.notifier).addDeleted(
       task.copyWith(deletedAt: deletedAt),
     );
@@ -216,7 +218,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       await ref.read(taskListProvider.notifier).restoreTask(task.id!);
       await ref.read(recycleBinProvider.notifier).restore(task);
       await ref.read(occurrenceListProvider.notifier).load();
+      await _rescheduleNotifications();
     });
+  }
+
+  Future<void> _rescheduleNotifications() async {
+    final repo = ref.read(taskRepositoryProvider);
+    final tasks = await repo.getAllTasks();
+    final rules = await repo.getRecurrenceRuleMap();
+    await NotificationService.instance.rescheduleAll(tasks, rules);
   }
 
   Future<void> _completeOccurrenceWithUndo(TaskOccurrence occ) async {
@@ -226,6 +236,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (occ.task.isHabit) {
       ref.invalidate(habitProvider);
     }
+    // A completed one-off task should not keep its reminder.
+    if (!occ.isRecurring) {
+      if (!wasDone) {
+        await NotificationService.instance.cancelReminder(occ.task.id!);
+      } else {
+        await _rescheduleNotifications();
+      }
+    }
     if (!mounted) return;
     context.showTopBanner(
       wasDone ? '已取消完成' : '已完成',
@@ -234,6 +252,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         await ref.read(occurrenceListProvider.notifier).setDone(occ, wasDone);
         if (occ.task.isHabit) {
           ref.invalidate(habitProvider);
+        }
+        if (!occ.isRecurring) {
+          await _rescheduleNotifications();
         }
       },
     );
