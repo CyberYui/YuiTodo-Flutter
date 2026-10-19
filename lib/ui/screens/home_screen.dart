@@ -40,6 +40,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   /// Tasks fading out before the actual soft delete is applied.
   final Set<int> _removingTaskIds = <int>{};
+
+  /// Optimistic sort orders applied immediately on drop, before the DB write
+  /// and reload finish. Keeps the ReorderableListView from snapping back.
+  final Map<int, int> _optimisticSortOrders = <int, int>{};
   final _searchController = TextEditingController();
   late AnimationController _filterAnimController;
   late Animation<double> _filterAnimation;
@@ -170,9 +174,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Future<void> _openTaskEditor(Task? task) async {
+    Task? base = task;
+    if (task?.id != null) {
+      try {
+        base = await ref
+                .read(taskRepositoryProvider)
+                .getTaskById(task!.id!) ??
+            task;
+      } catch (_) {
+        // Fall back to the passed task if the lookup fails.
+      }
+    }
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => TaskEditorScreen(task: task)),
+      MaterialPageRoute(builder: (_) => TaskEditorScreen(task: base)),
     );
     if (!mounted) return;
     await ref.read(occurrenceListProvider.notifier).load();
@@ -256,11 +271,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final moved = reordered.removeAt(oldIndex);
     reordered.insert(newIndex, moved);
 
+    // Apply the new order immediately so the drop animation lands on the
+    // final layout instead of snapping back while the DB write runs.
+    setState(() {
+      for (var i = 0; i < reordered.length; i++) {
+        _optimisticSortOrders[reordered[i].task.id!] = i * 100;
+      }
+    });
+
     final repo = ref.read(taskRepositoryProvider);
     for (var i = 0; i < reordered.length; i++) {
       await repo.updateTaskSortOrder(reordered[i].task.id!, i * 100);
     }
     await ref.read(occurrenceListProvider.notifier).load();
+    if (mounted) {
+      setState(() => _optimisticSortOrders.clear());
+    }
   }
 
   void _showBatchOperationsSheet(List<int> selectedIds) {
@@ -534,7 +560,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       );
     }
 
-    final filtered = sortForManualOrder(_filterOccurrences(occurrences));
+    final filtered = sortForManualOrder(
+      _filterOccurrences(occurrences),
+      sortOrderOverrides: _optimisticSortOrders,
+    );
     if (filtered.isEmpty) return _emptyState(theme);
 
     return ReorderableListView.builder(
@@ -544,9 +573,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           _onReorder(oldIndex, newIndex, filtered),
       itemBuilder: (context, index) {
         final occ = filtered[index];
-        return AnimatedEntry(
+        // No entry animation in the reorderable list: it replays after a
+        // drop and causes a visible flicker. The list's own drop animation
+        // is enough.
+        return KeyedSubtree(
           key: ValueKey('f-${occ.task.id}-${occ.dayKey}'),
-          index: index,
           child: _buildSlidableItem(
             context,
             theme,

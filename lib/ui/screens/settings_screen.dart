@@ -8,6 +8,7 @@ import '../../core/theme/font_state.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
 import '../screens/habit_screen.dart';
+import '../widgets/sun_moon_icon.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -30,6 +31,11 @@ class SettingsScreen extends ConsumerWidget {
           
           // Theme mode
           ListTile(
+            leading: SunMoonIcon(
+              isDark: themeState.isDarkMode,
+              size: 24,
+              color: theme.colorScheme.primary,
+            ),
             title: const Text('主题模式'),
             subtitle: Text(_getThemeModeLabel(themeState.mode)),
             trailing: const Icon(Icons.chevron_right),

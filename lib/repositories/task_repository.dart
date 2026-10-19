@@ -138,11 +138,22 @@ class TaskRepository {
     await db.delete('task', where: 'id = ?', whereArgs: [taskId]);
   }
 
+  /// Load one base task (not an occurrence) with its steps and tags.
+  /// Used by the editor so per-occurrence step statuses are never written back
+  /// to the template.
   Future<Task?> getTaskById(int taskId) async {
     final db = await _db.database;
-    final maps = await db.query('task', where: 'id = ?', whereArgs: [taskId], limit: 1);
+    final maps = await db.query(
+      'task',
+      where: 'id = ? AND (deleted_at IS NULL OR deleted_at = 0)',
+      whereArgs: [taskId],
+      limit: 1,
+    );
     if (maps.isEmpty) return null;
-    return Task.fromMap(maps.first);
+    final task = Task.fromMap(maps.first);
+    final steps = await getStepsForTask(taskId);
+    final tags = await getTagsForTask(taskId);
+    return task.copyWith(steps: steps, tags: tags);
   }
 
   // Steps

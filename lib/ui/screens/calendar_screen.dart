@@ -7,6 +7,7 @@ import '../../core/theme/calendar_background.dart';
 import '../../models/task.dart';
 import '../../models/task_occurrence.dart';
 import '../../providers/calendar_provider.dart';
+import '../../providers/task_provider.dart';
 import '../../providers/occurrence_provider.dart';
 import '../../repositories/task_repository.dart';
 import '../screens/task_editor_screen.dart';
@@ -289,9 +290,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Future<void> _openEditor(Task? task) async {
+    Task? base = task;
+    if (task?.id != null) {
+      try {
+        base = await ref
+                .read(taskRepositoryProvider)
+                .getTaskById(task!.id!) ??
+            task;
+      } catch (_) {
+        // Fall back to the passed task if the lookup fails.
+      }
+    }
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => TaskEditorScreen(task: task)),
+      MaterialPageRoute(builder: (_) => TaskEditorScreen(task: base)),
     );
     if (!mounted) return;
     await _reload();

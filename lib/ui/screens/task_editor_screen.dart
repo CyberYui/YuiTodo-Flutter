@@ -209,22 +209,34 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         taskId = task.id!;
         final repo = ref.read(taskRepositoryProvider);
 
-        // Delete existing steps and re-add with correct order
+        // Keep existing step ids so per-occurrence history survives edits.
+        // Removed steps are deleted; existing steps are updated in place.
         final existingSteps = await repo.getStepsForTask(taskId);
+        final incomingIds =
+            _steps.where((s) => s.id != null).map((s) => s.id!).toSet();
         for (final step in existingSteps) {
-          if (step.id != null) {
+          if (step.id != null && !incomingIds.contains(step.id)) {
             await repo.deleteStep(step.id!);
           }
         }
         for (int i = 0; i < _steps.length; i++) {
-          await repo.createStep(
-            TaskStep(
+          final step = _steps[i];
+          if (step.id != null) {
+            await repo.updateStep(TaskStep(
+              id: step.id,
               taskId: taskId,
-              title: _steps[i].title,
+              title: step.title,
               sortOrder: i,
-              status: _steps[i].status,
-            ),
-          );
+              status: step.status,
+            ));
+          } else {
+            await repo.createStep(TaskStep(
+              taskId: taskId,
+              title: step.title,
+              sortOrder: i,
+              status: step.status,
+            ));
+          }
         }
 
         // Update tags
@@ -720,6 +732,20 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
             title: '子任务',
             child: Column(
               children: [
+                if (_recurrenceType != RecurrenceType.none)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '子任务完成状态按天记录，请在任务列表勾选',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                    ),
+                  ),
                 ReorderableListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -756,7 +782,9 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                           ),
                           const SizedBox(width: 8),
                           GestureDetector(
-                            onTap: () => _toggleStepStatus(index),
+                            onTap: _recurrenceType == RecurrenceType.none
+                                ? () => _toggleStepStatus(index)
+                                : null,
                             child: Icon(
                               step.status == 'completed'
                                   ? Icons.check_circle

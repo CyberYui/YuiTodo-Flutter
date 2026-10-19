@@ -163,7 +163,20 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
             children: [
               if (!runtime.isResting)
                 OutlinedButton.icon(
-                  icon: Icon(runtime.isPaused ? Icons.play_arrow : Icons.pause),
+                  icon: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(
+                      begin: runtime.isPaused ? 0 : 1,
+                      end: runtime.isPaused ? 0 : 1,
+                    ),
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, _) => AnimatedIcon(
+                      icon: AnimatedIcons.play_pause,
+                      progress: AlwaysStoppedAnimation<double>(value),
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
                   label: Text(runtime.isPaused ? '继续' : '暂停'),
                   onPressed: runtime.isPaused
                       ? () => ref.read(focusProvider.notifier).resume()

@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 9,
+      version: 10,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -412,6 +412,29 @@ class AppDatabase {
           FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE CASCADE
         )
       ''');
+    }
+
+    if (oldVersion < 10) {
+      // Recurring tasks store step completion per occurrence. Older editor
+      // versions wrote the occurrence statuses back to task_step, which made
+      // every future instance look completed. Preserve today's completion as
+      // today's occurrence, then reset the template statuses to pending.
+      final now = DateTime.now();
+      final todayKey = now.year * 10000 + now.month * 100 + now.day;
+      final nowMs = now.millisecondsSinceEpoch;
+      await db.rawInsert(
+        '''INSERT OR REPLACE INTO task_step_occurrence
+           (step_id, task_id, occurrence_day, status, updated_at)
+           SELECT ts.id, ts.task_id, ?, 'completed', ?
+           FROM task_step ts
+           WHERE ts.status = 'completed'
+             AND ts.task_id IN (SELECT task_id FROM recurrence_rule)''',
+        [todayKey, nowMs],
+      );
+      await db.rawUpdate(
+        '''UPDATE task_step SET status = 'pending'
+           WHERE task_id IN (SELECT task_id FROM recurrence_rule)''',
+      );
     }
 
   }
