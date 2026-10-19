@@ -8,6 +8,7 @@ import '../../core/theme/font_state.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
 import '../screens/habit_screen.dart';
+import '../screens/notification_settings_screen.dart';
 import '../widgets/sun_moon_icon.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -104,6 +105,23 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => _showOpenFontCredits(context),
           ),
           
+          const Divider(),
+
+          // Notifications & background
+          _SectionHeader(title: '提醒与后台'),
+          ListTile(
+            leading: const Icon(Icons.notifications_active_outlined),
+            title: const Text('提醒与后台'),
+            subtitle: const Text('通知权限、精确闹钟、电池优化、自启动'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const NotificationSettingsScreen(),
+              ),
+            ),
+          ),
+
           const Divider(),
 
           // Data section

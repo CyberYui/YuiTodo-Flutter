@@ -322,6 +322,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         if (reminderDate.isAfter(now)) {
           await NotificationService.instance.scheduleReminder(
             id: taskId,
+            taskId: taskId,
             title: task.title,
             body: '任务提醒',
             scheduledTime: reminderDate,

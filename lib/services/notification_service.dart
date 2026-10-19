@@ -4,6 +4,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../core/utils/reminder_scheduler.dart';
 import '../models/recurrence_rule.dart';
@@ -115,6 +118,7 @@ class NotificationService {
 
   Future<void> scheduleReminder({
     required int id,
+    int? taskId,
     required String title,
     required String body,
     required DateTime scheduledTime,
@@ -166,6 +170,7 @@ class NotificationService {
 
     final payload = jsonEncode({
       'id': id,
+      'taskId': taskId,
       'title': title,
       'body': body,
       'big': bigText ?? body,
@@ -236,6 +241,7 @@ class NotificationService {
     for (var i = 0; i < capped.length; i++) {
       await scheduleReminder(
         id: base + i + 1,
+        taskId: taskId,
         title: title,
         body: body,
         scheduledTime: capped[i],
@@ -264,6 +270,7 @@ class NotificationService {
         if (reminderDate.isAfter(now)) {
           await scheduleReminder(
             id: id,
+            taskId: id,
             title: task.title,
             body: '任务提醒',
             scheduledTime: reminderDate,
@@ -411,6 +418,26 @@ Future<void> notificationTapBackground(NotificationResponse response) async {
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: response.payload,
     );
+  }
+  final taskId = (data['taskId'] as num?)?.toInt();
+  if (taskId != null) {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final db = await openDatabase(p.join(dir.path, 'yuitodo.db'));
+      await db.update(
+        'task',
+        {
+          'reminder_time': when.millisecondsSinceEpoch,
+          'updated_at': DateTime.now().millisecondsSinceEpoch,
+        },
+        where: 'id = ?',
+        whereArgs: [taskId],
+      );
+      await db.close();
+      debugPrint('Snooze updated task $taskId reminder_time');
+    } catch (e) {
+      debugPrint('Snooze DB update failed: $e');
+    }
   }
   debugPrint('Snoozed notification $id to $when');
 }
