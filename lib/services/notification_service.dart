@@ -423,7 +423,12 @@ Future<void> notificationTapBackground(NotificationResponse response) async {
   if (taskId != null) {
     try {
       final dir = await getApplicationDocumentsDirectory();
-      final db = await openDatabase(p.join(dir.path, 'yuitodo.db'));
+      // Use a separate connection: closing the app's shared sqflite instance
+      // here would close the database for the running UI/isolate.
+      final db = await openDatabase(
+        p.join(dir.path, 'yuitodo.db'),
+        singleInstance: false,
+      );
       await db.update(
         'task',
         {
