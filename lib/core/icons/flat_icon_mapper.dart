@@ -1,4 +1,6 @@
 /// Icon mapping for flat icons to Material Icons
+
+library;
 import 'package:flutter/material.dart';
 
 class FlatIconMapper {

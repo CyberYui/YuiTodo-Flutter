@@ -11,7 +11,6 @@ import 'package:sqflite/sqflite.dart';
 import '../core/utils/reminder_scheduler.dart';
 import '../models/recurrence_rule.dart';
 import '../models/task.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 

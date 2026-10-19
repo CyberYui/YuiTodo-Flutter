@@ -104,7 +104,7 @@ class _SunMoonPainter extends CustomPainter {
     final rayOpacity = (1 - t).clamp(0.0, 1.0);
     if (rayOpacity > 0.01) {
       final rayPaint = Paint()
-        ..color = color.withOpacity(rayOpacity)
+        ..color = color.withValues(alpha: rayOpacity)
         ..strokeWidth = unit * 0.075
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;

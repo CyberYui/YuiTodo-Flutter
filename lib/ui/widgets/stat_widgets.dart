@@ -41,7 +41,7 @@ class StatCard extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 10,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -91,7 +91,7 @@ class CompactStatCard extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontSize: 10,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -128,7 +128,7 @@ class MiniBarChart extends StatelessWidget {
               child: Container(
                 height: height + 4,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.7),
+                  color: color.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -346,9 +346,9 @@ class ContributionHeatmap extends StatelessWidget {
                 if (isEmpty) {
                   cellColor = Colors.transparent;
                 } else if (day.count == 0) {
-                  cellColor = baseColor.withOpacity(0.08);
+                  cellColor = baseColor.withValues(alpha: 0.08);
                 } else {
-                  cellColor = baseColor.withOpacity(0.2 + intensity * 0.8);
+                  cellColor = baseColor.withValues(alpha: 0.2 + intensity * 0.8);
                 }
                 return Padding(
                   padding: EdgeInsets.only(right: col < 6 ? 2 : 0),
@@ -384,7 +384,7 @@ class ContributionHeatmap extends StatelessWidget {
           '$label($unit)',
           style: TextStyle(
             fontSize: 10,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -433,7 +433,7 @@ class TagDistributionChart extends StatelessWidget {
                     Container(
                       height: 20,
                       decoration: BoxDecoration(
-                        color: baseColor.withOpacity(0.1),
+                        color: baseColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -524,8 +524,8 @@ class WeekdayDistributionChart extends StatelessWidget {
                   height: barHeight + 2,
                   decoration: BoxDecoration(
                     color: count > 0
-                        ? baseColor.withOpacity(0.7)
-                        : baseColor.withOpacity(0.15),
+                        ? baseColor.withValues(alpha: 0.7)
+                        : baseColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -590,7 +590,7 @@ class StreakCard extends StatelessWidget {
             Container(
               height: 40,
               width: 1,
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
             ),
             Column(
               children: [

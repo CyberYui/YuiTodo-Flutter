@@ -186,6 +186,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         // Fall back to the passed task if the lookup fails.
       }
     }
+    if (!mounted) return;
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => TaskEditorScreen(task: base)),
@@ -281,7 +282,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     List<TaskOccurrence> filtered,
   ) async {
     if (oldIndex < 0 || oldIndex >= filtered.length) return;
-    if (oldIndex < newIndex) newIndex -= 1;
     if (newIndex < 0 || newIndex >= filtered.length) return;
     if (newIndex == oldIndex) return;
 
@@ -590,7 +590,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return ReorderableListView.builder(
       padding: const EdgeInsets.only(bottom: 80),
       itemCount: filtered.length,
-      onReorder: (oldIndex, newIndex) =>
+      onReorderItem: (oldIndex, newIndex) =>
           _onReorder(oldIndex, newIndex, filtered),
       itemBuilder: (context, index) {
         final occ = filtered[index];

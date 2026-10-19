@@ -50,11 +50,36 @@ class HabitScreen extends ConsumerWidget {
               ),
             );
           }
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-            itemCount: habits.length,
-            itemBuilder: (context, index) =>
-                _card(context, ref, theme, habits[index]),
+          final range = ref.watch(habitRangeProvider);
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Row(
+                  children: [
+                    for (final r in const [7, 30, 90])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text('$r 天'),
+                          selected: range == r,
+                          onSelected: (_) => ref
+                              .read(habitRangeProvider.notifier)
+                              .state = r,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                  itemCount: habits.length,
+                  itemBuilder: (context, index) =>
+                      _card(context, ref, theme, habits[index], range),
+                ),
+              ),
+            ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -72,6 +97,7 @@ class HabitScreen extends ConsumerWidget {
     WidgetRef ref,
     ThemeData theme,
     HabitData habit,
+    int range,
   ) {
     final color = Color(int.parse(habit.task.color.replaceFirst('#', '0xFF')));
     return Card(
@@ -84,7 +110,7 @@ class HabitScreen extends ConsumerWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: color.withOpacity(0.15),
+                  backgroundColor: color.withValues(alpha: 0.15),
                   child: Icon(Icons.check_circle, color: color),
                 ),
                 const SizedBox(width: 12),
@@ -130,7 +156,12 @@ class HabitScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 12),
-            HabitGrid(days: habit.days, color: color),
+            HabitGrid(
+              days: habit.days.length > range
+                  ? habit.days.sublist(habit.days.length - range)
+                  : habit.days,
+              color: color,
+            ),
           ],
         ),
       ),

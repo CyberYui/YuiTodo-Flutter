@@ -76,12 +76,12 @@ class TaskCard extends ConsumerWidget {
           Container(
             decoration: BoxDecoration(
               color: isSelected
-                  ? theme.colorScheme.primary.withOpacity(0.15)
+                  ? theme.colorScheme.primary.withValues(alpha: 0.15)
                   : theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(8),
               border: isSelected
                   ? Border.all(
-                      color: theme.colorScheme.primary.withOpacity(0.4),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.4),
                     )
                   : null,
             ),
@@ -119,7 +119,7 @@ class TaskCard extends ConsumerWidget {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: taskColor.withOpacity(0.15),
+                            color: taskColor.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
                           child: task.icon != null
@@ -229,7 +229,7 @@ class TaskCard extends ConsumerWidget {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: tagColor.withOpacity(0.15),
+                                  color: tagColor.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -298,7 +298,7 @@ class TaskCard extends ConsumerWidget {
         child: Icon(
           Icons.drag_indicator,
           size: 16,
-          color: theme.colorScheme.outline.withOpacity(0.4),
+          color: theme.colorScheme.outline.withValues(alpha: 0.4),
         ),
       ),
     );
@@ -362,7 +362,7 @@ class TaskCard extends ConsumerWidget {
             '还有 $remaining 个...',
             style: TextStyle(
               fontSize: 11,
-              color: subtaskColor.withOpacity(0.6),
+              color: subtaskColor.withValues(alpha: 0.6),
             ),
           ),
         ),

@@ -67,7 +67,7 @@ class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.outline.withOpacity(0.3),
+                color: theme.colorScheme.outline.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -163,7 +163,7 @@ class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
               child: Container(
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                       : null,
                   borderRadius: BorderRadius.circular(12),
                   border: isSelected
@@ -171,7 +171,7 @@ class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
                           color: Theme.of(context).colorScheme.primary,
                           width: 2,
                         )
-                      : Border.all(color: Colors.grey.withOpacity(0.2)),
+                      : Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                 ),
                 child: isAvatar
                     ? Padding(
@@ -179,7 +179,7 @@ class _IconPickerBottomSheetState extends ConsumerState<IconPickerBottomSheet> {
                         child: Image.asset(
                           'assets/icons/$iconName.png',
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(
+                          errorBuilder: (_, _, _) => const Icon(
                             Icons.help_outline,
                             color: Colors.grey,
                           ),

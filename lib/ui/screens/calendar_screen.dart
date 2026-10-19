@@ -7,7 +7,7 @@ import '../../core/theme/calendar_background.dart';
 import '../../models/task.dart';
 import '../../models/task_occurrence.dart';
 import '../../providers/calendar_provider.dart';
-import '../../providers/task_provider.dart';
+import '../../providers/week_start_provider.dart';
 import '../../providers/occurrence_provider.dart';
 import '../../repositories/task_repository.dart';
 import '../screens/task_editor_screen.dart';
@@ -78,7 +78,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  theme.colorScheme.primary.withOpacity(0.16),
+                  theme.colorScheme.primary.withValues(alpha: 0.16),
                   theme.colorScheme.surface,
                 ],
                 stops: const [0, 0.52],
@@ -96,7 +96,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     eventLoader: (day) => byDay[ymdKey(day)] ?? const [],
                     calendarFormat: CalendarFormat.month,
                     availableCalendarFormats: const {CalendarFormat.month: '月'},
-                    startingDayOfWeek: StartingDayOfWeek.monday,
+                    startingDayOfWeek: ref.watch(weekStartProvider) == 1
+                        ? StartingDayOfWeek.sunday
+                        : StartingDayOfWeek.monday,
                     locale: 'zh_CN',
                     headerStyle: HeaderStyle(
                       formatButtonVisible: false,
@@ -138,10 +140,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       outsideTextStyle: TextStyle(
                         fontSize: 14,
                         color: theme.colorScheme.onSurfaceVariant
-                            .withOpacity(0.35),
+                            .withValues(alpha: 0.35),
                       ),
                       todayDecoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.16),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.16),
                         shape: BoxShape.circle,
                       ),
                       todayTextStyle: TextStyle(
@@ -267,28 +269,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     await _reload();
   }
 
-  Future<void> _toggleStep(
-    Task task,
-    TaskStep step,
-    TaskOccurrence occ,
-  ) async {
-    if (step.id == null) return;
-    final newStatus = step.status == 'completed' ? 'pending' : 'completed';
-    if (occ.isRecurring) {
-      await ref.read(taskRepositoryProvider).setStepOccurrenceStatus(
-            step.id!,
-            occ.task.id!,
-            occ.day,
-            newStatus,
-          );
-    } else {
-      await ref
-          .read(taskRepositoryProvider)
-          .updateStepStatus(step.id!, newStatus);
-    }
-    await _reload();
-  }
-
   Future<void> _openEditor(Task? task) async {
     Task? base = task;
     if (task?.id != null) {
@@ -301,6 +281,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         // Fall back to the passed task if the lookup fails.
       }
     }
+    if (!mounted) return;
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => TaskEditorScreen(task: base)),
@@ -430,7 +411,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           Icon(
             Icons.event_available,
             size: 40,
-            color: theme.colorScheme.outline.withOpacity(0.6),
+            color: theme.colorScheme.outline.withValues(alpha: 0.6),
           ),
           const SizedBox(height: 8),
           Text(

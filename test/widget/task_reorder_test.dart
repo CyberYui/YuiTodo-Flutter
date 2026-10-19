@@ -22,7 +22,7 @@ void main() {
           home: Scaffold(
             body: ReorderableListView.builder(
               itemCount: tasks.length,
-              onReorder: (oldIndex, newIndex) => reordered = true,
+              onReorderItem: (oldIndex, newIndex) => reordered = true,
               itemBuilder: (context, index) => TaskCard(
                 key: ValueKey(tasks[index].id),
                 task: tasks[index],

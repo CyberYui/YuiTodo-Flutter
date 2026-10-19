@@ -169,9 +169,7 @@ ThemeData lightThemeForScheme(ThemeScheme scheme) {
     colorScheme: ColorScheme.light(
       primary: scheme.lightPrimary,
       secondary: scheme.lightSecondary,
-      background: scheme.lightBackground,
       surface: scheme.lightSurface,
-      onBackground: const Color(0xFF1A1A1A),
       onSurface: const Color(0xFF1A1A1A),
       onPrimary: Colors.white,
       onSecondary: Colors.white,
@@ -213,9 +211,7 @@ ThemeData darkThemeForScheme(ThemeScheme scheme) {
     colorScheme: ColorScheme.dark(
       primary: scheme.darkPrimary,
       secondary: scheme.darkSecondary,
-      background: scheme.darkBackground,
       surface: scheme.darkSurface,
-      onBackground: Colors.white,
       onSurface: Colors.white,
       onPrimary: Colors.black,
       onSecondary: Colors.black,

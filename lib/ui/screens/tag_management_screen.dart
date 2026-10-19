@@ -119,7 +119,7 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                           const Text('R'),
                           Expanded(
                             child: Slider(
-                              value: currentColor.red.toDouble(),
+                              value: currentColor.r * 255,
                               min: 0,
                               max: 255,
                               activeColor: Colors.red,
@@ -128,14 +128,14 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                                   currentColor = Color.fromARGB(
                                     255,
                                     v.round(),
-                                    currentColor.green,
-                                    currentColor.blue,
+                                    (currentColor.g * 255).round(),
+                                    (currentColor.b * 255).round(),
                                   );
                                 });
                               },
                             ),
                           ),
-                          Text('${currentColor.red}'),
+                          Text('${(currentColor.r * 255).round()}'),
                         ],
                       ),
                       // Green
@@ -144,7 +144,7 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                           const Text('G'),
                           Expanded(
                             child: Slider(
-                              value: currentColor.green.toDouble(),
+                              value: currentColor.g * 255,
                               min: 0,
                               max: 255,
                               activeColor: Colors.green,
@@ -152,15 +152,15 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                                 setDialogState(() {
                                   currentColor = Color.fromARGB(
                                     255,
-                                    currentColor.red,
+                                    (currentColor.r * 255).round(),
                                     v.round(),
-                                    currentColor.blue,
+                                    (currentColor.b * 255).round(),
                                   );
                                 });
                               },
                             ),
                           ),
-                          Text('${currentColor.green}'),
+                          Text('${(currentColor.g * 255).round()}'),
                         ],
                       ),
                       // Blue
@@ -169,7 +169,7 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                           const Text('B'),
                           Expanded(
                             child: Slider(
-                              value: currentColor.blue.toDouble(),
+                              value: currentColor.b * 255,
                               min: 0,
                               max: 255,
                               activeColor: Colors.blue,
@@ -177,15 +177,15 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                                 setDialogState(() {
                                   currentColor = Color.fromARGB(
                                     255,
-                                    currentColor.red,
-                                    currentColor.green,
+                                    (currentColor.r * 255).round(),
+                                    (currentColor.g * 255).round(),
                                     v.round(),
                                   );
                                 });
                               },
                             ),
                           ),
-                          Text('${currentColor.blue}'),
+                          Text('${(currentColor.b * 255).round()}'),
                         ],
                       ),
                       // Preview
@@ -212,7 +212,7 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
             TextButton(
               onPressed: () {
                 final hex =
-                    '#${currentColor.value.toRadixString(16).substring(2).toUpperCase()}';
+                    '#${currentColor.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
                 setState(() => _selectedColor = hex);
                 Navigator.pop(context);
               },
@@ -289,7 +289,7 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                         await ref.read(tagListProvider.notifier).updateTag(
                           tag.copyWith(color: newColor),
                         );
-                        if (mounted) Navigator.pop(context);
+                        if (context.mounted) Navigator.pop(context);
                       },
                       child: const Text('保存'),
                     ),
@@ -321,7 +321,7 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                       const Text('R'),
                       Expanded(
                         child: Slider(
-                          value: currentColor.red.toDouble(),
+                          value: currentColor.r * 255,
                           min: 0,
                           max: 255,
                           activeColor: Colors.red,
@@ -330,14 +330,14 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                               currentColor = Color.fromARGB(
                                 255,
                                 v.round(),
-                                currentColor.green,
-                                currentColor.blue,
+                                (currentColor.g * 255).round(),
+                                (currentColor.b * 255).round(),
                               );
                             });
                           },
                         ),
                       ),
-                      Text('${currentColor.red}'),
+                      Text('${(currentColor.r * 255).round()}'),
                     ],
                   ),
                   Row(
@@ -345,7 +345,7 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                       const Text('G'),
                       Expanded(
                         child: Slider(
-                          value: currentColor.green.toDouble(),
+                          value: currentColor.g * 255,
                           min: 0,
                           max: 255,
                           activeColor: Colors.green,
@@ -353,15 +353,15 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                             setDialogState(() {
                               currentColor = Color.fromARGB(
                                 255,
-                                currentColor.red,
+                                (currentColor.r * 255).round(),
                                 v.round(),
-                                currentColor.blue,
+                                (currentColor.b * 255).round(),
                               );
                             });
                           },
                         ),
                       ),
-                      Text('${currentColor.green}'),
+                      Text('${(currentColor.g * 255).round()}'),
                     ],
                   ),
                   Row(
@@ -369,7 +369,7 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                       const Text('B'),
                       Expanded(
                         child: Slider(
-                          value: currentColor.blue.toDouble(),
+                          value: currentColor.b * 255,
                           min: 0,
                           max: 255,
                           activeColor: Colors.blue,
@@ -377,15 +377,15 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                             setDialogState(() {
                               currentColor = Color.fromARGB(
                                 255,
-                                currentColor.red,
-                                currentColor.green,
+                                (currentColor.r * 255).round(),
+                                (currentColor.g * 255).round(),
                                 v.round(),
                               );
                             });
                           },
                         ),
                       ),
-                      Text('${currentColor.blue}'),
+                      Text('${(currentColor.b * 255).round()}'),
                     ],
                   ),
                   Container(
@@ -408,11 +408,11 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
             ),
             TextButton(
               onPressed: () async {
-                final hex = '#${currentColor.value.toRadixString(16).substring(2).toUpperCase()}';
+                final hex = '#${currentColor.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
                 await ref.read(tagListProvider.notifier).updateTag(
                   tag.copyWith(color: hex),
                 );
-                if (mounted) Navigator.pop(context);
+                if (context.mounted) Navigator.pop(context);
               },
               child: const Text('确定'),
             ),
@@ -455,7 +455,7 @@ class _TagManagementScreenState extends ConsumerState<TagManagementScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: theme.colorScheme.outline.withOpacity(0.3),
+                        color: theme.colorScheme.outline.withValues(alpha: 0.3),
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),

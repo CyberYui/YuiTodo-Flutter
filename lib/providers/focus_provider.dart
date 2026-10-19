@@ -212,7 +212,7 @@ class FocusNotifier extends StateNotifier<FocusRuntime> {
     if (!state.isFinished && !state.isFocusing) return;
     _resting = true;
     _restStartedAt = DateTime.now();
-    if (_pausedAt == null) _pausedAt = DateTime.now();
+    _pausedAt ??= DateTime.now();
     state = _snapshot();
   }
 

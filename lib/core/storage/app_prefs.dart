@@ -64,6 +64,13 @@ class AppPrefs {
     _prefs.setBool('stats_exclude_habits', value);
   }
 
+  // ---- Calendar ----
+  /// 0 = Monday, 1 = Sunday.
+  int get weekStart => _prefs.getInt('week_start') ?? 0;
+  set weekStart(int value) {
+    _prefs.setInt('week_start', value);
+  }
+
   // ---- Font ----
   int get fontIndex => _prefs.getInt(_kFontIndex) ?? 0;
   set fontIndex(int value) {

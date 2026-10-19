@@ -85,7 +85,7 @@ final habitProvider = FutureProvider<List<HabitData>>((ref) async {
     }
 
     final days = <HabitDay>[];
-    for (var i = 29; i >= 0; i--) {
+    for (var i = 89; i >= 0; i--) {
       final d = today.subtract(Duration(days: i));
       days.add(HabitDay(d, stateByDay[ymdKey(d)] ?? 'pending'));
     }
@@ -101,3 +101,6 @@ final habitProvider = FutureProvider<List<HabitData>>((ref) async {
   }
   return result;
 });
+
+/// Selected history window for the habit grid (7 / 30 / 90 days).
+final habitRangeProvider = StateProvider<int>((ref) => 30);

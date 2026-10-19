@@ -3,6 +3,8 @@
 /// All occurrence keys use a local-date integer `yyyyMMdd` (e.g. 20261017) so
 /// they sort naturally and survive timezone/day-boundary changes.
 
+library;
+
 DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
 /// yyyyMMdd integer key for a local date.

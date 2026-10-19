@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/task.dart';
@@ -471,11 +470,11 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Color(int.parse(_color.replaceFirst('#', '0xFF')))
-                        .withOpacity(0.1),
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: Color(int.parse(_color.replaceFirst('#', '0xFF')))
-                          .withOpacity(0.3),
+                          .withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -514,7 +513,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                     final color = isCustom
                         ? (_color.isNotEmpty && _color != '#CUSTOM'
                               ? TaskColors.fromHex(_color)
-                              : Colors.grey.withOpacity(0.3))
+                              : Colors.grey.withValues(alpha: 0.3))
                         : Color(int.parse(c.replaceFirst('#', '0xFF')));
                     return GestureDetector(
                       onTap: () {
@@ -544,11 +543,11 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                                   color: theme.colorScheme.outline,
                                   width: 3,
                                 )
-                              : Border.all(color: Colors.grey.withOpacity(0.2)),
+                              : Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: color.withOpacity(0.4),
+                                    color: color.withValues(alpha: 0.4),
                                     blurRadius: 8,
                                     spreadRadius: 2,
                                   ),
@@ -605,7 +604,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: theme.colorScheme.outline.withOpacity(0.3),
+                    color: theme.colorScheme.outline.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -623,7 +622,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceVariant,
+                          color: theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -672,7 +671,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                     }).toList(),
                   ),
                   loading: () => const CircularProgressIndicator(),
-                  error: (_, __) => const Text('加载标签失败'),
+                  error: (_, _) => const Text('加载标签失败'),
                 );
               },
             ),
@@ -753,9 +752,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _steps.length,
-                  onReorder: (oldIndex, newIndex) {
+                  onReorderItem: (oldIndex, newIndex) {
                     setState(() {
-                      if (newIndex > oldIndex) newIndex--;
                       final item = _steps.removeAt(oldIndex);
                       _steps.insert(newIndex, item);
                       for (int i = 0; i < _steps.length; i++) {
@@ -844,7 +842,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -868,27 +866,6 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  void _showColorPicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                '自定义颜色',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        );
-      },
     );
   }
 
@@ -916,7 +893,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                           const Text('R'),
                           Expanded(
                             child: Slider(
-                              value: currentColor.red.toDouble(),
+                              value: currentColor.r * 255,
                               min: 0,
                               max: 255,
                               activeColor: Colors.red,
@@ -925,8 +902,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                                   currentColor = Color.fromARGB(
                                     255,
                                     v.round(),
-                                    currentColor.green,
-                                    currentColor.blue,
+                                    (currentColor.g * 255).round(),
+                                    (currentColor.b * 255).round(),
                                   );
                                 });
                               },
@@ -934,7 +911,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                           ),
                           SizedBox(
                             width: 30,
-                            child: Text('${currentColor.red}'),
+                            child: Text('${(currentColor.r * 255).round()}'),
                           ),
                         ],
                       ),
@@ -944,7 +921,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                           const Text('G'),
                           Expanded(
                             child: Slider(
-                              value: currentColor.green.toDouble(),
+                              value: currentColor.g * 255,
                               min: 0,
                               max: 255,
                               activeColor: Colors.green,
@@ -952,9 +929,9 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                                 setDialogState(() {
                                   currentColor = Color.fromARGB(
                                     255,
-                                    currentColor.red,
+                                    (currentColor.r * 255).round(),
                                     v.round(),
-                                    currentColor.blue,
+                                    (currentColor.b * 255).round(),
                                   );
                                 });
                               },
@@ -962,7 +939,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                           ),
                           SizedBox(
                             width: 30,
-                            child: Text('${currentColor.green}'),
+                            child: Text('${(currentColor.g * 255).round()}'),
                           ),
                         ],
                       ),
@@ -972,7 +949,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                           const Text('B'),
                           Expanded(
                             child: Slider(
-                              value: currentColor.blue.toDouble(),
+                              value: currentColor.b * 255,
                               min: 0,
                               max: 255,
                               activeColor: Colors.blue,
@@ -980,8 +957,8 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                                 setDialogState(() {
                                   currentColor = Color.fromARGB(
                                     255,
-                                    currentColor.red,
-                                    currentColor.green,
+                                    (currentColor.r * 255).round(),
+                                    (currentColor.g * 255).round(),
                                     v.round(),
                                   );
                                 });
@@ -990,7 +967,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                           ),
                           SizedBox(
                             width: 30,
-                            child: Text('${currentColor.blue}'),
+                            child: Text('${(currentColor.b * 255).round()}'),
                           ),
                         ],
                       ),
@@ -1003,7 +980,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                           color: currentColor,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: Colors.grey.withOpacity(0.3),
+                            color: Colors.grey.withValues(alpha: 0.3),
                           ),
                         ),
                       ),
@@ -1021,7 +998,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
             TextButton(
               onPressed: () {
                 final hex =
-                    '#${currentColor.value.toRadixString(16).substring(2).toUpperCase()}';
+                    '#${currentColor.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
                 setState(() => _color = hex);
                 Navigator.pop(context);
               },

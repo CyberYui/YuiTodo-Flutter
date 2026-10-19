@@ -5,6 +5,7 @@ import '../../core/theme/theme_schemes.dart';
 import '../../core/theme/theme_state.dart';
 import '../../core/theme/font_pairs.dart';
 import '../../core/theme/font_state.dart';
+import '../../providers/week_start_provider.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
 import '../screens/habit_screen.dart';
@@ -19,6 +20,7 @@ class SettingsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final themeState = ref.watch(themeStateProvider);
     final fontIndex = ref.watch(fontIndexProvider);
+    final weekStart = ref.watch(weekStartProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -120,6 +122,17 @@ class SettingsScreen extends ConsumerWidget {
                 builder: (_) => const NotificationSettingsScreen(),
               ),
             ),
+          ),
+
+          const Divider(),
+
+          // Calendar
+          _SectionHeader(title: '日历'),
+          ListTile(
+            title: const Text('每周起始日'),
+            subtitle: Text(weekStart == 1 ? '周日' : '周一'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showWeekStartPicker(context, ref),
           ),
 
           const Divider(),
@@ -354,6 +367,47 @@ class SettingsScreen extends ConsumerWidget {
   /// 字体选择器弹窗
   /// 显示所有可用的字体配对方案
   /// 用户选择后更新 fontIndexProvider，触发整个应用的字体刷新
+  void _showWeekStartPicker(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                '每周起始日',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+            ),
+            ListTile(
+              title: const Text('周一'),
+              trailing: ref.watch(weekStartProvider) == 0
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                ref.read(weekStartProvider.notifier).set(0);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('周日'),
+              trailing: ref.watch(weekStartProvider) == 1
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                ref.read(weekStartProvider.notifier).set(1);
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Switch fonts behind a full-screen loading mask.
   ///
   /// Rebuilding the TextTheme makes every screen reflow at once; the mask

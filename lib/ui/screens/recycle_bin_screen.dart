@@ -37,7 +37,7 @@ class RecycleBinScreen extends ConsumerWidget {
                     ],
                   ),
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
         ],
       ),
@@ -45,7 +45,7 @@ class RecycleBinScreen extends ConsumerWidget {
         data: (tasks) =>
             tasks.isEmpty ? _buildEmptyState(theme) : _buildTaskList(context, ref, tasks),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, __) => Center(child: Text('加载回收站失败: $e')),
+        error: (e, _) => Center(child: Text('加载回收站失败: $e')),
       ),
     );
   }
@@ -90,7 +90,7 @@ class RecycleBinScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: Color(
                   int.parse(
-                    (task.color ?? '#3B82F6').replaceFirst('#', '0xFF'),
+                    task.color.replaceFirst('#', '0xFF'),
                   ),
                 ),
                 borderRadius: BorderRadius.circular(8),

@@ -8,7 +8,6 @@ import '../../services/app_usage_service.dart';
 import '../../core/storage/app_prefs.dart';
 import '../../statistics/statistics_calculator.dart';
 import '../../ui/widgets/stat_widgets.dart';
-import '../../ui/widgets/help_icon.dart';
 
 final statsRangeProvider = StateProvider<int>((ref) => 30);
 
@@ -144,7 +143,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer.withOpacity(0.35),
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -509,7 +508,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                         '已完成',
                         style: TextStyle(
                           fontSize: 12,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -521,7 +520,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                   child: CircularProgressIndicator(
                     value: todayProgress,
                     strokeWidth: 8,
-                    backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                    backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                   ),
                 ),
               ],
@@ -609,7 +608,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                     '${stats.completedTasks}/${stats.totalTasks} 任务已完成',
                     style: TextStyle(
                       fontSize: 12,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -646,7 +645,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                       '${stats.completedSteps}/${stats.totalSteps} 子任务已完成',
                       style: TextStyle(
                         fontSize: 12,
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
