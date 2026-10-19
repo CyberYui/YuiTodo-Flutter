@@ -5,7 +5,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-4.5.1-blue)
+![Version](https://img.shields.io/badge/Version-4.6.0-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
@@ -39,6 +39,17 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 - **操作流畅**：手势优先，减少点击层级
 - **功能完备**：覆盖任务管理的核心场景，无冗余功能
 - **隐私优先**：纯本地存储，零网络请求，无账号、无云同步
+
+---
+
+## 🆕 v4.6.0 新变化
+
+- **消除 N+1 查询**：任务列表的子任务/标签改为两条批量查询，任务越多收益越明显。
+- **增量更新**：完成/取消完成、跳过、子任务勾选只改内存中的对应 occurrence，不再每次重算两年数据。
+- **月历缓存**：按月份缓存日历数据，并用数据指纹（任务/步骤/occurrence 的计数与时间戳）自动失效；翻回看过的月份无需重新查询。
+- **长列表懒加载**：首页分区列表改为扁平化的 `ListView.builder`，只构建可见行。
+- **数据库 v14**：补充 `task_step_occurrence(occurrence_day)` 与 `recurrence_rule(task_id)` 索引。
+- 新增 4 项增量更新单元测试（非重复/重复完成、子任务、跨任务隔离）。
 
 ---
 
@@ -256,8 +267,8 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 4. 允许"未知来源"安装权限
 
 > **两个版本说明**
-> - **开源版（opensource）**：内置思源黑体/得意黑/霞鹜文楷/IBM Plex（SIL OFL 1.1），设置中可切换，不使用版权字体；当前版本 **v4.5.1**。
-> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.5.1.1**。
+> - **开源版（opensource）**：内置思源黑体/得意黑/霞鹜文楷/IBM Plex（SIL OFL 1.1），设置中可切换，不使用版权字体；当前版本 **v4.6.0**。
+> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.6.0.1**。
 >
 > 两者功能完全一致，仅字体切换能力不同。
 

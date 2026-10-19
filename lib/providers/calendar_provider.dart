@@ -16,9 +16,21 @@ class CalendarNotifier
     extends StateNotifier<AsyncValue<List<TaskOccurrence>>> {
   final TaskDateQueryEngine _engine;
 
+  /// Recently queried months, keyed by `year-month`.
+  final Map<String, _CalendarCacheEntry> _cache = {};
+  static const int _maxCachedMonths = 12;
+
   CalendarNotifier(this._engine) : super(const AsyncValue.loading());
 
   Future<void> loadMonth(DateTime month, {bool showLoading = true}) async {
+    final key = '${month.year}-${month.month}';
+    final version = await _engine.repo.getDataVersion();
+    final cached = _cache[key];
+    if (cached != null && cached.version == version) {
+      state = AsyncValue.data(cached.occurrences);
+      return;
+    }
+
     if (showLoading || !state.hasValue) {
       state = const AsyncValue.loading();
     }
@@ -32,9 +44,20 @@ class CalendarNotifier
         end,
         includeAllNonRecurring: false,
       );
+      _cache[key] = _CalendarCacheEntry(version, list);
+      while (_cache.length > _maxCachedMonths) {
+        _cache.remove(_cache.keys.first);
+      }
       state = AsyncValue.data(list);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
+}
+
+class _CalendarCacheEntry {
+  final int version;
+  final List<TaskOccurrence> occurrences;
+
+  const _CalendarCacheEntry(this.version, this.occurrences);
 }

@@ -20,7 +20,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 13,
+      version: 14,
       onCreate: _createTables,
       onUpgrade: _upgradeDatabase,
     );
@@ -136,6 +136,12 @@ class AppDatabase {
     ''');
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_step_occ_task_day ON task_step_occurrence(task_id, occurrence_day)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_step_occ_day ON task_step_occurrence(occurrence_day)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_recurrence_task ON recurrence_rule(task_id)',
     );
 
     await db.execute('''
@@ -464,6 +470,17 @@ class AppDatabase {
       if (!names.contains('reminder_sound')) {
         await db.execute('ALTER TABLE task ADD COLUMN reminder_sound TEXT');
       }
+    }
+
+    if (oldVersion < 14) {
+      // Range queries filter occurrence rows by day; add the missing day
+      // indexes and the per-task recurrence lookup index.
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_step_occ_day ON task_step_occurrence(occurrence_day)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_recurrence_task ON recurrence_rule(task_id)',
+      );
     }
   }
 

@@ -59,16 +59,86 @@ class OccurrenceNotifier
     } else {
       await _engine.uncomplete(occ.task, occ.day);
     }
-    await load();
+    _applyState(occ, done ? 'done' : 'pending');
   }
 
   Future<void> skip(TaskOccurrence occ) async {
     await _engine.skipOccurrence(occ);
-    await load();
+    _applyState(occ, 'skipped');
   }
 
   Future<void> clear(TaskOccurrence occ) async {
     await _engine.clearOccurrence(occ);
-    await load();
+    _applyState(occ, 'pending');
   }
+
+  /// Update one step in memory after a step toggle, avoiding a full reload.
+  void updateStep(TaskOccurrence occ, int stepId, String status) {
+    final current = state.valueOrNull;
+    if (current == null) {
+      load();
+      return;
+    }
+    state = AsyncValue.data(
+      applyStepState(current, occ.task.id!, occ.dayKey, stepId, status),
+    );
+  }
+
+  void _applyState(TaskOccurrence occ, String newState) {
+    final current = state.valueOrNull;
+    if (current == null) {
+      load();
+      return;
+    }
+    state = AsyncValue.data(
+      applyOccurrenceState(current, occ.task.id!, occ.dayKey, newState),
+    );
+  }
+}
+
+/// Pure in-memory update used after completing/skipping an occurrence.
+List<TaskOccurrence> applyOccurrenceState(
+  List<TaskOccurrence> occurrences,
+  int taskId,
+  int dayKey,
+  String state,
+) {
+  return [
+    for (final occ in occurrences)
+      if (occ.task.id == taskId && occ.dayKey == dayKey)
+        occ.copyWith(
+          state: state,
+          task: occ.isRecurring
+              ? occ.task
+              : occ.task.copyWith(
+                  status: state == 'done' ? 'done' : 'pending',
+                ),
+        )
+      else
+        occ,
+  ];
+}
+
+/// Pure in-memory update used after toggling a subtask.
+List<TaskOccurrence> applyStepState(
+  List<TaskOccurrence> occurrences,
+  int taskId,
+  int dayKey,
+  int stepId,
+  String status,
+) {
+  return [
+    for (final occ in occurrences)
+      if (occ.task.id == taskId && occ.dayKey == dayKey)
+        occ.copyWith(
+          task: occ.task.copyWith(
+            steps: [
+              for (final step in occ.task.steps)
+                if (step.id == stepId) step.copyWith(status: status) else step,
+            ],
+          ),
+        )
+      else
+        occ,
+  ];
 }

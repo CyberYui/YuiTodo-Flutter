@@ -25,14 +25,77 @@ class TaskRepository {
       orderBy: 'sort_order ASC, start_date ASC',
     );
     final tasks = maps.map((m) => Task.fromMap(m)).toList();
+    if (tasks.isEmpty) return tasks;
 
-    // Load relations for each task
+    // Bulk-load relations in two queries instead of 2 * tasks.length queries.
+    final stepMaps = await db.query(
+      'task_step',
+      orderBy: 'task_id ASC, sort_order ASC',
+    );
+    final stepsByTask = <int, List<TaskStep>>{};
+    for (final map in stepMaps) {
+      final step = TaskStep.fromMap(map);
+      (stepsByTask[step.taskId] ??= <TaskStep>[]).add(step);
+    }
+
+    final tagMaps = await db.rawQuery('''
+      SELECT tt.task_id AS task_id,
+             t.id AS id,
+             t.name AS name,
+             t.color AS color,
+             t.created_at AS created_at
+      FROM task_tag tt
+      JOIN tag t ON t.id = tt.tag_id
+      ORDER BY tt.task_id ASC, t.name ASC
+    ''');
+    final tagsByTask = <int, List<Tag>>{};
+    for (final map in tagMaps) {
+      final taskId = map['task_id'] as int;
+      (tagsByTask[taskId] ??= <Tag>[]).add(Tag.fromMap(map));
+    }
+
     for (var i = 0; i < tasks.length; i++) {
-      final steps = await getStepsForTask(tasks[i].id!);
-      final tags = await getTagsForTask(tasks[i].id!);
-      tasks[i] = tasks[i].copyWith(steps: steps, tags: tags);
+      final id = tasks[i].id!;
+      tasks[i] = tasks[i].copyWith(
+        steps: stepsByTask[id] ?? const <TaskStep>[],
+        tags: tagsByTask[id] ?? const <Tag>[],
+      );
     }
     return tasks;
+  }
+
+  /// Cheap fingerprint of everything the occurrence engine reads. The calendar
+  /// uses it to decide whether a cached month is still valid.
+  Future<int> getDataVersion() async {
+    final db = await _db.database;
+    final rows = await db.rawQuery('''
+      SELECT
+        (SELECT COUNT(*) FROM task) AS tc,
+        (SELECT COALESCE(MAX(updated_at), 0) FROM task) AS tm,
+        (SELECT COUNT(*) FROM task_step) AS sc,
+        (SELECT COALESCE(MAX(id), 0) FROM task_step) AS sm,
+        (SELECT COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0)
+           FROM task_step) AS sp,
+        (SELECT COUNT(*) FROM task_occurrence) AS oc,
+        (SELECT COALESCE(MAX(created_at), 0) FROM task_occurrence) AS om,
+        (SELECT COUNT(*) FROM task_step_occurrence) AS soc,
+        (SELECT COALESCE(MAX(updated_at), 0) FROM task_step_occurrence) AS som,
+        (SELECT COUNT(*) FROM recurrence_rule) AS rc
+    ''');
+    if (rows.isEmpty) return 0;
+    final row = rows.first;
+    return Object.hash(
+      row['tc'],
+      row['tm'],
+      row['sc'],
+      row['sm'],
+      row['sp'],
+      row['oc'],
+      row['om'],
+      row['soc'],
+      row['som'],
+      row['rc'],
+    );
   }
 
   Future<List<Task>> getDeletedTasks() async {

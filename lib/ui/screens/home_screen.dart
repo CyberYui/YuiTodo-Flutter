@@ -555,11 +555,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             occ.day,
             newStatus,
           );
-      await ref.read(occurrenceListProvider.notifier).load();
+      ref
+          .read(occurrenceListProvider.notifier)
+          .updateStep(occ, step.id!, newStatus);
     } else {
       await ref.read(taskRepositoryProvider).updateStepStatus(step.id!, newStatus);
       await ref.read(taskListProvider.notifier).loadTasks();
-      await ref.read(occurrenceListProvider.notifier).load();
+      ref
+          .read(occurrenceListProvider.notifier)
+          .updateStep(occ, step.id!, newStatus);
     }
   }
 
@@ -627,53 +631,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final collapsedMap = ref.watch(sectionCollapseProvider);
     final base = _applyCommonFilters(occurrences);
 
-    final children = <Widget>[];
+    final entries = <_SectionListEntry>[];
     for (final section in order) {
       final items =
           sortForManualOrder(_itemsForSection(section, base, today));
       final collapsed = collapsedMap[section] ?? false;
-      children.add(_sectionHeader(theme, section, items.length, collapsed));
-
-      final itemWidgets = <Widget>[];
-      for (var i = 0; i < items.length; i++) {
-        final occ = items[i];
-        itemWidgets.add(
-          AnimatedEntry(
-            key: ValueKey('occ-${occ.task.id}-${occ.dayKey}'),
-            index: i,
-            child: _buildSlidableItem(
-              context,
-              theme,
-              occ,
-              i,
-              selection,
-              isSelectionMode,
-              sortEnabled: false,
-            ),
-          ),
-        );
+      entries.add(_SectionListEntry.header(section, items.length, collapsed));
+      if (!collapsed) {
+        for (var i = 0; i < items.length; i++) {
+          entries.add(_SectionListEntry.item(items[i], i));
+        }
       }
-
-      // Animate the section body height so collapse/expand feels physical.
-      children.add(
-        AnimatedSize(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeInOutCubic,
-          alignment: Alignment.topCenter,
-          child: collapsed
-              ? const SizedBox(width: double.infinity)
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: itemWidgets,
-                ),
-        ),
-      );
     }
 
-    if (children.isEmpty) return _emptyState(theme);
-    return ListView(
+    if (entries.isEmpty) return _emptyState(theme);
+    // Flattened lazy list: only the visible rows are built, so long lists
+    // stay cheap even with a two-year occurrence window.
+    return ListView.builder(
       padding: const EdgeInsets.only(bottom: 80),
-      children: children,
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        final entry = entries[index];
+        if (entry.isHeader) {
+          return _sectionHeader(
+            theme,
+            entry.section!,
+            entry.count,
+            entry.collapsed,
+          );
+        }
+        final occ = entry.occurrence!;
+        return AnimatedEntry(
+          key: ValueKey('occ-${occ.task.id}-${occ.dayKey}'),
+          index: entry.itemIndex,
+          child: _buildSlidableItem(
+            context,
+            theme,
+            occ,
+            entry.itemIndex,
+            selection,
+            isSelectionMode,
+            sortEnabled: false,
+          ),
+        );
+      },
     );
   }
 
@@ -1083,4 +1084,27 @@ class BatchOperationsSheet extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// One row in the flattened, lazily built sectioned home list.
+class _SectionListEntry {
+  final HomeSection? section;
+  final int count;
+  final bool collapsed;
+  final TaskOccurrence? occurrence;
+  final int itemIndex;
+
+  const _SectionListEntry.header(
+    this.section,
+    this.count,
+    this.collapsed,
+  )  : occurrence = null,
+        itemIndex = 0;
+
+  const _SectionListEntry.item(this.occurrence, this.itemIndex)
+      : section = null,
+        count = 0,
+        collapsed = false;
+
+  bool get isHeader => section != null;
 }
