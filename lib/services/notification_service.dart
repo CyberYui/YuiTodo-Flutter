@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../core/date/date_utils.dart';
 import '../core/notifications/reminder_sounds.dart';
 import '../core/utils/reminder_scheduler.dart';
 import '../models/recurrence_rule.dart';
@@ -120,6 +121,8 @@ class NotificationService {
     String? subText,
     String? soundKey,
     int slot = 0,
+    int? occurrenceDay,
+    List<int>? siblingIds,
   }) async {
     await initialize();
 
@@ -151,8 +154,15 @@ class NotificationService {
         contentTitle: title,
         summaryText: 'YuiTodo',
       ),
-      actions: const <AndroidNotificationAction>[
-        AndroidNotificationAction(
+      actions: <AndroidNotificationAction>[
+        if (taskId != null)
+          const AndroidNotificationAction(
+            'complete',
+            '完成',
+            showsUserInterface: false,
+            cancelNotification: true,
+          ),
+        const AndroidNotificationAction(
           'snooze',
           '稍后 10 分钟',
           showsUserInterface: false,
@@ -173,6 +183,8 @@ class NotificationService {
       'taskId': taskId,
       'slot': slot,
       'soundKey': soundKey,
+      'occurrenceDay': occurrenceDay,
+      'siblingIds': siblingIds,
       'title': title,
       'body': body,
       'big': bigText ?? body,
@@ -253,12 +265,19 @@ class NotificationService {
     required List<DateTime> primaryTimes,
     required List<List<DateTime>> extraTimes,
     required bool recurring,
+    List<int> extraOffsets = const [],
     String? soundKey,
     Color? color,
     String? bigText,
   }) async {
     await cancelTaskReminders(taskId);
     final base = _taskBaseId(taskId);
+    final extraCount = extraTimes.length;
+
+    List<int> siblingsFor(int index) => <int>[
+          recurring ? base + index + 1 : taskId,
+          for (var r = 0; r < extraCount; r++) base + 100 + r * 10 + index,
+        ];
 
     final primary = primaryTimes.take(_maxOccurrences).toList();
     for (var i = 0; i < primary.length; i++) {
@@ -270,6 +289,8 @@ class NotificationService {
         scheduledTime: primary[i],
         subText: formatNotificationTime(primary[i]),
         soundKey: soundKey,
+        occurrenceDay: ymdKey(primary[i]),
+        siblingIds: siblingsFor(i),
         color: color,
         bigText: bigText,
       );
@@ -278,6 +299,7 @@ class NotificationService {
     final extras = extraTimes.take(_maxExtraReminders).toList();
     for (var r = 0; r < extras.length; r++) {
       final times = extras[r].take(_maxOccurrences).toList();
+      final offset = r < extraOffsets.length ? extraOffsets[r] : 0;
       for (var i = 0; i < times.length; i++) {
         await scheduleReminder(
           id: base + 100 + r * 10 + i,
@@ -287,6 +309,9 @@ class NotificationService {
           scheduledTime: times[i],
           subText: '提前提醒 · ${formatNotificationTime(times[i])}',
           soundKey: soundKey,
+          occurrenceDay:
+              ymdKey(times[i].add(Duration(minutes: offset))),
+          siblingIds: siblingsFor(i),
           color: color,
           bigText: bigText,
           slot: r + 1,
@@ -329,7 +354,9 @@ class NotificationService {
       );
 
       final extraTimes = <List<DateTime>>[];
+      final extraOffsets = <int>[];
       for (final extra in extras) {
+        extraOffsets.add(extra.offsetMinutes!);
         extraTimes.add(
           ReminderScheduler.offsetReminderTimes(
             anchor: anchor,
@@ -351,6 +378,7 @@ class NotificationService {
         body: '任务提醒',
         primaryTimes: primaryTimes,
         extraTimes: extraTimes,
+        extraOffsets: extraOffsets,
         recurring: rule != null,
         soundKey: task.reminderSound,
         color: _colorOf(task),
@@ -391,11 +419,11 @@ class NotificationService {
   }
 }
 
-/// Runs in a background isolate when the user taps the "稍后 10 分钟" action.
-/// It schedules the same notification 10 minutes later without opening the app.
+/// Runs in a background isolate when the user taps a notification action.
+/// It never opens the app.
 @pragma('vm:entry-point')
 Future<void> notificationTapBackground(NotificationResponse response) async {
-  if (response.actionId != 'snooze' || response.payload == null) return;
+  if (response.payload == null) return;
 
   final Map<String, dynamic> data;
   try {
@@ -404,11 +432,94 @@ Future<void> notificationTapBackground(NotificationResponse response) async {
     return;
   }
 
+  switch (response.actionId) {
+    case 'complete':
+      await _handleComplete(data);
+      break;
+    case 'snooze':
+      await _handleSnooze(data, response.payload!);
+      break;
+  }
+}
+
+/// Mark the task (non-recurring) or the matching occurrence (recurring) done.
+Future<void> _handleComplete(Map<String, dynamic> data) async {
+  final taskId = (data['taskId'] as num?)?.toInt();
+  if (taskId == null) return;
+  final occurrenceDay = (data['occurrenceDay'] as num?)?.toInt();
+  final siblingIds = <int>[
+    for (final id in (data['siblingIds'] as List? ?? const []))
+      if (id is num) id.toInt(),
+  ];
+
+  WidgetsFlutterBinding.ensureInitialized();
+  ui.DartPluginRegistrant.ensureInitialized();
+
+  final plugin = FlutterLocalNotificationsPlugin();
+  const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+  await plugin.initialize(const InitializationSettings(android: android));
+  for (final notificationId in siblingIds) {
+    await plugin.cancel(notificationId);
+  }
+
+  try {
+    final dir = await getApplicationDocumentsDirectory();
+    // Use a separate connection: closing the app's shared sqflite instance
+    // here would close the database for the running UI/isolate.
+    final db = await openDatabase(
+      p.join(dir.path, 'yuitodo.db'),
+      singleInstance: false,
+    );
+    final rules = await db.query(
+      'recurrence_rule',
+      columns: ['id'],
+      where: 'task_id = ?',
+      whereArgs: [taskId],
+      limit: 1,
+    );
+    final recurring = rules.isNotEmpty;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (recurring) {
+      if (occurrenceDay != null) {
+        await db.insert(
+          'task_occurrence',
+          {
+            'task_id': taskId,
+            'occurrence_day': occurrenceDay,
+            'state': 'done',
+            'completed_at': now,
+            'created_at': now,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    } else {
+      await db.update(
+        'task',
+        {'status': 'done', 'updated_at': now},
+        where: 'id = ?',
+        whereArgs: [taskId],
+      );
+    }
+    await db.close();
+    debugPrint(
+      'Complete action: task=$taskId recurring=$recurring day=$occurrenceDay',
+    );
+  } catch (e) {
+    debugPrint('Complete action DB update failed: $e');
+  }
+}
+
+Future<void> _handleSnooze(
+  Map<String, dynamic> data,
+  String payload,
+) async {
   final id = (data['id'] as num?)?.toInt() ??
       DateTime.now().millisecondsSinceEpoch.remainder(100000);
   final title = data['title'] as String? ?? '任务提醒';
   final body = data['body'] as String? ?? '任务提醒';
   final big = data['big'] as String? ?? body;
+  final taskId = (data['taskId'] as num?)?.toInt();
   final soundOption = reminderSoundFor(data['soundKey'] as String?);
 
   WidgetsFlutterBinding.ensureInitialized();
@@ -446,8 +557,15 @@ Future<void> notificationTapBackground(NotificationResponse response) async {
       contentTitle: title,
       summaryText: 'YuiTodo',
     ),
-    actions: const <AndroidNotificationAction>[
-      AndroidNotificationAction(
+    actions: <AndroidNotificationAction>[
+      if (taskId != null)
+        const AndroidNotificationAction(
+          'complete',
+          '完成',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+      const AndroidNotificationAction(
         'snooze',
         '稍后 10 分钟',
         showsUserInterface: false,
@@ -467,7 +585,7 @@ Future<void> notificationTapBackground(NotificationResponse response) async {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      payload: response.payload,
+      payload: payload,
     );
   } catch (e) {
     debugPrint('Snooze exact schedule failed ($e); retrying inexact');
@@ -480,11 +598,10 @@ Future<void> notificationTapBackground(NotificationResponse response) async {
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      payload: response.payload,
+      payload: payload,
     );
   }
   final slot = (data['slot'] as num?)?.toInt() ?? 0;
-  final taskId = (data['taskId'] as num?)?.toInt();
   if (taskId != null && slot == 0) {
     try {
       final dir = await getApplicationDocumentsDirectory();

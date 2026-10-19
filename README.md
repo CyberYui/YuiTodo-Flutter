@@ -5,7 +5,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-4.6.0-blue)
+![Version](https://img.shields.io/badge/Version-4.7.0-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
@@ -39,6 +39,15 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 - **操作流畅**：手势优先，减少点击层级
 - **功能完备**：覆盖任务管理的核心场景，无冗余功能
 - **隐私优先**：纯本地存储，零网络请求，无账号、无云同步
+
+---
+
+## 🆕 v4.7.0 新变化
+
+- **通知内「完成」**：通知横幅新增「完成」按钮。非重复任务直接标记完成；重复任务只完成当天 occurrence；同一 occurrence 的其他提醒一并取消。后台写入 SQLite，回到 App 自动刷新。
+- **FAB 快速添加形变**：点击加号旋转成 X，弹出快速添加面板；输入标题回车/发送即可创建；铅笔按钮打开详细编辑并带入标题。
+- **搜索形变**：搜索图标与关闭图标旋转淡入淡出；标题栏变为搜索框，关闭时清空。
+- **前台刷新**：通知动作后台更新后，App 回到前台自动刷新首页与日历。
 
 ---
 
@@ -267,8 +276,8 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 4. 允许"未知来源"安装权限
 
 > **两个版本说明**
-> - **开源版（opensource）**：内置思源黑体/得意黑/霞鹜文楷/IBM Plex（SIL OFL 1.1），设置中可切换，不使用版权字体；当前版本 **v4.6.0**。
-> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.6.0.1**。
+> - **开源版（opensource）**：内置思源黑体/得意黑/霞鹜文楷/IBM Plex（SIL OFL 1.1），设置中可切换，不使用版权字体；当前版本 **v4.7.0**。
+> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.7.0.1**。
 >
 > 两者功能完全一致，仅字体切换能力不同。
 

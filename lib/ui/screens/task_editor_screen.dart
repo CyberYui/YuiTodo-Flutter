@@ -23,8 +23,9 @@ import '../../services/notification_service.dart';
 
 class TaskEditorScreen extends ConsumerStatefulWidget {
   final Task? task;
+  final String? initialTitle;
 
-  const TaskEditorScreen({super.key, this.task});
+  const TaskEditorScreen({super.key, this.task, this.initialTitle});
 
   @override
   ConsumerState<TaskEditorScreen> createState() => _TaskEditorScreenState();
@@ -52,7 +53,9 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.task?.title ?? '');
+    _titleController = TextEditingController(
+      text: widget.task?.title ?? widget.initialTitle ?? '',
+    );
     _noteController = TextEditingController(text: widget.task?.note ?? '');
     _stepController = TextEditingController();
 
@@ -360,9 +363,11 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
       }
 
       final extraTimes = <List<DateTime>>[];
+      final extraOffsets = <int>[];
       for (final extra in extras) {
         final offset = extra.offsetMinutes;
         if (offset == null || reminderDate == null) continue;
+        extraOffsets.add(offset);
         extraTimes.add(
           ReminderScheduler.offsetReminderTimes(
             anchor: anchor,
@@ -387,6 +392,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         body: '任务提醒',
         primaryTimes: primaryTimes,
         extraTimes: extraTimes,
+        extraOffsets: extraOffsets,
         recurring: rule != null,
         soundKey: _reminderSound,
         color: color,

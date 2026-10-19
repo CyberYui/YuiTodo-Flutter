@@ -35,7 +35,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   bool _showSearch = false;
   bool _showFilters = false;
 
@@ -46,12 +46,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   /// and reload finish. Keeps the ReorderableListView from snapping back.
   final Map<int, int> _optimisticSortOrders = <int, int>{};
   final _searchController = TextEditingController();
+  bool _showQuickAdd = false;
+  final _quickAddController = TextEditingController();
+  final _quickAddFocus = FocusNode();
   late AnimationController _filterAnimController;
   late Animation<double> _filterAnimation;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _filterAnimController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -65,9 +69,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
+    _quickAddController.dispose();
+    _quickAddFocus.dispose();
     _filterAnimController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    // The notification actions update SQLite from a background isolate, so
+    // refresh when the app comes back to the foreground.
+    ref.read(occurrenceListProvider.notifier).load();
+    ref.read(taskListProvider.notifier).loadTasks();
+    ref.invalidate(habitProvider);
   }
 
   void _toggleFilters() {
@@ -174,7 +191,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return a.day.isBefore(b.day) ? a : b;
   }
 
-  Future<void> _openTaskEditor(Task? task) async {
+  Future<void> _openTaskEditor(Task? task, {String? initialTitle}) async {
     Task? base = task;
     if (task?.id != null) {
       try {
@@ -189,7 +206,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (!mounted) return;
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => TaskEditorScreen(task: base)),
+      MaterialPageRoute(
+        builder: (_) => TaskEditorScreen(
+          task: base,
+          initialTitle: initialTitle,
+        ),
+      ),
     );
     if (!mounted) return;
     await ref.read(occurrenceListProvider.notifier).load();
@@ -356,8 +378,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
           ] else ...[
             IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () => setState(() => _showSearch = !_showSearch),
+              icon: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) => RotationTransition(
+                  turns: Tween<double>(begin: 0.75, end: 1).animate(animation),
+                  child: FadeTransition(opacity: animation, child: child),
+                ),
+                child: Icon(
+                  _showSearch ? Icons.close : Icons.search,
+                  key: ValueKey<bool>(_showSearch),
+                ),
+              ),
+              tooltip: _showSearch ? '关闭搜索' : '搜索',
+              onPressed: () {
+                setState(() {
+                  _showSearch = !_showSearch;
+                  if (!_showSearch) {
+                    _searchController.clear();
+                  }
+                });
+              },
             ),
             IconButton(
               icon: AnimatedIcon(
@@ -511,22 +553,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
           // Task list with drag-and-drop and pull-to-refresh
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await ref.read(occurrenceListProvider.notifier).load();
-              },
-              child: occurrencesAsync.when(
-                data: (occurrences) => _buildList(
-                  context,
-                  theme,
-                  occurrences,
-                  selection,
-                  isSelectionMode,
-                  smartFilter,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      await ref.read(occurrenceListProvider.notifier).load();
+                    },
+                    child: occurrencesAsync.when(
+                      data: (occurrences) => _buildList(
+                        context,
+                        theme,
+                        occurrences,
+                        selection,
+                        isSelectionMode,
+                        smartFilter,
+                      ),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (e, _) => Center(child: Text('加载失败: $e')),
+                    ),
+                  ),
                 ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('加载失败: $e')),
-              ),
+                if (!isSelectionMode)
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 88,
+                    child: _buildQuickAddPanel(theme),
+                  ),
+              ],
             ),
           ),
         ],
@@ -534,9 +590,110 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       floatingActionButton: isSelectionMode
           ? null
           : FloatingActionButton(
-              onPressed: () => _openTaskEditor(null),
-              child: const Icon(Icons.add),
+              onPressed: _toggleQuickAdd,
+              tooltip: _showQuickAdd ? '关闭快速添加' : '快速添加',
+              child: AnimatedRotation(
+                turns: _showQuickAdd ? 0.125 : 0,
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeInOutCubic,
+                child: const Icon(Icons.add),
+              ),
             ),
+    );
+  }
+
+  void _toggleQuickAdd() {
+    setState(() {
+      _showQuickAdd = !_showQuickAdd;
+      if (_showQuickAdd) {
+        _showSearch = false;
+        _searchController.clear();
+      } else {
+        _quickAddController.clear();
+        _quickAddFocus.unfocus();
+      }
+    });
+    if (_showQuickAdd) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _quickAddFocus.requestFocus();
+      });
+    }
+  }
+
+  Future<void> _submitQuickAdd() async {
+    final title = _quickAddController.text.trim();
+    if (title.isEmpty) return;
+    final now = DateTime.now();
+    final repo = ref.read(taskRepositoryProvider);
+    await repo.createTask(Task(
+      title: title,
+      startDate: now.millisecondsSinceEpoch,
+      startTime: now.millisecondsSinceEpoch,
+      endTime: now.add(const Duration(hours: 1)).millisecondsSinceEpoch,
+      createdAt: now.millisecondsSinceEpoch,
+      updatedAt: now.millisecondsSinceEpoch,
+    ));
+    _quickAddController.clear();
+    _quickAddFocus.unfocus();
+    if (mounted) setState(() => _showQuickAdd = false);
+    await ref.read(taskListProvider.notifier).loadTasks();
+    await ref.read(occurrenceListProvider.notifier).load();
+  }
+
+  Future<void> _openDetailedEditor() async {
+    final text = _quickAddController.text.trim();
+    _quickAddController.clear();
+    _quickAddFocus.unfocus();
+    setState(() => _showQuickAdd = false);
+    await _openTaskEditor(null, initialTitle: text.isEmpty ? null : text);
+  }
+
+  Widget _buildQuickAddPanel(ThemeData theme) {
+    return AnimatedSlide(
+      offset: _showQuickAdd ? Offset.zero : const Offset(0, 0.25),
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      child: AnimatedOpacity(
+        opacity: _showQuickAdd ? 1 : 0,
+        duration: const Duration(milliseconds: 180),
+        child: IgnorePointer(
+          ignoring: !_showQuickAdd,
+          child: Material(
+            elevation: 6,
+            borderRadius: BorderRadius.circular(16),
+            color: theme.colorScheme.surface,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _quickAddController,
+                      focusNode: _quickAddFocus,
+                      textInputAction: TextInputAction.done,
+                      decoration: const InputDecoration(
+                        hintText: '快速添加任务…',
+                        border: InputBorder.none,
+                      ),
+                      onSubmitted: (_) => _submitQuickAdd(),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: '详细编辑',
+                    onPressed: _openDetailedEditor,
+                  ),
+                  IconButton.filled(
+                    icon: const Icon(Icons.arrow_upward),
+                    tooltip: '添加',
+                    onPressed: _submitQuickAdd,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

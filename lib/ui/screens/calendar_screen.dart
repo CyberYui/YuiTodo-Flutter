@@ -21,19 +21,36 @@ class CalendarScreen extends ConsumerStatefulWidget {
   ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+class _CalendarScreenState extends ConsumerState<CalendarScreen>
+    with WidgetsBindingObserver {
   late DateTime _focusedDay;
   late DateTime _selectedDay;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final now = DateTime.now();
     _focusedDay = DateTime(now.year, now.month, 1);
     _selectedDay = DateTime(now.year, now.month, now.day);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(calendarProvider.notifier).loadMonth(_focusedDay);
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    // Notification actions can complete an occurrence in the background.
+    ref
+        .read(calendarProvider.notifier)
+        .loadMonth(_focusedDay, showLoading: false);
   }
 
   @override
