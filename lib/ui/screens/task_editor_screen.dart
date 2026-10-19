@@ -15,6 +15,7 @@ import '../../core/utils/recurrence.dart';
 import '../../core/utils/reminder_scheduler.dart';
 import '../widgets/recurrence_selector.dart';
 import '../widgets/reminder_selector.dart';
+import '../widgets/reminder_sound_picker.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/help_icon.dart';
 import '../../repositories/task_repository.dart';
@@ -158,55 +159,17 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   }
 
   Future<void> _showReminderSoundPicker(BuildContext context) async {
-    final selected = await showModalBottomSheet<String>(
+    await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  '提醒铃声',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-              ),
-              for (final option in reminderSounds)
-                ListTile(
-                  title: Text(option.label),
-                  subtitle:
-                      option.key == null ? const Text('使用系统默认通知音') : null,
-                  trailing: _reminderSound == option.key
-                      ? const Icon(Icons.check)
-                      : null,
-                  onTap: () => Navigator.pop(
-                    context,
-                    option.key ?? '__system__',
-                  ),
-                ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 4, 16, 12),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '铃声仅对本任务生效；修改后需重新保存任务。',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF7B746A)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      builder: (context) => ReminderSoundPicker(
+        selectedKey: _reminderSound,
+        onSelected: (key) => setState(() => _reminderSound = key),
       ),
     );
-    if (!mounted || selected == null) return;
-    setState(() {
-      _reminderSound = selected == '__system__' ? null : selected;
-    });
   }
 
   Future<void> _saveTask() async {
