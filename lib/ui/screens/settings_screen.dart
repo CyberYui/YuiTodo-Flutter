@@ -336,6 +336,28 @@ class SettingsScreen extends ConsumerWidget {
   /// 字体选择器弹窗
   /// 显示所有可用的字体配对方案
   /// 用户选择后更新 fontIndexProvider，触发整个应用的字体刷新
+  /// Switch fonts behind a full-screen loading mask.
+  ///
+  /// Rebuilding the TextTheme makes every screen reflow at once; the mask
+  /// hides that transition and blocks taps until the layout settles.
+  Future<void> _applyFont(
+    BuildContext context,
+    WidgetRef ref,
+    int index,
+  ) async {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final entry = OverlayEntry(builder: (_) => const _FontApplyOverlay());
+    overlay.insert(entry);
+    navigator.pop(); // close the picker sheet
+    // Let the mask paint before the TextTheme rebuild.
+    await Future<void>.delayed(const Duration(milliseconds: 70));
+    ref.read(fontIndexProvider.notifier).setIndex(index);
+    // Keep the mask until the new layout has settled.
+    await Future<void>.delayed(const Duration(milliseconds: 520));
+    entry.remove();
+  }
+
   void _showFontPicker(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
@@ -360,10 +382,7 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                       ),
                       TextButton(
-                        onPressed: () {
-                          ref.read(fontIndexProvider.notifier).setIndex(0);
-                          Navigator.pop(context);
-                        },
+                        onPressed: () => _applyFont(context, ref, 0),
                         child: const Text('恢复默认'),
                       ),
                     ],
@@ -399,13 +418,8 @@ class SettingsScreen extends ConsumerWidget {
                         trailing: currentIndex == index
                             ? const Icon(Icons.check)
                             : null,
-                        // 点击选中字体
-                        onTap: () {
-                          // 更新字体索引 → 触发 main.dart 中的 build 方法重新执行
-                          // → 重新构建带新字体的 TextTheme → 整个应用字体刷新
-                          ref.read(fontIndexProvider.notifier).setIndex(index);
-                          Navigator.pop(context);
-                        },
+                        // 点击选中字体：loading 遮罩掩盖全局重排
+                        onTap: () => _applyFont(context, ref, index),
                       );
                     },
                   ),
@@ -499,6 +513,36 @@ class _SectionHeader extends StatelessWidget {
           fontSize: 14,
           fontWeight: FontWeight.w600,
           color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+    );
+  }
+}
+
+class _FontApplyOverlay extends StatelessWidget {
+  const _FontApplyOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Positioned.fill(
+      child: AbsorbPointer(
+        child: ColoredBox(
+          color: Colors.black.withValues(alpha: 0.45),
+          child: Center(
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(strokeWidth: 3),
+              ),
+            ),
+          ),
         ),
       ),
     );
