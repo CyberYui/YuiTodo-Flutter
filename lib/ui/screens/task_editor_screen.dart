@@ -454,7 +454,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Date section - disabled when recurrence is active
           _buildSection(
@@ -516,7 +516,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // ==================== 颜色选择区块 ====================
           _buildSection(
@@ -651,7 +651,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Icon section
           _buildSection(
@@ -699,7 +699,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Tags section
           _buildSection(
@@ -735,7 +735,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               },
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Recurrence section
           _buildSection(
@@ -766,7 +766,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               onIntervalChanged: (i) => setState(() => _recurrenceInterval = i),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Reminder section
           _buildSection(
@@ -807,7 +807,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Steps section
           _buildSection(
@@ -930,7 +930,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
             child: titleWidget ?? Text(
               title,
               style: TextStyle(
@@ -941,7 +941,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
             child: child,
           ),
         ],

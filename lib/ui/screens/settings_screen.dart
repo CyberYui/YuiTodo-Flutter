@@ -1,15 +1,29 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/theme/theme_schemes.dart';
 import '../../core/theme/theme_state.dart';
 import '../../core/theme/font_pairs.dart';
 import '../../core/theme/font_state.dart';
+import '../../providers/habit_provider.dart';
+import '../../providers/occurrence_provider.dart';
+import '../../providers/recycle_bin_provider.dart';
+import '../../providers/tag_provider.dart';
+import '../../providers/task_provider.dart';
 import '../../providers/week_start_provider.dart';
+import '../../repositories/task_repository.dart';
+import '../../services/backup_service.dart';
+import '../../services/notification_service.dart';
 import '../screens/tag_management_screen.dart';
 import '../screens/recycle_bin_screen.dart';
 import '../screens/habit_screen.dart';
 import '../screens/notification_settings_screen.dart';
+import '../screens/font_licenses_screen.dart';
 import '../widgets/sun_moon_icon.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -101,10 +115,13 @@ class SettingsScreen extends ConsumerWidget {
           // 开源字体许可（两个版本都保留）
           ListTile(
             leading: const Icon(Icons.verified_outlined),
-            title: const Text('开源字体'),
-            subtitle: const Text('思源黑体 / 得意黑 / 霞鹜文楷 / IBM Plex · SIL OFL 1.1'),
+            title: const Text('开源字体许可'),
+            subtitle: const Text('SIL OFL 1.1 · 查看完整文本'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showOpenFontCredits(context),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FontLicensesScreen()),
+            ),
           ),
           
           const Divider(),
@@ -338,32 +355,6 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _showOpenFontCredits(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('开源字体许可'),
-        content: const SingleChildScrollView(
-          child: Text(
-            '思源黑体 Source Han Sans SC · Adobe\n'
-            '得意黑 Smiley Sans · atelier-anchor\n'
-            '霞鹜文楷 LXGW WenKai Lite · LXGW\n'
-            'IBM Plex Sans SC / IBM Plex Mono · IBM\n\n'
-            '许可：SIL Open Font License 1.1\n'
-            '字体文件仅用于界面显示，遵循 OFL 1.1 许可；'
-            '完整许可文本见 assets/fonts/open/ 目录。',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// 字体选择器弹窗
   /// 显示所有可用的字体配对方案
   /// 用户选择后更新 fontIndexProvider，触发整个应用的字体刷新
@@ -523,16 +514,107 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  void _exportData(BuildContext context, WidgetRef ref) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('开发中...')),
-    );
+  Future<void> _exportData(BuildContext context, WidgetRef ref) async {
+    try {
+      final json = await ref.read(backupServiceProvider).export();
+      final stamp = DateFormat('yyyyMMdd-HHmm').format(DateTime.now());
+      final name = 'YuiTodo-backup-$stamp.json';
+      final path = await FilePicker.platform.saveFile(
+        dialogTitle: '导出 YuiTodo 数据',
+        fileName: name,
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+        bytes: Uint8List.fromList(utf8.encode(json)),
+      );
+      if (!context.mounted || path == null) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已导出：$name')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('导出失败：$e')),
+      );
+    }
   }
 
-  void _importData(BuildContext context, WidgetRef ref) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('开发中...')),
-    );
+  Future<void> _importData(BuildContext context, WidgetRef ref) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        dialogTitle: '导入 YuiTodo 数据',
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final bytes = result.files.single.bytes;
+      if (bytes == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('无法读取所选文件')),
+          );
+        }
+        return;
+      }
+
+      final text = utf8.decode(bytes);
+      final service = ref.read(backupServiceProvider);
+      if (!service.isValidBackup(text)) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('不是有效的 YuiTodo 备份文件')),
+          );
+        }
+        return;
+      }
+
+      if (!context.mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('导入数据'),
+          content: const Text(
+            '导入会覆盖当前所有任务、标签、提醒与历史记录。建议先导出备份。\n\n确定继续吗？',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('覆盖导入'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+
+      final count = await service.import(text);
+      await ref.read(taskListProvider.notifier).loadTasks();
+      await ref.read(occurrenceListProvider.notifier).load();
+      await ref.read(tagListProvider.notifier).loadTags();
+      await ref.read(recycleBinProvider.notifier).loadDeletedTasks();
+      ref.invalidate(habitProvider);
+      await _rescheduleNotifications(ref);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已导入 $count 个任务')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('导入失败：$e')),
+      );
+    }
+  }
+
+  Future<void> _rescheduleNotifications(WidgetRef ref) async {
+    final repo = ref.read(taskRepositoryProvider);
+    final tasks = await repo.getAllTasks();
+    final rules = await repo.getRecurrenceRuleMap();
+    final reminders = await repo.getEnabledRemindersByTask();
+    await NotificationService.instance.rescheduleAll(tasks, rules, reminders);
   }
 }
 

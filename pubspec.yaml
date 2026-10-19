@@ -1,7 +1,7 @@
 name: yuitodo
 description: "YuiTodo - A beautiful task management app"
 publish_to: 'none'
-version: 4.7.0+29
+version: 4.8.0+30
 
 environment:
   sdk: ^3.13.2
@@ -27,6 +27,7 @@ dependencies:
   table_calendar: ^3.1.3
   flutter_localizations:
     sdk: flutter
+  file_picker: ^10.0.0
 
 dev_dependencies:
   flutter_test:
@@ -38,6 +39,10 @@ flutter:
   assets:
     - assets/icons/
     - assets/images/
+    - assets/fonts/open/OFL-IBMPlex.txt
+    - assets/fonts/open/OFL-LXGWWenKai.txt
+    - assets/fonts/open/OFL-SourceHanSans.txt
+    - assets/fonts/open/OFL-SmileySans.txt
   fonts:
     - family: SourceHanSansSC
       fonts:

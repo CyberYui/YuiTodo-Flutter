@@ -165,6 +165,7 @@ const Map<AppThemeScheme, ThemeScheme> themeSchemes = {
 ThemeData lightThemeForScheme(ThemeScheme scheme) {
   return ThemeData(
     useMaterial3: true,
+    visualDensity: VisualDensity.compact,
     brightness: Brightness.light,
     colorScheme: ColorScheme.light(
       primary: scheme.lightPrimary,
@@ -207,6 +208,7 @@ ThemeData lightThemeForScheme(ThemeScheme scheme) {
 ThemeData darkThemeForScheme(ThemeScheme scheme) {
   return ThemeData(
     useMaterial3: true,
+    visualDensity: VisualDensity.compact,
     brightness: Brightness.dark,
     colorScheme: ColorScheme.dark(
       primary: scheme.darkPrimary,

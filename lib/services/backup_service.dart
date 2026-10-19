@@ -10,110 +10,116 @@ final backupServiceProvider = Provider<BackupService>((ref) {
 });
 
 class BackupService {
+  /// Bump when the JSON shape changes in a backwards-incompatible way.
+  static const int formatVersion = 2;
+
   final AppDatabase _db;
 
   BackupService(this._db);
 
-  /// Export all data to JSON file
+  /// Export all data (including recycle-bin tasks) to a pretty JSON string.
   Future<String> export() async {
     final db = await _db.database;
 
-    // Get all tasks
-    final taskMaps = await db.query(
-      'task',
-      where: 'deleted_at IS NULL OR deleted_at = 0',
-    );
-
-    // Get all tags
-    final tagMaps = await db.query('tag');
-
-    // Get all task-tag relations
-    final taskTagMaps = await db.query('task_tag');
-
-    // Get all steps
-    final stepMaps = await db.query('task_step');
-
-    // Get all recurrence rules
-    final recurrenceMaps = await db.query('recurrence_rule');
-
-    // Get all extra reminders
-    final reminderMaps = await db.query('task_reminder');
-
-    final data = {
-      'version': '4.4.0',
+    final data = <String, dynamic>{
+      'formatVersion': formatVersion,
+      'version': '$formatVersion',
       'exportTime': DateTime.now().toIso8601String(),
-      'tasks': taskMaps,
-      'tags': tagMaps,
-      'taskTags': taskTagMaps,
-      'steps': stepMaps,
-      'recurrenceRules': recurrenceMaps,
-      'taskReminders': reminderMaps,
+      'tasks': await db.query('task'),
+      'tags': await db.query('tag'),
+      'taskTags': await db.query('task_tag'),
+      'steps': await db.query('task_step'),
+      'stepOccurrences': await db.query('task_step_occurrence'),
+      'occurrences': await db.query('task_occurrence'),
+      'recurrenceRules': await db.query('recurrence_rule'),
+      'taskReminders': await db.query('task_reminder'),
+      'focusSessions': await db.query('focus_session'),
+      'focusRestSegments': await db.query('focus_rest_segment'),
     };
 
-    final json = const JsonEncoder.withIndent('  ').convert(data);
-    return json;
+    return const JsonEncoder.withIndent('  ').convert(data);
   }
 
-  /// Import data from JSON string
-  /// Returns number of tasks imported
+  /// Import data from JSON, replacing everything in one transaction.
+  /// Returns the number of tasks imported.
   Future<int> import(String jsonString) async {
-    final data = jsonDecode(jsonString) as Map<String, dynamic>;
+    final dynamic decoded = jsonDecode(jsonString);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('备份文件格式不正确');
+    }
+    final data = decoded;
     final db = await _db.database;
+    final tasks = (data['tasks'] as List?) ?? const <dynamic>[];
 
-    // Clear existing data
-    await db.delete('task_tag');
-    await db.delete('task_step');
-    await db.delete('task_reminder');
-    await db.delete('task');
-    await db.delete('tag');
-    await db.delete('recurrence_rule');
+    await db.transaction((txn) async {
+      // Child tables first; foreign keys are not enforced but this order keeps
+      // the data logically consistent if they ever are.
+      await txn.delete('focus_rest_segment');
+      await txn.delete('focus_session');
+      await txn.delete('task_step_occurrence');
+      await txn.delete('task_occurrence');
+      await txn.delete('task_reminder');
+      await txn.delete('task_tag');
+      await txn.delete('task_step');
+      await txn.delete('recurrence_rule');
+      await txn.delete('task');
+      await txn.delete('tag');
 
-    // Import recurrence rules
-    final recurrenceRules = (data['recurrenceRules'] as List?) ?? [];
-    for (final rule in recurrenceRules) {
-      await db.insert('recurrence_rule', rule as Map<String, dynamic>);
-    }
-
-    // Import tags
-    final tags = (data['tags'] as List?) ?? [];
-    for (final tag in tags) {
-      await db.insert('tag', tag as Map<String, dynamic>);
-    }
-
-    // Import tasks
-    final tasks = (data['tasks'] as List?) ?? [];
-    for (final task in tasks) {
-      await db.insert('task', task as Map<String, dynamic>);
-    }
-
-    // Import task-tag relations
-    final taskTags = (data['taskTags'] as List?) ?? [];
-    for (final tt in taskTags) {
-      await db.insert('task_tag', tt as Map<String, dynamic>);
-    }
-
-    // Import steps
-    final steps = (data['steps'] as List?) ?? [];
-    for (final step in steps) {
-      await db.insert('task_step', step as Map<String, dynamic>);
-    }
-
-    // Import extra reminders (older backups simply have none)
-    final reminders = (data['taskReminders'] as List?) ?? [];
-    for (final reminder in reminders) {
-      await db.insert('task_reminder', reminder as Map<String, dynamic>);
-    }
+      // Parents, then children.
+      for (final task in tasks) {
+        await txn.insert('task', task as Map<String, dynamic>);
+      }
+      for (final tag in (data['tags'] as List? ?? const <dynamic>[])) {
+        await txn.insert('tag', tag as Map<String, dynamic>);
+      }
+      for (final step in (data['steps'] as List? ?? const <dynamic>[])) {
+        await txn.insert('task_step', step as Map<String, dynamic>);
+      }
+      for (final rule in (data['recurrenceRules'] as List? ?? const <dynamic>[])) {
+        await txn.insert('recurrence_rule', rule as Map<String, dynamic>);
+      }
+      for (final reminder
+          in (data['taskReminders'] as List? ?? const <dynamic>[])) {
+        await txn.insert('task_reminder', reminder as Map<String, dynamic>);
+      }
+      for (final occurrence
+          in (data['occurrences'] as List? ?? const <dynamic>[])) {
+        await txn.insert('task_occurrence', occurrence as Map<String, dynamic>);
+      }
+      for (final stepOccurrence
+          in (data['stepOccurrences'] as List? ?? const <dynamic>[])) {
+        await txn.insert(
+          'task_step_occurrence',
+          stepOccurrence as Map<String, dynamic>,
+        );
+      }
+      for (final relation
+          in (data['taskTags'] as List? ?? const <dynamic>[])) {
+        await txn.insert('task_tag', relation as Map<String, dynamic>);
+      }
+      for (final session
+          in (data['focusSessions'] as List? ?? const <dynamic>[])) {
+        await txn.insert('focus_session', session as Map<String, dynamic>);
+      }
+      for (final segment
+          in (data['focusRestSegments'] as List? ?? const <dynamic>[])) {
+        await txn.insert(
+          'focus_rest_segment',
+          segment as Map<String, dynamic>,
+        );
+      }
+    });
 
     return tasks.length;
   }
 
-  /// Validate backup format
+  /// Validate backup format (older backups without the new tables are fine).
   bool isValidBackup(String jsonString) {
     try {
-      final data = jsonDecode(jsonString) as Map<String, dynamic>;
-      return data.containsKey('version') &&
-          data.containsKey('tasks') &&
-          data['tasks'] is List;
+      final dynamic decoded = jsonDecode(jsonString);
+      return decoded is Map<String, dynamic> &&
+          decoded.containsKey('version') &&
+          decoded['tasks'] is List;
     } catch (_) {
       return false;
     }

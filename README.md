@@ -5,7 +5,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-4.7.0-blue)
+![Version](https://img.shields.io/badge/Version-4.8.0-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
@@ -39,6 +39,14 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 - **操作流畅**：手势优先，减少点击层级
 - **功能完备**：覆盖任务管理的核心场景，无冗余功能
 - **隐私优先**：纯本地存储，零网络请求，无账号、无云同步
+
+---
+
+## 🆕 v4.8.0 新变化
+
+- **本地导出 / 导入**：设置 → 数据管理 → 导出/导入。导出为 JSON（系统文件保存器），包含任务、标签、子任务、重复规则、每日子任务/重复任务历史、提醒、专注记录；导入前确认覆盖，导入后自动刷新并重排提醒。
+- **开源字体许可明文**：设置 → 开源字体许可，App 内直接展示 SIL OFL 1.1 全文（可滚动、可长按复制），不再让用户去 `assets/` 目录找；补充得意黑许可文本。
+- **更紧凑的 UI**：全局 `VisualDensity.compact`，首页分区标题、任务卡、编辑器分区间距收紧，更接近 Todoery 的密度。
 
 ---
 
@@ -276,8 +284,8 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 4. 允许"未知来源"安装权限
 
 > **两个版本说明**
-> - **开源版（opensource）**：内置思源黑体/得意黑/霞鹜文楷/IBM Plex（SIL OFL 1.1），设置中可切换，不使用版权字体；当前版本 **v4.7.0**。
-> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.7.0.1**。
+> - **开源版（opensource）**：内置思源黑体/得意黑/霞鹜文楷/IBM Plex（SIL OFL 1.1），设置中可切换，不使用版权字体；当前版本 **v4.8.0**。
+> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.8.0.1**。
 >
 > 两者功能完全一致，仅字体切换能力不同。
 

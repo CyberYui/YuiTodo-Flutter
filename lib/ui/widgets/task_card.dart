@@ -70,7 +70,7 @@ class TaskCard extends ConsumerWidget {
           );
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       child: Stack(
         children: [
           Container(
@@ -90,7 +90,7 @@ class TaskCard extends ConsumerWidget {
         onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

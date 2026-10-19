@@ -872,7 +872,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return InkWell(
       onTap: () => ref.read(sectionCollapseProvider.notifier).toggle(section),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
         child: Row(
           children: [
             AnimatedRotation(
