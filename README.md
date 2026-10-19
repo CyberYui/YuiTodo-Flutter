@@ -5,7 +5,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-4.0.4-blue)
+![Version](https://img.shields.io/badge/Version-4.0.5-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
@@ -39,6 +39,14 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 - **操作流畅**：手势优先，减少点击层级
 - **功能完备**：覆盖任务管理的核心场景，无冗余功能
 - **隐私优先**：纯本地存储，零网络请求，无账号、无云同步
+
+---
+
+## 🆕 v4.0.5 新变化
+
+- **开源字体扩展（Phase B）**：新增霞鹜文楷 Lite（阅读/文艺）、IBM Plex Sans SC（企业级黑体）、IBM Plex Mono（等宽西文/数字）。
+- **开源版字体选择器**：开源版设置 → 字体现在可以切换全部开源字体（之前只能用默认思源黑体）；完整版额外提供版权字体。
+- **分支对齐**：`main` 与 `full` 现在只差版权字体资源、字体清单条目与版本号，界面/功能代码一致。
 
 ---
 
@@ -142,7 +150,7 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 | 🗑️ 回收站 | 软删除，支持恢复和永久删除 |
 | 💾 数据导入导出 | JSON 格式备份恢复 |
 | 🎨 主题持久化 | 主题模式、浅色/深色方案、定时切换自动保存，重启后恢复 |
-| 🔤 开源字体 | 思源黑体 / 得意黑（SIL OFL 1.1）；完整版可切换更多字体 |
+| 🔤 开源字体 | 思源黑体 / 得意黑 / 霞鹜文楷 / IBM Plex（SIL OFL 1.1）；两版均可在设置中切换，完整版另有版权字体 |
 | 🔔 智能提醒 | 精确闹钟 + 自动回退机制，确保提醒准时送达 |
 | ♻️ 删除与恢复 | 软删除进回收站；顶部横幅「撤销」或回收站「恢复」均可即时还原 |
 | 🧭 示例数据 | 首次安装自动生成示例任务/习惯，作为内置使用说明 |
@@ -180,8 +188,8 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 4. 允许"未知来源"安装权限
 
 > **两个版本说明**
-> - **开源版（opensource）**：内置思源黑体/得意黑（SIL OFL 1.1），不使用版权字体，公开发布；当前版本 **v4.0.4**。
-> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.0.4.1**。
+> - **开源版（opensource）**：内置思源黑体/得意黑/霞鹜文楷/IBM Plex（SIL OFL 1.1），设置中可切换，不使用版权字体；当前版本 **v4.0.5**。
+> - **完整版（full）**：在开源字体之外包含版权字体切换（仅本地构建，不公开分发）；当前版本 **v4.0.5.1**。
 >
 > 两者功能完全一致，仅字体切换能力不同。
 

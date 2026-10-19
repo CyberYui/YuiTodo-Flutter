@@ -99,7 +99,7 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.verified_outlined),
             title: const Text('开源字体'),
-            subtitle: const Text('思源黑体 / 得意黑 · SIL OFL 1.1'),
+            subtitle: const Text('思源黑体 / 得意黑 / 霞鹜文楷 / IBM Plex · SIL OFL 1.1'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showOpenFontCredits(context),
           ),
@@ -314,12 +314,11 @@ class SettingsScreen extends ConsumerWidget {
         title: const Text('开源字体许可'),
         content: const SingleChildScrollView(
           child: Text(
-            '思源黑体 Source Han Sans SC\n'
-            '作者：Adobe\n'
-            '许可：SIL Open Font License 1.1\n\n'
-            '得意黑 Smiley Sans\n'
-            '作者：atelier-anchor\n'
-            '许可：SIL Open Font License 1.1\n\n'
+            '思源黑体 Source Han Sans SC · Adobe\n'
+            '得意黑 Smiley Sans · atelier-anchor\n'
+            '霞鹜文楷 LXGW WenKai Lite · LXGW\n'
+            'IBM Plex Sans SC / IBM Plex Mono · IBM\n\n'
+            '许可：SIL Open Font License 1.1\n'
             '字体文件仅用于界面显示，遵循 OFL 1.1 许可；'
             '完整许可文本见 assets/fonts/open/ 目录。',
           ),

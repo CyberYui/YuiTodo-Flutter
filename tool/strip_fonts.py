@@ -49,14 +49,27 @@ def remove_font_assets():
     log(f"deleted {removed} proprietary root fonts (kept assets/fonts/open/)")
 
 
-def remove_font_code():
-    for rel in ("lib/core/theme/font_pairs.dart", "lib/core/theme/font_state.dart"):
-        path = os.path.join(ROOT, rel)
-        if os.path.exists(path):
-            os.remove(path)
-            log(f"deleted {rel}")
-        else:
-            log(f"{rel} already absent")
+def strip_proprietary_font_pairs():
+    """Remove the proprietary font entries from font_pairs.dart.
+
+    The opensource build keeps the font picker (AppFontPairs / font_state), but
+    only the open-source fonts remain in the catalog.
+    """
+    path = os.path.join(ROOT, "lib", "core", "theme", "font_pairs.dart")
+    with open(path, encoding="utf-8") as f:
+        s = f.read()
+    marker = "    // ---- Proprietary fonts (full build only) ----"
+    start = s.find(marker)
+    if start == -1:
+        log("font_pairs.dart has no proprietary marker; leaving as is")
+        return
+    end = s.find("  ];", start)
+    if end == -1:
+        die("could not find the end of the font_pairs list")
+    s = s[:start] + s[end:]
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(s)
+    log("font_pairs.dart -> open-source fonts only (picker kept)")
 
 
 def edit_pubspec():
@@ -70,6 +83,15 @@ def edit_pubspec():
     - family: SmileySans
       fonts:
         - asset: assets/fonts/open/SmileySans-Oblique.ttf
+    - family: LXGWWenKaiLite
+      fonts:
+        - asset: assets/fonts/open/LXGWWenKaiLite-Regular.ttf
+    - family: IBMPlexSansSC
+      fonts:
+        - asset: assets/fonts/open/IBMPlexSansSC-Regular.ttf
+    - family: IBMPlexMono
+      fonts:
+        - asset: assets/fonts/open/IBMPlexMono-Regular.ttf
 """
     if "\n  fonts:" in s:
         s = s[: s.index("\n  fonts:")].rstrip() + "\n" + open_fonts
@@ -81,115 +103,11 @@ def edit_pubspec():
 
 
 def edit_main_dart():
-    path = os.path.join(ROOT, "lib", "main.dart")
-    with open(path, encoding="utf-8") as f:
-        s = f.read()
-
-    s = s.replace("import 'core/theme/font_pairs.dart';  // ← 导入字体配对系统\n", "")
-    s = s.replace("import 'core/theme/font_state.dart';  // ← 字体索引（已持久化）\n", "")
-
-    # If font logic is present, replace the whole build body with the simple one.
-    if "fontIndexProvider" in s or "AppFontPairs" in s:
-        start = s.find("  @override\n  Widget build(BuildContext context) {")
-        end_marker = "\n}\n"
-        # find the end of _YuiTodoAppState class (last occurrence of build's closing)
-        # We replace from build start to the class closing brace before EOF.
-        if start == -1:
-            die("could not locate build() in main.dart")
-        # The state class is the last class in the file.
-        tail = s.rfind("\n}\n")
-        if tail == -1:
-            die("could not locate class end in main.dart")
-        simple = '''  @override
-  Widget build(BuildContext context) {
-    final themeState = ref.watch(themeStateProvider);
-
-    final lightScheme = themeSchemes[themeState.lightScheme];
-    final darkScheme = themeSchemes[themeState.darkScheme];
-
-    final rawLightTheme = lightScheme != null
-        ? lightThemeForScheme(lightScheme)
-        : lightTheme;
-    final rawDarkTheme = darkScheme != null
-        ? darkThemeForScheme(darkScheme)
-        : darkTheme;
-    // Opensource build: Source Han Sans SC is the default UI font.
-    final baseLightTheme = rawLightTheme.copyWith(
-      textTheme: rawLightTheme.textTheme.apply(fontFamily: 'SourceHanSansSC'),
-    );
-    final baseDarkTheme = rawDarkTheme.copyWith(
-      textTheme: rawDarkTheme.textTheme.apply(fontFamily: 'SourceHanSansSC'),
-    );
-
-    return MaterialApp(
-      title: 'YuiTodo',
-      debugShowCheckedModeBanner: false,
-      // Resolve system brightness + timed auto-switch into a concrete mode.
-      themeMode: themeState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      theme: baseLightTheme.copyWith(
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          },
-        ),
-      ),
-      darkTheme: baseDarkTheme.copyWith(
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          },
-        ),
-      ),
-      home: const HomeScreen(),
-    );
-  }
-'''
-        s = s[:start] + simple + s[tail + 1 :]
-        log("simplified main.dart (removed font TextTheme)")
-    else:
-        log("main.dart already has no font logic")
-
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(s)
+    log("main.dart kept (font picker/logic shared by both builds)")
 
 
 def edit_settings_screen():
-    path = os.path.join(ROOT, "lib", "ui", "screens", "settings_screen.dart")
-    with open(path, encoding="utf-8") as f:
-        s = f.read()
-
-    s = s.replace("import '../../core/theme/font_pairs.dart';\n", "")
-    s = s.replace("import '../../core/theme/font_state.dart';\n", "")
-    s = s.replace("    final fontIndex = ref.watch(fontIndexProvider);\n", "")
-
-    tile = """          
-          // Font
-          // 字体选择入口：点击打开字体选择器弹窗
-          ListTile(
-            title: const Text('字体'),
-            subtitle: Text(AppFontPairs.getPair(fontIndex).name),  // 显示当前选中的字体名称
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showFontPicker(context, ref),  // 打开字体选择器
-          ),
-"""
-    if tile in s:
-        s = s.replace(tile, "\n")
-        log("removed font tile from settings")
-    else:
-        log("settings font tile already absent")
-
-    start = s.find("  /// 字体选择器弹窗")
-    end = s.find("  Future<void> _showTimePicker")
-    if start != -1 and end != -1 and end > start:
-        s = s[:start] + s[end:]
-        log("removed _showFontPicker method")
-    else:
-        log("_showFontPicker already absent")
-
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(s)
+    log("settings font picker kept (open fonts in both builds)")
 
 
 def edit_gitignore():
@@ -209,7 +127,7 @@ def main():
     if not os.path.exists(os.path.join(ROOT, "pubspec.yaml")):
         die("run this from the repository root")
     remove_font_assets()
-    remove_font_code()
+    strip_proprietary_font_pairs()
     edit_pubspec()
     edit_main_dart()
     edit_settings_screen()

@@ -1,30 +1,26 @@
 import 'package:flutter/material.dart';
 
 /// ============================================================================
-/// 字体配对系统（Font Pairing System）
+/// Font pairing catalog
 /// ============================================================================
-/// 
-/// 本文件定义了所有可用的字体配对方案。
-/// 字体来源：本地嵌入字体文件（assets/fonts/）
-/// 
-/// 字体列表：
-///   - 华康少女文字W5：可爱少女风
-///   - 恋星圆体：圆润可爱风
-///   - LOGO圆体：标题圆体风
-///   - 萌神手写体：手写涂鸦风
-///   - 字体家AI造字福楷：AI生成楷书
-///   - MapleMono：等宽代码字体
-///   - FiraCodeNerdFontMono：Nerd Font 图标字体
-///   - ArkPixel：像素字体
-/// ============================================================================
-
-/// 单个字体配对方案
+///
+/// Open-source fonts (SIL OFL 1.1) are listed first so the opensource build
+/// keeps the same indices. Proprietary fonts are appended and only exist in
+/// the full build; `tool/strip_fonts.py` removes the marked block when deriving
+/// the opensource branch.
+///
+/// Open fonts:
+///   - Source Han Sans SC（思源黑体）
+///   - Smiley Sans（得意黑）
+///   - LXGW WenKai Lite（霞鹜文楷）
+///   - IBM Plex Sans SC
+///   - IBM Plex Mono
 class FontPair {
-  final String name;                    // 显示名称
-  final String? chineseFontFamily;      // 中文字体名称（嵌入字体用 family 名称）
-  final String? englishFontFamily;      // 英文字体名称
-  final String description;             // 风格描述
-  
+  final String name;
+  final String? chineseFontFamily;
+  final String? englishFontFamily;
+  final String description;
+
   const FontPair({
     required this.name,
     this.chineseFontFamily,
@@ -33,13 +29,47 @@ class FontPair {
   });
 }
 
-/// 所有可用的字体配对列表
+/// All available font pairings.
 class AppFontPairs {
   static const List<FontPair> pairs = [
     FontPair(
       name: '系统默认',
       description: '使用系统默认字体（不指定 fontFamily）',
     ),
+
+    // ---- Open-source fonts (SIL OFL 1.1) ----
+    FontPair(
+      name: '思源黑体',
+      chineseFontFamily: 'SourceHanSansSC',
+      englishFontFamily: 'SourceHanSansSC',
+      description: '开源黑体，干净通用（SIL OFL 1.1）',
+    ),
+    FontPair(
+      name: '得意黑',
+      chineseFontFamily: 'SmileySans',
+      englishFontFamily: 'SmileySans',
+      description: '开源展示黑体，适合标题/鼓励语（SIL OFL 1.1）',
+    ),
+    FontPair(
+      name: '霞鹜文楷',
+      chineseFontFamily: 'LXGWWenKaiLite',
+      englishFontFamily: 'LXGWWenKaiLite',
+      description: '开源楷体，温暖阅读（SIL OFL 1.1）',
+    ),
+    FontPair(
+      name: 'IBM Plex Sans SC',
+      chineseFontFamily: 'IBMPlexSansSC',
+      englishFontFamily: 'IBMPlexSansSC',
+      description: '开源企业级黑体（SIL OFL 1.1）',
+    ),
+    FontPair(
+      name: 'IBM Plex Mono',
+      chineseFontFamily: 'IBMPlexMono',
+      englishFontFamily: 'IBMPlexMono',
+      description: '等宽西文/数字，中文自动回退（SIL OFL 1.1）',
+    ),
+
+    // ---- Proprietary fonts (full build only) ----
     FontPair(
       name: '华康少女',
       chineseFontFamily: '华康少女文字W5',
@@ -88,21 +118,9 @@ class AppFontPairs {
       englishFontFamily: 'ArkPixel',
       description: '像素字体，复古游戏风',
     ),
-    FontPair(
-      name: '思源黑体',
-      chineseFontFamily: 'SourceHanSansSC',
-      englishFontFamily: 'SourceHanSansSC',
-      description: '开源黑体，干净通用（SIL OFL 1.1）',
-    ),
-    FontPair(
-      name: '得意黑',
-      chineseFontFamily: 'SmileySans',
-      englishFontFamily: 'SmileySans',
-      description: '开源展示黑体，适合标题/鼓励语（SIL OFL 1.1）',
-    ),
   ];
-  
-  /// 根据索引获取字体配对
+
+  /// Get a font pair by index, falling back to the system default.
   static FontPair getPair(int index) {
     if (index < 0 || index >= pairs.length) return pairs.first;
     return pairs[index];
