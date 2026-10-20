@@ -5,7 +5,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-4.9.0-blue)
+![Version](https://img.shields.io/badge/Version-4.9.1-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
@@ -42,13 +42,14 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 
 ---
 
-## 🆕 v4.9.0 新变化
+## 🆕 v4.9.1 新变化
 
-- **日历背景图**：内置 1240×1600 云层背景（顶部显示、向下渐隐到任务列表），与日历配色融合。
-- **更紧凑的 UI**：首页分区标题、任务卡、设置项、编辑器再次收紧；日期选择去掉图标，日期文字获得更多空间。
-- **全局搜索**：首页菜单 →「搜索全部任务」，或搜索框右侧入口；支持标题/备注/子任务/标签，包含已完成任务。
-- **通知体验**：完成/稍后动作增加图标，新增「稍后 1 小时」；动作图标与铃声加入 release 资源保留规则。
-- **数据修复**：设置 → 数据管理 →「修复孤立数据」，可从误删遗留的子任务/历史恢复任务。
+- **批量删除更可靠**：多选删除后列表立即刷新、写入回收站，并显示可撤销横幅；撤销会恢复整批任务。
+- **回收站批量操作**：进入即刷新，支持全选、批量恢复、批量永久删除与清空；右上角改为带文字说明的操作菜单。
+- **子任务完成**：重复任务可在详情页直接勾选「今天」的子任务；任务卡可展开查看并勾选全部子任务。
+- **快速添加更清晰**：输入框增加薄描边，并常驻提示「点铅笔进入详细编辑（日期、标签、提醒、子任务）」。
+- **每周起始日联动**：切换周一/周日会同步影响日历排列、统计周分组、热力图和习惯「本周」进度。
+- 继承 v4.9.0 的日历背景图、全局搜索、紧凑 UI、通知动作图标与孤立数据修复。
 
 > 历史版本更新内容见 [Releases](https://github.com/CyberYui/YuiTodo-Flutter/releases)。
 
@@ -61,7 +62,7 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 | 功能 | 描述 |
 |------|------|
 | 📝 任务管理 | 创建、编辑、删除、完成任务，支持富文本备注 |
-| ✅ 子任务 | 独立勾选完成，支持拖拽排序，超过 3 个折叠；重复任务按次隔离 |
+| ✅ 子任务 | 独立勾选完成，支持拖拽排序；超过 3 个可展开查看；重复任务按天隔离 |
 | 🏷️ 标签系统 | 替代分组，多维度筛选，自定义颜色和字体颜色 |
 | 🔍 搜索 | 全局搜索：标题、备注、子任务、标签；含已完成任务 |
 | 📅 日期管理 | 开始/结束日期，日历选择器 |
@@ -109,7 +110,7 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 ### 安装方法
 
 1. 前往 [Releases](https://github.com/CyberYui/YuiTodo-Flutter/releases) 页面
-2. 下载最新版本的 `YuiTodo-vX.X.X.apk`（当前为 `YuiTodo-v4.9.0.apk`）
+2. 下载最新版本的 `YuiTodo-vX.X.X.apk`（当前为 `YuiTodo-v4.9.1.apk`）
 3. 在 Android 设备上安装
 4. 允许"未知来源"安装权限
 
