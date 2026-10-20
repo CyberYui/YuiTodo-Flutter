@@ -21,12 +21,12 @@ class AppDatabase {
     return openDatabase(
       path,
       version: 14,
-      onCreate: _createTables,
+      onCreate: createTables,
       onUpgrade: _upgradeDatabase,
     );
   }
 
-  Future<void> _createTables(Database db, int version) async {
+  Future<void> createTables(Database db, int version) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS task (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
