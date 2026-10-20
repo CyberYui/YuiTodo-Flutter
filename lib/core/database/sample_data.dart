@@ -1,12 +1,14 @@
 import 'package:sqflite/sqflite.dart';
 
 import '../date/date_utils.dart';
+import '../../models/focus_session.dart';
 
 /// Seeds a small, editable set of sample tasks and habits on a fresh install.
 ///
 /// The samples double as an in-app manual: they demonstrate sections, tags,
-/// subtasks, recurrence, habits, stats and the swipe actions. Seeding only
-/// happens when the task table is empty, so existing users are never touched.
+/// subtasks, recurrence, habits, stats, icons, reminders and the swipe actions
+/// (including the recurring-only 「跳过」 action). Seeding only happens when the
+/// task table is empty, so existing users are never touched.
 class SampleData {
   static Future<void> seedIfNeeded(Database db) async {
     final flags = await db.query(
@@ -59,6 +61,8 @@ class SampleData {
       int target = 7,
       int sort = 0,
       bool starred = false,
+      int? reminderTime,
+      String? reminderSound,
       List<int> tags = const [],
     }) async {
       final startMs = date.millisecondsSinceEpoch;
@@ -80,7 +84,8 @@ class SampleData {
         'created_at': nowMs,
         'updated_at': nowMs,
         'deleted_at': null,
-        'reminder_time': null,
+        'reminder_time': reminderTime,
+        'reminder_sound': reminderSound,
         'is_habit': isHabit ? 1 : 0,
         'habit_target_per_week': target,
       });
@@ -134,27 +139,49 @@ class SampleData {
       );
     }
 
-    // 1) In-app manual.
-    await task(
+    Future<void> stepOccurrence(
+      int stepId,
+      int taskId,
+      DateTime day,
+      String status,
+    ) {
+      return db.insert(
+        'task_step_occurrence',
+        {
+          'step_id': stepId,
+          'task_id': taskId,
+          'occurrence_day': ymdKey(day),
+          'status': status,
+          'updated_at': nowMs,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    // 1) In-app manual —— 每日重复，用来演示「跳过」等循环任务操作。
+    final welcome = await task(
       title: '👋 欢迎使用 YuiTodo',
       note: '这是一条示例任务，也是使用说明：\n'
-          '• 左滑任务 → 星标；右滑任务 → 完成\n'
+          '• 左滑任务 → 完成 / 星标；右滑任务 → 星标 / 跳过 / 专注 / 改期 / 删除\n'
           '• 长按任务 → 多选；点击左侧圆圈 → 快速完成\n'
           '• 顶部「=」展开筛选与标签\n'
           '• 右上角「⋮」→ 日历 / 专注 / 统计 / 设置\n'
           '• 设置 → 功能 → 习惯打卡\n\n'
-          '示例数据可以随时删除，删除后不会再次出现。',
+          '本任务每天重复，可试试右滑「跳过」；示例数据可随时删除，删除后不会再次出现。',
       color: '#3B82F6',
+      icon: 'house',
       date: today,
       sort: 0,
       tags: [life],
     );
+    await rule(welcome);
 
     // 2) Daily recurring task with subtasks + history.
     final checkin = await task(
       title: '每日签到',
       note: '每天的小习惯，坚持打卡',
       color: '#EF4444',
+      icon: 'calendar-check',
       date: today.subtract(const Duration(days: 7)),
       sort: 1,
       tags: [life, habitTag],
@@ -165,33 +192,13 @@ class SampleData {
     await rule(checkin);
     await occurrence(checkin, today, 'done');
     for (final stepId in [step1, step2]) {
-      await db.insert(
-        'task_step_occurrence',
-        {
-          'step_id': stepId,
-          'task_id': checkin,
-          'occurrence_day': ymdKey(today),
-          'status': 'completed',
-          'updated_at': nowMs,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await stepOccurrence(stepId, checkin, today, 'completed');
     }
     for (var i = 1; i <= 7; i++) {
       final day = today.subtract(Duration(days: i));
       await occurrence(checkin, day, 'done');
       for (final stepId in [step1, step2]) {
-        await db.insert(
-          'task_step_occurrence',
-          {
-            'step_id': stepId,
-            'task_id': checkin,
-            'occurrence_day': ymdKey(day),
-            'status': 'completed',
-            'updated_at': nowMs,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        await stepOccurrence(stepId, checkin, day, 'completed');
       }
     }
 
@@ -200,25 +207,33 @@ class SampleData {
       title: '每周复盘',
       note: '回顾本周完成的任务，规划下周重点',
       color: '#8B5CF6',
+      icon: 'calendar-blank',
       date: today,
       sort: 2,
       tags: [work],
     );
     await rule(review, type: 'weekly', daysOfWeek: '5');
 
-    // 4) One-off tasks (past completed ones feed the statistics).
+    // 4) One-off future task with a reminder —— 演示定时提醒。
     await task(
       title: '买咖啡豆',
-      note: '浅烘 200g',
+      note: '浅烘 200g\n（已设置提醒，可在通知里看到）',
       color: '#F59E0B',
+      icon: 'coffee',
       date: today.add(const Duration(days: 2)),
       sort: 3,
+      reminderTime:
+          today.add(const Duration(days: 2, hours: 9)).millisecondsSinceEpoch,
+      reminderSound: 'chime',
       tags: [life],
     );
+
+    // 5) Past completed one-off tasks (feed the statistics).
     await task(
       title: '读书 30 分钟',
       note: '《深度工作》',
       color: '#10B981',
+      icon: 'books',
       status: 'done',
       date: today.subtract(const Duration(days: 1)),
       sort: 4,
@@ -228,6 +243,7 @@ class SampleData {
       title: '晨跑 5 公里',
       note: '配速 5:30',
       color: '#06B6D4',
+      icon: 'heart',
       status: 'done',
       date: today.subtract(const Duration(days: 3)),
       sort: 5,
@@ -237,6 +253,7 @@ class SampleData {
       title: '整理桌面',
       note: '清理文件与书签',
       color: '#64748B',
+      icon: 'folder',
       status: 'done',
       date: today.subtract(const Duration(days: 5)),
       sort: 6,
@@ -246,6 +263,7 @@ class SampleData {
       title: '回顾季度目标',
       note: '检查进度并调整计划',
       color: '#EC4899',
+      icon: 'target',
       status: 'done',
       date: today.subtract(const Duration(days: 2)),
       sort: 7,
@@ -253,11 +271,12 @@ class SampleData {
       starred: true,
     );
 
-    // 5) Habits with history for the streak/grid.
+    // 6) Habits with history for the streak/grid.
     final water = await task(
       title: '喝水',
       note: '每天 8 杯水',
       color: '#06B6D4',
+      icon: 'drop',
       date: today.subtract(const Duration(days: 12)),
       isHabit: true,
       target: 7,
@@ -275,6 +294,7 @@ class SampleData {
       title: '睡前阅读',
       note: '每天读 20 页',
       color: '#8B5CF6',
+      icon: 'moon',
       date: today.subtract(const Duration(days: 12)),
       isHabit: true,
       target: 5,
@@ -289,6 +309,28 @@ class SampleData {
         day,
         i <= 6 || i == 9 ? 'done' : 'skipped',
       );
+    }
+
+    // 7) Focus session records —— 演示「专注」页面的历史记录。
+    for (var i = 1; i <= 3; i++) {
+      final day = today.subtract(Duration(days: i));
+      final start = DateTime(day.year, day.month, day.day, 20, 0);
+      final duration = 1500 + i * 300;
+      await db.insert('focus_session', {
+        'task_id': null,
+        'mode': FocusMode.timer,
+        'status': FocusStatus.onTime,
+        'start_time': start.millisecondsSinceEpoch,
+        'end_time':
+            start.add(Duration(seconds: duration)).millisecondsSinceEpoch,
+        'target_duration': duration,
+        'actual_duration': duration,
+        'pause_count': 0,
+        'rest_count': 0,
+        'rest_duration': 0,
+        'focus_name': i == 1 ? '读书 30 分钟' : (i == 2 ? '每周复盘' : '整理桌面'),
+        'created_at': nowMs,
+      });
     }
   }
 }

@@ -7,7 +7,7 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-4.9.2-02569B?logo=flutter&logoColor=white)
+![Version](https://img.shields.io/badge/Version-4.9.3-02569B?logo=flutter&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
@@ -47,7 +47,19 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 ## 🆕 版本变化
 
 <details>
-<summary><b>v4.9.2（当前版本）</b> — 点击展开</summary>
+<summary><b>v4.9.3（当前版本）</b> — 点击展开</summary>
+
+- **示例数据重新设计**：首次安装的示例任务现在完整演示所有功能。
+  - 「👋 欢迎使用 YuiTodo」改为**每日重复**任务，可右滑「跳过」，演示循环任务操作。
+  - 所有示例任务新增**图标**（主页、签到、复盘、咖啡、阅读、运动、文件夹、目标、水滴、月亮）。
+  - 「买咖啡豆」新增**定时提醒**（清脆铃声），演示通知功能。
+  - 新增 3 条**专注记录**，演示「专注」页面的历史列表。
+- 修复：旧版欢迎任务因非重复而缺少「跳过」滑动按钮的问题。
+
+</details>
+
+<details>
+<summary><b>v4.9.2</b> — 点击展开</summary>
 
 - **全新应用图标**：采用全新设计的方形图标（金色花纹边框 + 四角绿宝石 + 蓝发角色与待办元素），更贴合应用气质。
 - **文档完善**：README 徽章展示图标、版本变化默认折叠、主题系统补充主要配色与十六进制色值、新增「可自定义内容」与「开放接口与数据」章节。
@@ -154,12 +166,12 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 ### 安装方法
 
 1. 前往 [Releases](https://github.com/CyberYui/YuiTodo-Flutter/releases) 页面
-2. 下载最新版本的 `YuiTodo-vX.X.X.apk`（当前为 `YuiTodo-v4.9.2.apk`）
+2. 下载最新版本的 `YuiTodo-vX.X.X.apk`（当前为 `YuiTodo-v4.9.3.apk`）
 3. 在 Android 设备上安装
 4. 允许"未知来源"安装权限
 
 > **字体说明**
-> 内置思源黑体 / 得意黑 / 霞鹜文楷 / IBM Plex（SIL OFL 1.1），可在设置中切换。当前版本 **v4.9.2**。
+> 内置思源黑体 / 得意黑 / 霞鹜文楷 / IBM Plex（SIL OFL 1.1），可在设置中切换。当前版本 **v4.9.3**。
 
 ### 快速开始
 
@@ -266,7 +278,7 @@ flutter build apk --release
 
 | 分支 | 内容 | 版本 |
 |------|------|------|
-| `main` | 唯一主分支，开源版 | `4.9.2` |
+| `main` | 唯一主分支，开源版 | `4.9.3` |
 
 项目为单分支模式，所有开发均在 `main` 上进行。
 
