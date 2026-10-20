@@ -2,16 +2,18 @@
 
 <div align="center">
 
+<img src=".github/images/icon.png" alt="YuiTodo 图标" width="96" height="96" style="border-radius:20%">
+
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-4.9.1-blue)
+![Version](https://img.shields.io/badge/Version-4.9.2-02569B?logo=flutter&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 
 **一款使用 Flutter 开发、纯本地、无账号的任务管理应用**
 
-[下载 APK](https://github.com/CyberYui/YuiTodo-Flutter/releases) · [功能介绍](#功能介绍) · [如何使用](#如何使用) · [开发](#开发)
+[下载 APK](https://github.com/CyberYui/YuiTodo-Flutter/releases) · [功能介绍](#功能介绍) · [如何使用](#如何使用) · [开发](#开发) · [主题配色](#主题系统)
 
 <!-- 截图展示区 -->
 <table align="center">
@@ -42,7 +44,18 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 
 ---
 
-## 🆕 v4.9.1 新变化
+## 🆕 版本变化
+
+<details>
+<summary><b>v4.9.2（当前版本）</b> — 点击展开</summary>
+
+- **全新应用图标**：采用全新设计的方形图标（金色花纹边框 + 四角绿宝石 + 蓝发角色与待办元素），更贴合应用气质。
+- **文档完善**：README 徽章展示图标、版本变化默认折叠、主题系统补充主要配色与十六进制色值、新增「可自定义内容」与「开放接口与数据」章节。
+
+</details>
+
+<details>
+<summary><b>v4.9.1</b> — 点击展开</summary>
 
 - **批量删除更可靠**：多选删除后列表立即刷新、写入回收站，并显示可撤销横幅；撤销会恢复整批任务。
 - **回收站批量操作**：进入即刷新，支持全选、批量恢复、批量永久删除与清空；右上角改为带文字说明的操作菜单。
@@ -51,7 +64,20 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 - **每周起始日联动**：切换周一/周日会同步影响日历排列、统计周分组、热力图和习惯「本周」进度。
 - 继承 v4.9.0 的日历背景图、全局搜索、紧凑 UI、通知动作图标与孤立数据修复。
 
-> 历史版本更新内容见 [Releases](https://github.com/CyberYui/YuiTodo-Flutter/releases)。
+</details>
+
+<details>
+<summary><b>v4.9.0</b> — 点击展开</summary>
+
+- **日历背景图**：支持在日历头部使用自定义背景图（推荐 1240×1600 竖版）。
+- **全局搜索**：新增全局搜索页，可搜索标题、备注、子任务与标签。
+- **紧凑 UI**：整体布局更紧凑，小屏设备顶栏只保留「搜索 / 筛选 / 更多」。
+- **通知动作图标**：完成 / 稍后提醒通知按钮带独立图标。
+- **孤立数据修复**：修复历史硬删除遗留的孤立子任务/标签/历史数据。
+
+</details>
+
+> 更多历史版本更新内容见 [Releases](https://github.com/CyberYui/YuiTodo-Flutter/releases)。
 
 ---
 
@@ -77,26 +103,44 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 | 🗑️ 回收站 | 软删除，支持恢复和永久删除 |
 | 💾 数据导入导出 | JSON 格式备份恢复 |
 | 🎨 主题持久化 | 主题模式、浅色/深色方案、定时切换自动保存，重启后恢复 |
-| 🔤 开源字体 | 思源黑体 / 得意黑 / 霞鹜文楷 / IBM Plex（SIL OFL 1.1）；两版均可在设置中切换，完整版另有版权字体 |
+| 🔤 开源字体 | 思源黑体 / 得意黑 / 霞鹜文楷 / IBM Plex（SIL OFL 1.1）；可在设置中切换 |
 | 🔔 智能提醒 | 精确闹钟 + 自动回退机制，确保提醒准时送达 |
 | ♻️ 删除与恢复 | 软删除进回收站；顶部横幅「撤销」或回收站「恢复」均可即时还原 |
 | 🧭 示例数据 | 首次安装自动生成示例任务/习惯，作为内置使用说明 |
 
 ### 主题系统
 
-| 浅色主题 | 深色主题 |
-|----------|----------|
-| 默认蓝 | 默认蓝 |
-| 森林绿 | 森林绿 |
-| 紫罗兰 | 紫罗兰 |
-| 日落橙 | 日落橙 |
-| Monokai | Monokai |
-| Dracula | Dracula |
-| Nord | Nord |
-| Gruvbox | Gruvbox |
-| 纯黑 | 纯黑 |
+共 **9 套配色方案**，每套均含浅色与深色两套，可分别指定；支持**跟随系统**自动切换，或**定时切换**（自定义深色时段的开始/结束时间）。
 
-支持**跟随系统**自动切换，或**定时切换**（自定义时间段）。
+| 方案 | 浅色主色 | 深色主色 | 风格 |
+|------|----------|----------|------|
+| 默认蓝 | `#3B82F6` | `#60A5FA` | 清爽通用 |
+| 森林绿 | `#10B981` | `#34D399` | 自然柔和 |
+| 紫罗兰 | `#8B5CF6` | `#A78BFA` | 优雅梦幻 |
+| 日落橙 | `#F59E0B` | `#FBBF24` | 温暖活力 |
+| Monokai | `#A6E22E` | `#A6E22E` | 代码编辑器风 |
+| Dracula | `#FF79C6` | `#FF79C6` | 霓虹粉紫 |
+| Nord | `#81A1C1` | `#81A1C1` | 北欧冷色 |
+| Gruvbox | `#B16286` | `#D3869B` | 复古暖色 |
+| 纯黑 | `#1A1A1A` | `#E0E0E0` | 极简黑白 |
+
+**主要配色与十六进制色值**
+
+以默认蓝（浅色）为例，展示各语义角色的取值：
+
+| 角色 | 浅色 | 深色 |
+|------|------|------|
+| 主色 Primary | `#3B82F6` | `#60A5FA` |
+| 次色 Secondary | `#60A5FA` | `#3B82F6` |
+| 页面背景 | `#F8FAFC` | `#0F172A` |
+| 卡片表面 | `#FFFFFF` | `#1E293B` |
+| 顶栏背景 | `#E8F0FE` | `#1E293B` |
+| 正文文字 | `#1A1A1A` | `#FFFFFF` |
+| 分割线 | `#E0E0E0` | `#404040` |
+
+> 配色定义见 `lib/core/theme/theme_schemes.dart`，主题模式与定时切换逻辑见 `lib/core/theme/theme_state.dart`。
+
+**任务颜色**：内置 16 色调色板（`#3B82F6` 蓝、`#EF4444` 红、`#10B981` 绿、`#F59E0B` 琥珀、`#EC4899` 粉、`#06B6D4` 青、`#F97316` 橙、`#6366F1` 靛、`#84CC16` 柠檬、`#D946EF` 紫红、`#64748B` 石板、`#78716C` 暖灰、`#F43F5E` 玫红、`#000000` 黑、`#FFFFFF` 白），另支持自定义 RGB 取色器。
 
 ---
 
@@ -105,17 +149,17 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 ### 系统要求
 
 - Android 7.0+ (API 24+)
-- 约 100MB（开源版）/ 130MB（完整版）存储空间
+- 约 100MB 存储空间
 
 ### 安装方法
 
 1. 前往 [Releases](https://github.com/CyberYui/YuiTodo-Flutter/releases) 页面
-2. 下载最新版本的 `YuiTodo-vX.X.X.apk`（当前为 `YuiTodo-v4.9.1.apk`）
+2. 下载最新版本的 `YuiTodo-vX.X.X.apk`（当前为 `YuiTodo-v4.9.2.apk`）
 3. 在 Android 设备上安装
 4. 允许"未知来源"安装权限
 
 > **字体说明**
-> 内置思源黑体/得意黑/霞鹜文楷/IBM Plex（SIL OFL 1.1），设置中可切换。当前版本 **v4.9.0**。
+> 内置思源黑体 / 得意黑 / 霞鹜文楷 / IBM Plex（SIL OFL 1.1），可在设置中切换。当前版本 **v4.9.2**。
 
 ### 快速开始
 
@@ -150,33 +194,53 @@ YuiTodo 诞生于对现有任务管理工具的不满：要么功能过于复杂
 ```
 YuiTodo-Flutter/
 ├── lib/
-│   ├── main.dart                    # 应用入口
+│   ├── main.dart                    # 应用入口（Prefs 加载、示例数据、提醒重排）
 │   ├── core/                        # 核心基础设施
-│   │   ├── database/                # 数据库初始化和迁移、示例数据
-│   │   ├── date/                    # 日期工具与虚拟实例查询引擎
-│   │   ├── icons/                   # 图标系统和映射
-│   │   ├── theme/                   # 主题、字体、配色
-│   │   └── utils/                   # 循环计算、提醒调度、撤销管理
-│   ├── models/                      # 数据模型（Task/Tag/TaskStep/Occurrence）
-│   ├── providers/                   # Riverpod 状态管理
-│   ├── repositories/                # 数据仓库（CRUD 操作）
-│   ├── services/                    # 业务服务（备份/通知）
+│   │   ├── database/                # 数据库初始化、14 版迁移、示例数据
+│   │   ├── date/                    # 日期工具（startOfWeek/ymdKey）与虚拟实例查询引擎
+│   │   ├── icons/                   # 图标系统（28 头像 + 200+ 扁平图标映射）
+│   │   ├── notifications/           # 提醒铃声目录与试听
+│   │   ├── storage/                 # SharedPreferences 设置封装
+│   │   ├── theme/                   # 主题、9 套配色、字体对、任务色板
+│   │   └── utils/                   # 循环计算、提醒调度、撤销管理、手动排序
+│   ├── models/                      # 数据模型（Task/Tag/TaskStep/RecurrenceRule/Occurrence/FocusSession）
+│   ├── providers/                   # Riverpod 状态管理（10 个 provider）
+│   ├── repositories/                # 数据仓库（TaskRepository 统一 CRUD）
+│   ├── services/                    # 业务服务（备份导入导出/通知/使用统计）
 │   ├── statistics/                  # 统计计算逻辑
 │   └── ui/                          # 界面层
-│       ├── screens/                 # 页面（首页/全局搜索/日历/专注/习惯/设置/统计/回收站/任务编辑）
-│       └── widgets/                 # 可复用组件（任务卡片/图标选择器/循环选择器/提醒选择器）
+│       ├── screens/                 # 页面（首页/全局搜索/日历/专注/习惯/设置/统计/回收站/任务编辑/标签管理/通知设置/字体许可）
+│       └── widgets/                 # 可复用组件（任务卡片/图标选择器/循环选择器/提醒选择器/习惯网格/统计组件）
 ├── assets/
 │   ├── icons/                       # 二次元头像图标（28 个 PNG）
 │   ├── images/                      # 日历背景图（1240×1600）
-│   └── fonts/                       # 自定义字体文件（仅完整版）
+│   └── fonts/open/                  # 开源字体（SIL OFL 1.1）
+├── android/app/src/main/res/        # 启动器图标（各密度 mipmap）
 ├── .github/
-│   ├── images/                      # README 截图展示
+│   ├── images/                      # README 截图与图标展示
 │   └── workflows/                   # CI/CD 配置
 ├── test/                            # 单元测试和 Widget 测试
-├── tool/                            # 构建辅助脚本（字体剥离等）
+├── tool/                            # 构建辅助脚本（图标生成等）
 ├── pubspec.yaml                     # 依赖配置
 └── README.md                        # 项目文档
 ```
+
+### 可自定义内容
+
+| 自定义项 | 方式 | 位置 |
+|----------|------|------|
+| 主题配色 | 9 套方案（浅/深分别设置） | 设置 → 外观 |
+| 定时深色 | 自定义深色时段 | 设置 → 外观 → 定时自动切换 |
+| 字体 | 6 种字体对（含系统默认） | 设置 → 外观 → 字体 |
+| 每周起始日 | 周一 / 周日 | 设置 → 日历 |
+| 任务颜色 | 16 色调色板 + 自定义 RGB | 任务编辑 → 颜色 |
+| 任务图标 | 28 头像 + 200+ 扁平图标 | 任务编辑 → 图标 |
+| 提醒铃声 | 6 种（跟随系统/清脆/弹跳/铃铛/电子/轻柔） | 任务编辑 → 提醒 / 通知设置 |
+| 日历背景图 | 替换 `assets/images/calendar_bg.jpg` | 需重新打包 |
+| 应用图标 | 替换 `android/app/src/main/res/mipmap-*/` | 需重新打包 |
+| 示例数据 | 首次安装自动生成（可删除） | 自动 |
+
+> **开发者自定义**：日历背景图与应用图标为资源文件，替换后重新打包即可生效；详见 `tool/gen_app_icon_v2.py` 与 `lib/core/theme/calendar_background.dart`。
 
 ### 本地开发
 
@@ -202,9 +266,26 @@ flutter build apk --release
 
 | 分支 | 内容 | 版本 |
 |------|------|------|
-| `main` | 唯一主分支，开源版 | `4.9.0` |
+| `main` | 唯一主分支，开源版 | `4.9.2` |
 
 项目为单分支模式，所有开发均在 `main` 上进行。
+
+### 开放接口与数据
+
+本项目以 MIT 许可开源，所有接口均为**进程内 Dart 接口**，无网络服务、无账号体系。主要开放点：
+
+| 接口 | 说明 | 位置 |
+|------|------|------|
+| 数据仓库 | `TaskRepository` 提供任务/标签/子任务/循环/专注/提醒的统一 CRUD | `lib/repositories/task_repository.dart` |
+| 状态管理 | 10 个 Riverpod Provider（任务、标签、回收站、日历、专注、习惯、筛选、分区、周起始、循环） | `lib/providers/` |
+| 统计计算 | `StatisticsCalculator.calculate()` 纯函数，输入任务列表输出统计结果 | `lib/statistics/statistics_calculator.dart` |
+| 循环引擎 | `RecurrenceCalculator.occurrencesBetween()` 纯函数，规则 → 日期列表 | `lib/core/utils/recurrence.dart` |
+| 备份格式 | JSON（`formatVersion = 2`），含全部表数据，可跨设备导入导出 | `lib/services/backup_service.dart` |
+| 主题配色 | 9 套 `ThemeScheme`，可扩充新方案 | `lib/core/theme/theme_schemes.dart` |
+| 字体对 | `AppFontPairs.pairs` 可扩展新字体 | `lib/core/theme/font_pairs.dart` |
+| 图标系统 | `AppIcons` + `FlatIconMapper` 可扩展图标 | `lib/core/icons/` |
+
+> 备份 JSON 字段：`tasks`、`tags`、`taskTags`、`steps`、`stepOccurrences`、`occurrences`、`recurrenceRules`、`taskReminders`、`focusSessions`、`focusRestSegments`。
 
 ---
 
