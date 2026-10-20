@@ -37,6 +37,13 @@ class TaskCard extends ConsumerWidget {
   /// Called when the handle is long-pressed while [sortEnabled] is false.
   final VoidCallback? onSortDisabled;
 
+  /// Whether every step should be visible. When false only the first few are
+  /// previewed and a "展开全部" action is shown.
+  final bool showAllSteps;
+
+  /// Called when the user taps the expand / collapse subtask action.
+  final VoidCallback? onToggleSteps;
+
   const TaskCard({
     super.key,
     required this.task,
@@ -50,6 +57,8 @@ class TaskCard extends ConsumerWidget {
     this.onToggleComplete,
     this.sortEnabled = true,
     this.onSortDisabled,
+    this.showAllSteps = false,
+    this.onToggleSteps,
   });
 
   @override
@@ -307,8 +316,9 @@ class TaskCard extends ConsumerWidget {
   /// 构建子任务预览列表
   List<Widget> _buildSubtasks() {
     final maxVisible = 3;
-    final visibleSteps = task.steps.take(maxVisible).toList();
-    final remaining = task.steps.length - maxVisible;
+    final visibleSteps =
+        showAllSteps ? task.steps : task.steps.take(maxVisible).toList();
+    final remaining = task.steps.length - visibleSteps.length;
     final subtaskColor = Color(int.parse(task.color.replaceFirst('#', '0xFF')));
 
     final widgets = <Widget>[];
@@ -354,15 +364,33 @@ class TaskCard extends ConsumerWidget {
       );
     }
 
-    if (remaining > 0) {
+    if (remaining > 0 || (showAllSteps && task.steps.length > maxVisible)) {
       widgets.add(
         Padding(
-          padding: const EdgeInsets.only(top: 4, left: 24),
-          child: Text(
-            '还有 $remaining 个...',
-            style: TextStyle(
-              fontSize: 11,
-              color: subtaskColor.withValues(alpha: 0.6),
+          padding: const EdgeInsets.only(top: 2),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: onToggleSteps,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    showAllSteps ? Icons.expand_less : Icons.expand_more,
+                    size: 16,
+                    color: subtaskColor.withValues(alpha: 0.8),
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    showAllSteps ? '收起子任务' : '展开全部（还有 $remaining 个）',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: subtaskColor.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

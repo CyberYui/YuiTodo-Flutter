@@ -43,6 +43,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   /// Tasks fading out before the actual soft delete is applied.
   final Set<int> _removingTaskIds = <int>{};
 
+  /// Cards whose full subtask list is expanded, keyed by task id + day.
+  final Set<String> _expandedCards = <String>{};
+
   /// Optimistic sort orders applied immediately on drop, before the DB write
   /// and reload finish. Keeps the ReorderableListView from snapping back.
   final Map<int, int> _optimisticSortOrders = <int, int>{};
@@ -238,12 +241,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     await ref.read(occurrenceListProvider.notifier).load();
     if (!mounted) return;
     setState(() => _removingTaskIds.remove(id));
-    context.showTopBanner('任务已删除', actionLabel: '撤销', onAction: () async {
-      await ref.read(taskListProvider.notifier).restoreTask(task.id!);
-      await ref.read(recycleBinProvider.notifier).restore(task);
+    context.showTopBanner(
+      '任务已删除',
+      actionLabel: '撤销',
+      duration: const Duration(seconds: 6),
+      onAction: () async {
+        await ref.read(taskListProvider.notifier).restoreTask(task.id!);
+        await ref.read(recycleBinProvider.notifier).restore(task);
+        await ref.read(occurrenceListProvider.notifier).load();
+        await _rescheduleNotifications();
+      },
+    );
+  }
+
+  /// Soft-deletes several tasks at once, keeps the home list in sync and
+  /// offers a single undo action that restores the whole batch.
+  Future<void> _batchDeleteWithUndo(List<int> ids) async {
+    if (ids.isEmpty) return;
+    final repo = ref.read(taskRepositoryProvider);
+    final deletedAt = DateTime.now().millisecondsSinceEpoch;
+
+    // Capture full task rows before the soft delete so the recycle bin entry
+    // and the undo path have titles, colours and steps available.
+    final deletedTasks = <Task>[];
+    for (final id in ids) {
+      final task = await repo.getTaskById(id);
+      if (task != null) deletedTasks.add(task);
+    }
+    if (deletedTasks.isEmpty) {
+      // Selection referenced rows that no longer exist; just resync the view.
+      ref.read(selectionProvider.notifier).clear();
       await ref.read(occurrenceListProvider.notifier).load();
-      await _rescheduleNotifications();
-    });
+      return;
+    }
+
+    HapticFeedback.mediumImpact();
+    await ref.read(taskListProvider.notifier).batchSoftDelete(ids);
+    for (final task in deletedTasks) {
+      await NotificationService.instance.cancelTaskReminders(task.id!);
+      ref.read(recycleBinProvider.notifier).addDeleted(
+            task.copyWith(deletedAt: deletedAt),
+          );
+    }
+    ref.read(selectionProvider.notifier).clear();
+    await ref.read(occurrenceListProvider.notifier).load();
+    if (!mounted) return;
+
+    context.showTopBanner(
+      '已删除 ${deletedTasks.length} 个任务',
+      actionLabel: '撤销',
+      duration: const Duration(seconds: 6),
+      onAction: () async {
+        await ref
+            .read(taskListProvider.notifier)
+            .restoreTasks(deletedTasks.map((t) => t.id!).toList());
+        await ref.read(recycleBinProvider.notifier).restoreMany(deletedTasks);
+        await ref.read(occurrenceListProvider.notifier).load();
+        await _rescheduleNotifications();
+      },
+    );
   }
 
   Future<void> _rescheduleNotifications() async {
@@ -337,7 +393,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void _showBatchOperationsSheet(List<int> selectedIds) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => BatchOperationsSheet(selectedIds: selectedIds),
+      builder: (context) => BatchOperationsSheet(
+        selectedIds: selectedIds,
+        onBatchDelete: _batchDeleteWithUndo,
+      ),
     );
   }
 
@@ -690,33 +749,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ignoring: !_showQuickAdd,
           child: Material(
             elevation: 6,
-            borderRadius: BorderRadius.circular(16),
             color: theme.colorScheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: 0.28),
+              ),
+            ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
-              child: Row(
+              padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _quickAddController,
-                      focusNode: _quickAddFocus,
-                      textInputAction: TextInputAction.done,
-                      decoration: const InputDecoration(
-                        hintText: '快速添加任务…',
-                        border: InputBorder.none,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _quickAddController,
+                          focusNode: _quickAddFocus,
+                          textInputAction: TextInputAction.done,
+                          decoration: const InputDecoration(
+                            hintText: '快速添加任务…',
+                            border: InputBorder.none,
+                          ),
+                          onSubmitted: (_) => _submitQuickAdd(),
+                        ),
                       ),
-                      onSubmitted: (_) => _submitQuickAdd(),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined),
+                        tooltip: '详细编辑（日期 / 标签 / 提醒 / 子任务）',
+                        onPressed: _openDetailedEditor,
+                      ),
+                      IconButton.filled(
+                        icon: const Icon(Icons.arrow_upward),
+                        tooltip: '添加',
+                        onPressed: _submitQuickAdd,
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8, bottom: 2),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 13,
+                          color: theme.colorScheme.outline,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '点铅笔进入详细编辑（日期、标签、提醒、子任务）',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: theme.colorScheme.outline,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined),
-                    tooltip: '详细编辑',
-                    onPressed: _openDetailedEditor,
-                  ),
-                  IconButton.filled(
-                    icon: const Icon(Icons.arrow_upward),
-                    tooltip: '添加',
-                    onPressed: _submitQuickAdd,
                   ),
                 ],
               ),
@@ -1077,6 +1170,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             },
             onLongPress: () => _enterSelectionMode(task.id!),
             onStepToggle: (t, s) => _toggleStep(t, s, occ),
+            showAllSteps: _expandedCards.contains(
+              '${task.id}-${occ.dayKey}',
+            ),
+            onToggleSteps: () {
+              final key = '${task.id}-${occ.dayKey}';
+              setState(() {
+                if (!_expandedCards.add(key)) {
+                  _expandedCards.remove(key);
+                }
+              });
+            },
             sortEnabled: sortEnabled,
             onSortDisabled: _showSortDisabledPrompt,
           ),
@@ -1220,7 +1324,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 class BatchOperationsSheet extends ConsumerWidget {
   final List<int> selectedIds;
 
-  const BatchOperationsSheet({super.key, required this.selectedIds});
+  /// Runs the actual batch delete (kept in the home screen so it can update
+  /// the recycle bin, notifications and the undo banner in one place).
+  final Future<void> Function(List<int> ids) onBatchDelete;
+
+  const BatchOperationsSheet({
+    super.key,
+    required this.selectedIds,
+    required this.onBatchDelete,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1243,10 +1355,10 @@ class BatchOperationsSheet extends ConsumerWidget {
           ListTile(
             leading: Icon(Icons.delete, color: theme.colorScheme.error),
             title: const Text('批量删除'),
+            subtitle: const Text('删除后可在顶部横幅撤销'),
             onTap: () {
-              ref.read(taskListProvider.notifier).batchSoftDelete(selectedIds);
-              ref.read(selectionProvider.notifier).clear();
               Navigator.pop(context);
+              onBatchDelete(selectedIds);
             },
           ),
           if (tagsAsync.hasValue)

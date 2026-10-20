@@ -162,12 +162,16 @@ class ContributionHeatmap extends StatelessWidget {
   /// 是否采用「网格 + 汇总数字」左右并排布局（横屏用）。
   final bool sideBySide;
 
+  /// 每周起始日：0 = 周一，1 = 周日。
+  final int weekStart;
+
   const ContributionHeatmap({
     super.key,
     required this.data,
     required this.baseColor,
     this.maxCellSize,
     this.sideBySide = false,
+    this.weekStart = 0,
   });
 
   @override
@@ -175,17 +179,20 @@ class ContributionHeatmap extends StatelessWidget {
     final now = DateTime.now();
     final weeks = <List<_HeatmapDay>>[];
 
-    // Calculate start date (first day of current month, aligned to Monday)
+    // Calculate start date (first day of current month, aligned to the
+    // user's first day of week).
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
-    final monday = firstDayOfMonth.subtract(Duration(days: firstDayOfMonth.weekday - 1));
+    final offset = weekStart == 1
+        ? firstDayOfMonth.weekday % 7
+        : firstDayOfMonth.weekday - 1;
+    final gridStart = firstDayOfMonth.subtract(Duration(days: offset));
     var currentWeek = <_HeatmapDay>[];
 
-    // Pad the first week
-    final firstWeekday = monday.weekday;
-    for (int i = 1; i < firstWeekday; i++) {
+    // Pad the first week with transparent placeholders.
+    for (int i = 0; i < offset; i++) {
       currentWeek.add(
         _HeatmapDay(
-          date: monday.subtract(Duration(days: firstWeekday - i)),
+          date: gridStart.add(Duration(days: i)),
           count: -1,
         ),
       );

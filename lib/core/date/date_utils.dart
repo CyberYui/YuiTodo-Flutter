@@ -20,3 +20,12 @@ DateTime fromYmdKey(int key) {
 /// Number of whole days between two local dates (ignores time of day).
 int daysBetween(DateTime a, DateTime b) =>
     dateOnly(b).difference(dateOnly(a)).inDays;
+
+/// First day of the week containing [date].
+///
+/// [weekStart] uses the app setting: 0 = Monday, 1 = Sunday.
+DateTime startOfWeek(DateTime date, int weekStart) {
+  final day = dateOnly(date);
+  final offset = weekStart == 1 ? day.weekday % 7 : day.weekday - 1;
+  return day.subtract(Duration(days: offset));
+}

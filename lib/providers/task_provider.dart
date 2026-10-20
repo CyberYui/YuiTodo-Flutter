@@ -86,6 +86,14 @@ class TaskNotifier extends StateNotifier<AsyncValue<List<Task>>> {
     await loadTasks();
   }
 
+  /// Restore several tasks with a single list reload (batch undo).
+  Future<void> restoreTasks(List<int> taskIds) async {
+    for (final id in taskIds) {
+      await _repo.restoreTask(id);
+    }
+    await loadTasks();
+  }
+
   Future<void> toggleComplete(Task task) async {
     final newStatus = task.status == 'done' ? 'pending' : 'done';
     await _repo.updateTask(task.copyWith(status: newStatus));

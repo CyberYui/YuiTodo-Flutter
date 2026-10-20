@@ -39,8 +39,25 @@ class RecycleBinNotifier extends StateNotifier<AsyncValue<List<Task>>> {
     await loadDeletedTasks();
   }
 
+  /// Restore several tasks in one pass (used by the recycle bin batch mode).
+  Future<void> restoreMany(List<Task> tasks) async {
+    for (final task in tasks) {
+      if (task.id != null) {
+        await _repo.restoreTask(task.id!);
+      }
+    }
+    await loadDeletedTasks();
+  }
+
   Future<void> permanentDelete(int taskId) async {
     await _repo.deleteTask(taskId);
+    await loadDeletedTasks();
+  }
+
+  Future<void> permanentDeleteMany(List<int> taskIds) async {
+    for (final id in taskIds) {
+      await _repo.deleteTask(id);
+    }
     await loadDeletedTasks();
   }
 

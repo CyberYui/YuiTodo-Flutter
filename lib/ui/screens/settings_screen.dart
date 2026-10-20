@@ -146,8 +146,11 @@ class SettingsScreen extends ConsumerWidget {
           // Calendar
           _SectionHeader(title: '日历'),
           ListTile(
+            leading: const Icon(Icons.view_week_outlined),
             title: const Text('每周起始日'),
-            subtitle: Text(weekStart == 1 ? '周日' : '周一'),
+            subtitle: Text(
+              '${weekStart == 1 ? '周日' : '周一'} · 影响日历排列、统计周视图和习惯「本周」统计',
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showWeekStartPicker(context, ref),
           ),

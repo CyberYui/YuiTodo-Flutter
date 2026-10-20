@@ -1,3 +1,4 @@
+import '../../core/date/date_utils.dart';
 import '../../models/task.dart';
 
 /// Statistics data models
@@ -94,7 +95,11 @@ class TagStat {
 /// Statistics calculator
 class StatisticsCalculator {
   /// Calculate overview statistics
-  static TaskStatistics calculate(List<Task> tasks, {int appOpenCount = 0}) {
+  static TaskStatistics calculate(
+    List<Task> tasks, {
+    int appOpenCount = 0,
+    int weekStart = 0,
+  }) {
     final now = DateTime.now();
 
     int completed = 0;
@@ -169,7 +174,8 @@ class StatisticsCalculator {
     final dailyCompletions = _calculateDailyCompletions(tasks, 30);
 
     // Calculate weekly completions (last 12 weeks)
-    final weeklyCompletions = _calculateWeeklyCompletions(tasks, 12);
+    final weeklyCompletions =
+        _calculateWeeklyCompletions(tasks, 12, weekStart);
 
     // Calculate heatmap data (last 365 days) - GitHub style
     final heatmapData = _calculateHeatmap(tasks, 365);
@@ -236,15 +242,17 @@ class StatisticsCalculator {
   static List<WeeklyCompletion> _calculateWeeklyCompletions(
     List<Task> tasks,
     int weeks,
+    int weekStart,
   ) {
     final now = DateTime.now();
     final result = <WeeklyCompletion>[];
 
+    // Align to the user's first day of week (0 = Monday, 1 = Sunday).
+    final currentWeekStart = startOfWeek(now, weekStart);
+
     for (int i = weeks - 1; i >= 0; i--) {
-      final weekStart = now.subtract(Duration(days: 7 * i));
-      final weekStartDay = weekStart.subtract(
-        Duration(days: weekStart.weekday - 1),
-      );
+      final weekStartDay =
+          currentWeekStart.subtract(Duration(days: 7 * i));
       final weekEnd = weekStartDay.add(const Duration(days: 7));
 
       int total = 0;

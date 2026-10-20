@@ -5,6 +5,7 @@ import '../models/task.dart';
 import '../models/task_occurrence.dart';
 import '../repositories/task_repository.dart';
 import 'occurrence_provider.dart';
+import 'week_start_provider.dart';
 
 class HabitDay {
   final DateTime day;
@@ -37,6 +38,8 @@ class HabitData {
 final habitProvider = FutureProvider<List<HabitData>>((ref) async {
   final repo = ref.watch(taskRepositoryProvider);
   final engine = ref.watch(taskDateQueryEngineProvider);
+  // 0 = Monday, 1 = Sunday. Drives the "本周" counter in the habit screen.
+  final weekStart = ref.watch(weekStartProvider);
 
   final habits = await repo.getHabitTasks();
   if (habits.isEmpty) return const [];
@@ -76,10 +79,10 @@ final habitProvider = FutureProvider<List<HabitData>>((ref) async {
 
     final totalDays = stateByDay.values.where((s) => s == 'done').length;
 
-    final monday = today.subtract(Duration(days: today.weekday - 1));
+    final weekStartDay = startOfWeek(today, weekStart);
     var weekDone = 0;
     for (var i = 0; i < 7; i++) {
-      final d = monday.add(Duration(days: i));
+      final d = weekStartDay.add(Duration(days: i));
       if (d.isAfter(today)) break;
       if (stateByDay[ymdKey(d)] == 'done') weekDone++;
     }

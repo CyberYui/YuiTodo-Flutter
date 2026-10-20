@@ -1,8 +1,38 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:yuitodo/core/date/date_utils.dart';
 import 'package:yuitodo/statistics/statistics_calculator.dart';
 import 'package:yuitodo/models/task.dart';
 
 void main() {
+  group('startOfWeek', () {
+    test('Monday start snaps a Wednesday back to Monday', () {
+      expect(
+        startOfWeek(DateTime(2026, 10, 21), 0),
+        DateTime(2026, 10, 19),
+      );
+    });
+
+    test('Sunday start snaps a Wednesday back to Sunday', () {
+      expect(
+        startOfWeek(DateTime(2026, 10, 21), 1),
+        DateTime(2026, 10, 18),
+      );
+    });
+
+    test('Sunday itself is the week start when Sunday is configured', () {
+      final sunday = DateTime(2026, 10, 18);
+      expect(startOfWeek(sunday, 1), sunday);
+      expect(startOfWeek(sunday, 0), DateTime(2026, 10, 12));
+    });
+
+    test('time of day is ignored', () {
+      expect(
+        startOfWeek(DateTime(2026, 10, 21, 23, 59), 0),
+        DateTime(2026, 10, 19),
+      );
+    });
+  });
+
   group('StatisticsCalculator', () {
     test('calculate - empty tasks', () {
       final stats = StatisticsCalculator.calculate([]);

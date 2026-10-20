@@ -7,6 +7,7 @@ import '../../models/task.dart';
 import '../../models/recurrence_rule.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/tag_provider.dart';
+import '../../core/date/date_utils.dart';
 import '../../core/icons/app_icons.dart';
 import '../../core/icons/flat_icon_mapper.dart';
 import '../../core/notifications/reminder_sounds.dart';
@@ -41,6 +42,11 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
   String _color = '#3B82F6';
   String? _icon;
   List<TaskStep> _steps = [];
+
+  /// Today's per-occurrence step statuses for recurring tasks, keyed by step
+  /// id. Kept separate from [_steps] so saving the editor never overwrites the
+  /// template status with a single day's state.
+  Map<int, String> _todayStepStatus = {};
   List<Tag> _selectedTags = [];
   RecurrenceType _recurrenceType = RecurrenceType.none;
   int _recurrenceInterval = 1;
@@ -85,8 +91,22 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
     final repo = ref.read(taskRepositoryProvider);
     final rules = await repo.getRecurrenceRuleMap();
     final reminders = await repo.getRemindersForTask(id);
-    if (!mounted) return;
     final rule = rules[id];
+
+    // Recurring tasks store step completion per occurrence. Load today's
+    // overrides so the editor can display and toggle them.
+    var todayStatuses = <int, String>{};
+    if (rule != null) {
+      final today = DateTime.now();
+      final stepOcc = await repo.getStepOccurrencesInRange(today, today);
+      final todayKey = ymdKey(today);
+      for (final entry in stepOcc.entries) {
+        final status = entry.value[todayKey];
+        if (status != null) todayStatuses[entry.key] = status;
+      }
+    }
+
+    if (!mounted) return;
     setState(() {
       if (rule != null) {
         _recurrenceType = RecurrenceType.values.firstWhere(
@@ -95,9 +115,22 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
         );
         _recurrenceInterval = rule.interval;
       }
+      _todayStepStatus = todayStatuses;
       _reminders = reminders;
       _extrasLoaded = true;
     });
+  }
+
+  bool get _isRecurring => _recurrenceType != RecurrenceType.none;
+
+  /// Status shown for a step. Recurring tasks prefer today's occurrence state
+  /// so the editor never edits every future day by accident.
+  String _statusForStep(TaskStep step) {
+    final id = step.id;
+    if (_isRecurring && id != null) {
+      return _todayStepStatus[id] ?? step.status;
+    }
+    return step.status;
   }
 
   @override
@@ -130,15 +163,37 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
     });
   }
 
-  void _toggleStepStatus(int index) {
+  Future<void> _toggleStepStatus(int index) async {
+    // Close the race where the editor is tapped before the recurrence rule
+    // (and today's occurrence state) finishes loading.
+    if (widget.task != null && !_extrasLoaded) {
+      await _loadExtras();
+      if (!mounted) return;
+    }
+    final step = _steps[index];
+    final newStatus =
+        _statusForStep(step) == 'completed' ? 'pending' : 'completed';
+    final taskId = widget.task?.id;
+
+    if (_isRecurring && step.id != null && taskId != null) {
+      await ref.read(taskRepositoryProvider).setStepOccurrenceStatus(
+            step.id!,
+            taskId,
+            DateTime.now(),
+            newStatus,
+          );
+      if (!mounted) return;
+      setState(() => _todayStepStatus[step.id!] = newStatus);
+      return;
+    }
+
     setState(() {
-      final step = _steps[index];
       _steps[index] = TaskStep(
         id: step.id,
         taskId: step.taskId,
         title: step.title,
         sortOrder: step.sortOrder,
-        status: step.status == 'completed' ? 'pending' : 'completed',
+        status: newStatus,
       );
     });
   }
@@ -816,13 +871,13 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
             title: '子任务',
             child: Column(
               children: [
-                if (_recurrenceType != RecurrenceType.none)
+                if (_isRecurring)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        '子任务完成状态按天记录，请在任务列表勾选',
+                        '重复任务的子任务按天记录；这里的勾选只影响今天',
                         style: TextStyle(
                           fontSize: 12,
                           color: Theme.of(context).colorScheme.outline,
@@ -851,6 +906,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                   },
                   itemBuilder: (context, index) {
                     final step = _steps[index];
+                    final status = _statusForStep(step);
                     return ListTile(
                       key: ValueKey('step-$index'),
                       leading: Row(
@@ -865,14 +921,13 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                           ),
                           const SizedBox(width: 8),
                           GestureDetector(
-                            onTap: _recurrenceType == RecurrenceType.none
-                                ? () => _toggleStepStatus(index)
-                                : null,
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => _toggleStepStatus(index),
                             child: Icon(
-                              step.status == 'completed'
+                              status == 'completed'
                                   ? Icons.check_circle
                                   : Icons.circle_outlined,
-                              color: step.status == 'completed'
+                              color: status == 'completed'
                                   ? theme.colorScheme.primary
                                   : null,
                             ),
@@ -882,7 +937,7 @@ class _TaskEditorScreenState extends ConsumerState<TaskEditorScreen> {
                       title: Text(
                         step.title,
                         style: TextStyle(
-                          decoration: step.status == 'completed'
+                          decoration: status == 'completed'
                               ? TextDecoration.lineThrough
                               : null,
                         ),

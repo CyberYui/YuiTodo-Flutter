@@ -6,6 +6,7 @@ import '../../providers/occurrence_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../services/app_usage_service.dart';
 import '../../core/storage/app_prefs.dart';
+import '../../providers/week_start_provider.dart';
 import '../../statistics/statistics_calculator.dart';
 import '../../ui/widgets/stat_widgets.dart';
 
@@ -78,6 +79,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           final stats = StatisticsCalculator.calculate(
             tasks,
             appOpenCount: _appOpenCount,
+            weekStart: ref.watch(weekStartProvider),
           );
           final todayProgress = StatisticsCalculator.getTodayProgress(tasks);
           final todayCreated = (tasksAsync.valueOrNull ?? []).where((t) {
@@ -299,6 +301,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                   ContributionHeatmap(
                     data: stats.heatmapData,
                     baseColor: theme.colorScheme.primary,
+                    weekStart: ref.watch(weekStartProvider),
                   ),
                 ],
               ),
@@ -465,6 +468,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                     baseColor: theme.colorScheme.primary,
                     maxCellSize: 18,
                     sideBySide: true,
+                    weekStart: ref.watch(weekStartProvider),
                   ),
                 ],
               ),
